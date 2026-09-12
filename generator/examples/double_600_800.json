@@ -1,0 +1,11 @@
+{
+  "type": "double",
+  "outer_mm": [
+    600,
+    800
+  ],
+  "lattice_per_leaf": [
+    2,
+    4
+  ]
+}

@@ -1,0 +1,327 @@
+{
+  "research_date": "2026-09-11",
+  "baseline_revision": "PORTRAIT_DL_R2",
+  "baseline_checks": 59,
+  "baseline_source_sha256": {
+    "generate_spec.py": "eabaf65e73784d07b73e483b1ee83c98bb44c9139f68e434ce87ab4d59e26678",
+    "build_portrait_double_leaf.py": "df3d1d594a19bf24474408c0fd9a29d6d8bee8763f496c88c32c1312f9a30c52",
+    "design_parameters.json": "5021dc5bb63c4e5ddc7bc56a942c1030a5e48a57cb0793059a491c783cadf105"
+  },
+  "method": "Each experiment used a separate temporary unified copy. The cases map lists changes from R2. Optimization experiments used PYTHONOPTIMIZE=1. The invalid-candidate capture wrapper saved the in-memory document only inside the temporary test copy before re-raising the validator exception, to test --validate-only independently. Source files in unified were not modified.",
+  "parameter_changes": {
+    "dense_12_4": {
+      "lattice": {
+        "vertical_per_leaf": 12
+      }
+    },
+    "lap_30": {
+      "lattice": {
+        "end_lap_length": 30
+      }
+    },
+    "resize_600_800_fit_picture": {
+      "frame": {
+        "outer_width": 600,
+        "outer_height": 800
+      },
+      "picture": {
+        "sheet_width": 434,
+        "sheet_height": 634
+      }
+    },
+    "optimize_dense_13_4": {
+      "lattice": {
+        "vertical_per_leaf": 13
+      }
+    },
+    "optimize_depth_9": {
+      "machining": {
+        "pocket_depth": 9
+      }
+    },
+    "optimize_ratio_258": {
+      "frame": {
+        "outer_width": 523,
+        "outer_height": 646
+      },
+      "picture": {
+        "region_margin": 40
+      }
+    },
+    "single_no_bars": {
+      "leaf": {
+        "count": 1,
+        "min_height_to_width_ratio": 1
+      },
+      "lattice": {
+        "vertical_per_leaf": 0,
+        "horizontal_per_leaf": 0
+      }
+    },
+    "short_stock": {
+      "stock": {
+        "length": 600
+      }
+    },
+    "tool10": {
+      "machining": {
+        "tool_diameter": 10
+      }
+    }
+  },
+  "build_and_formula_results": {
+    "builds": [
+      {
+        "case": "dense_12_4",
+        "exit": 0,
+        "errors": [],
+        "derived_totals": {
+          "parts": 44,
+          "pockets": 344,
+          "reliefs": 128,
+          "joint_pairs": 172
+        },
+        "checks_passed": 59,
+        "cells": {
+          "LEFT_LEAF/L01": 0.538462,
+          "LEFT_LEAF/L02": 80.0,
+          "RIGHT_LEAF/L01": 0.538462,
+          "RIGHT_LEAF/L02": 80.0
+        }
+      },
+      {
+        "case": "lap_30",
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: 48_exact_R3.2_corner_reliefs_two_per_seat"
+        ],
+        "derived_totals": {
+          "parts": 24,
+          "pockets": 104,
+          "reliefs": 0,
+          "joint_pairs": 52
+        }
+      },
+      {
+        "case": "resize_600_800_fit_picture",
+        "exit": 0,
+        "errors": [],
+        "derived_totals": {
+          "parts": 24,
+          "pockets": 104,
+          "reliefs": 48,
+          "joint_pairs": 52
+        },
+        "checks_passed": 59,
+        "cells": {
+          "LEFT_LEAF/L01": 58.5,
+          "LEFT_LEAF/L02": 122.8,
+          "RIGHT_LEAF/L01": 58.5,
+          "RIGHT_LEAF/L02": 122.8
+        }
+      },
+      {
+        "case": "single_no_bars",
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: lattice_bars_evenly_spaced_in_measured_opening, hardware_2hinges_1handles_1catches_reference_only"
+        ],
+        "derived_totals": {
+          "parts": 8,
+          "pockets": 16,
+          "reliefs": 0,
+          "joint_pairs": 8
+        }
+      },
+      {
+        "case": "short_stock",
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: all_parts_within_board, minimum_board_edge_margin_20mm"
+        ],
+        "derived_totals": {
+          "parts": 24,
+          "pockets": 104,
+          "reliefs": 48,
+          "joint_pairs": 52
+        }
+      }
+    ],
+    "formula_matrix": {
+      "cases": 84,
+      "settings": {
+        "leaf_min_ratio": 1,
+        "lap": 10,
+        "sash_member_width": 30,
+        "leaf_count": [
+          1,
+          2
+        ],
+        "vertical_range": [
+          0,
+          5
+        ],
+        "horizontal_range": [
+          0,
+          6
+        ]
+      },
+      "mismatches": []
+    }
+  },
+  "optimize_three_cases": [
+    {
+      "case": "optimize_dense_13_4",
+      "env": {
+        "PYTHONOPTIMIZE": "1"
+      },
+      "normal_build": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, lattice_bars_evenly_spaced_in_measured_opening"
+        ]
+      },
+      "previous_dxf_preserved_on_failure": true,
+      "capture_rejected_candidate": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, lattice_bars_evenly_spaced_in_measured_opening"
+        ]
+      },
+      "validate_only": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, lattice_bars_evenly_spaced_in_measured_opening"
+        ]
+      }
+    },
+    {
+      "case": "optimize_depth_9",
+      "env": {
+        "PYTHONOPTIMIZE": "1"
+      },
+      "normal_build": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, half_lap_depth_9_is_half_of_stock_20"
+        ]
+      },
+      "previous_dxf_preserved_on_failure": true,
+      "capture_rejected_candidate": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, half_lap_depth_9_is_half_of_stock_20"
+        ]
+      },
+      "validate_only": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: no_nominal_assembled_solid_interpenetration, half_lap_depth_9_is_half_of_stock_20"
+        ]
+      }
+    },
+    {
+      "case": "optimize_ratio_258",
+      "env": {
+        "PYTHONOPTIMIZE": "1"
+      },
+      "normal_build": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: leaf_height_to_width_ratio_at_least_2.6"
+        ]
+      },
+      "previous_dxf_preserved_on_failure": true,
+      "capture_rejected_candidate": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: leaf_height_to_width_ratio_at_least_2.6"
+        ]
+      },
+      "validate_only": {
+        "exit": 1,
+        "errors": [
+          "AssertionError: DXF validation failed: leaf_height_to_width_ratio_at_least_2.6"
+        ]
+      }
+    }
+  ],
+  "optimize_tool_diameter_counterexample": {
+    "tool_diameter": 10,
+    "relief_radius": 3.2,
+    "runs": [
+      {
+        "pythonoptimize": "0",
+        "exit": 1,
+        "errors": [
+          "AssertionError: relief_radius (3.2) is smaller than the tool radius (5.0)"
+        ]
+      },
+      {
+        "pythonoptimize": "1",
+        "exit": 0,
+        "errors": [],
+        "checks_passed": 59,
+        "validate_only_exit": 0
+      }
+    ]
+  },
+  "saved_dxf_geometry_measurements": {
+    "stock_part_measurements": [
+      {
+        "pattern": "2 + 4",
+        "part_id": "S02-1",
+        "nominal_min_seat_gap_mm": 35.66666666666666,
+        "min_parent_cut_footprint_distance_mm": 29.266666666666666,
+        "max_adjacent_parent_cut_overlap_area_mm2": 0.0,
+        "machining_layer_remaining_components": 1,
+        "stock_thickness_mm": 20,
+        "cut_depth_mm": 10,
+        "interpretation": "XY section of the machined half only; component count does not mean the full wooden part breaks into pieces because the opposite 10 mm half remains."
+      },
+      {
+        "pattern": "12 + 4",
+        "part_id": "S02-1",
+        "nominal_min_seat_gap_mm": 0.5384615384615188,
+        "min_parent_cut_footprint_distance_mm": 0.0,
+        "max_adjacent_parent_cut_overlap_area_mm2": 28.7367151964123,
+        "machining_layer_remaining_components": 14,
+        "stock_thickness_mm": 20,
+        "cut_depth_mm": 10,
+        "interpretation": "XY section of the machined half only; component count does not mean the full wooden part breaks into pieces because the opposite 10 mm half remains."
+      }
+    ],
+    "resized_hinges": {
+      "assembled_y_centres_mm": [
+        103.0,
+        697.0
+      ],
+      "centre_spacing_mm": 594.0,
+      "leaf_height_mm": 714,
+      "inset_from_leaf_end_mm": 60
+    }
+  },
+  "dependency_probe": {
+    "requested_packages": [
+      "pydantic==2.13.5",
+      "fastapi==0.128.8",
+      "hypothesis==6.141.1"
+    ],
+    "install_exit": 0,
+    "pip_check_exit": 0,
+    "import_exit": 0,
+    "versions": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]\n2.13.5 2.46.5 0.128.8 6.141.1"
+  },
+  "protected_package_hashes": [
+    {
+      "directory": "unified",
+      "recorded_files": 23,
+      "mismatches": []
+    },
+    {
+      "directory": "from_codex/hanok_window_A3_portrait_double_leaf_ALL",
+      "recorded_files": 37,
+      "mismatches": []
+    }
+  ]
+}

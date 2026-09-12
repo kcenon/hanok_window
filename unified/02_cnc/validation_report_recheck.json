@@ -1,0 +1,521 @@
+{
+  "status": "PASS_NOMINAL_DXF_GEOMETRY",
+  "phase": "READ_BACK_FROM_SAVED_DXF",
+  "saved_dxf_reread": true,
+  "revision": "PORTRAIT_DL_R3",
+  "checks_passed": 64,
+  "checks": [
+    {
+      "name": "unique_part_ids_and_total",
+      "status": "PASS",
+      "measured": 24
+    },
+    {
+      "name": "F01_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 2,
+        "required": 2
+      }
+    },
+    {
+      "name": "F02_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 2,
+        "required": 2
+      }
+    },
+    {
+      "name": "S01_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 4,
+        "required": 4
+      }
+    },
+    {
+      "name": "S02_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 4,
+        "required": 4
+      }
+    },
+    {
+      "name": "L01_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 4,
+        "required": 4
+      }
+    },
+    {
+      "name": "L02_part_count",
+      "status": "PASS",
+      "measured": {
+        "actual": 8,
+        "required": 8
+      }
+    },
+    {
+      "name": "all_machining_entities_closed_lwpolyline",
+      "status": "PASS",
+      "measured": 176
+    },
+    {
+      "name": "valid_positive_area_no_self_intersection",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "no_duplicate_complete_machining_contours",
+      "status": "PASS",
+      "measured": 0
+    },
+    {
+      "name": "all_part_sizes_match_portrait_spec",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "board_boundary_1220x900",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all_parts_within_board",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "no_nesting_overlap",
+      "status": "PASS",
+      "measured": 0.0
+    },
+    {
+      "name": "minimum_nesting_gap_12mm",
+      "status": "PASS",
+      "measured": 11.999999999999998
+    },
+    {
+      "name": "minimum_board_edge_margin_20mm",
+      "status": "PASS",
+      "measured": 20.0
+    },
+    {
+      "name": "all_lengths_parallel_X_grain",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "J1_pocket_count",
+      "status": "PASS",
+      "measured": 8
+    },
+    {
+      "name": "J2_pocket_count",
+      "status": "PASS",
+      "measured": 16
+    },
+    {
+      "name": "J3_pocket_count",
+      "status": "PASS",
+      "measured": 32
+    },
+    {
+      "name": "J4_pocket_count",
+      "status": "PASS",
+      "measured": 48
+    },
+    {
+      "name": "total_base_pockets_104",
+      "status": "PASS",
+      "measured": 104
+    },
+    {
+      "name": "pockets_per_part",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "S01_4_J4_seats_each",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "S02_2_J4_seats_each",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all_lattice_two_end_laps",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all_L01_4_and_L02_2_crossing_pockets",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "lattice_2_vertical_4_horizontal_bars_per_leaf",
+      "status": "PASS",
+      "measured": {
+        "per_leaf": [
+          2,
+          4
+        ]
+      }
+    },
+    {
+      "name": "all_pocket_coordinates_match_exact_formulas",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "48_exact_R3.2_corner_reliefs_two_per_seat",
+      "status": "PASS",
+      "measured": 48
+    },
+    {
+      "name": "machining_relief_radius_at_least_tool_radius",
+      "status": "PASS",
+      "measured": {
+        "tool_radius_mm": 3.0,
+        "minimum_actual_radius_mm": 3.1999999999999886
+      }
+    },
+    {
+      "name": "distinct_machining_regions_separated",
+      "status": "PASS",
+      "measured": {
+        "pairs_compared": 196,
+        "closest_pair": {
+          "part_id": "S02-4",
+          "features": [
+            "S02-4-P03",
+            "S02-4-P04"
+          ],
+          "joints": [
+            "J4",
+            "J4"
+          ],
+          "shared_cut_depth_mm": 10,
+          "distance_mm": 29.266666666666424,
+          "uncertainty_mm": 2.01e-05
+        },
+        "connections": [],
+        "method": "each nominal pocket union its own reliefs; same part and overlapping actual cut-depth intervals"
+      }
+    },
+    {
+      "name": "machining_preserves_non_open_edges",
+      "status": "PASS",
+      "measured": {
+        "edges_compared": 184,
+        "closest_edge": {
+          "part_id": "S02-3",
+          "feature_id": "S02-3-P04",
+          "edge": "V_MIN",
+          "distance_mm": 16.799999999999955,
+          "uncertainty_mm": 1.0100000000000002e-05
+        },
+        "failures": []
+      }
+    },
+    {
+      "name": "all_pockets_reliefs_inside_own_part",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "layer_depth_and_face_separation",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all_required_layers_exist",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "mm_modelspace_flat_geometry",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "part_annotations_separate_and_unique",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "assembly_transform_faces_consistent",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "52_joint_pairs_XY_match_opposite_faces",
+      "status": "PASS",
+      "measured": {
+        "pairs": 52,
+        "max_mismatch_area_mm2": 1.1368683772161603e-12
+      }
+    },
+    {
+      "name": "mate_feature_links_bidirectional",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "no_nominal_assembled_solid_interpenetration",
+      "status": "PASS",
+      "measured": {
+        "max_volume_mm3": 5.6843418860808015e-12,
+        "worst_pair": "L01-2/L02-1",
+        "method": "per-region Z ranges from depth 10 in stock 20; actual circular bulges sampled with chord error <= 1e-05 mm"
+      }
+    },
+    {
+      "name": "half_lap_depth_10_is_half_of_stock_20",
+      "status": "PASS",
+      "measured": {
+        "retained_front": 10,
+        "retained_back": 10,
+        "stock": 20
+      }
+    },
+    {
+      "name": "frame_463x586_inner383x506",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all_leaf_envelopes187x500",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "leaf_height_to_width_ratio_at_least_2.6",
+      "status": "PASS",
+      "measured": [
+        2.673797,
+        2.673797
+      ]
+    },
+    {
+      "name": "centre_gap3_and_outer_gaps3",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "lattice_bars_evenly_spaced_in_measured_opening",
+      "status": "PASS",
+      "measured": {
+        "LEFT_LEAF/L01": 35.666667,
+        "LEFT_LEAF/L02": 80.0,
+        "RIGHT_LEAF/L01": 35.666667,
+        "RIGHT_LEAF/L02": 80.0
+      }
+    },
+    {
+      "name": "no_fixed_centre_mullion",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "no_member_bridges_leaves",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "assembly_reference_matches_all_cut_parts",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "A3_portrait297x420_in317x440_margin10",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "picture_margins_match_each_side",
+      "status": "PASS",
+      "measured": {
+        "required_mm": 10,
+        "measured_mm": {
+          "left": 10.0,
+          "right": 10.0,
+          "bottom": 10.0,
+          "top": 10.0
+        }
+      }
+    },
+    {
+      "name": "A3_and_picture_region_distinct_linetypes",
+      "status": "PASS",
+      "measured": {
+        "A3": "A3_DASHDOT",
+        "region": "REF_DASH"
+      }
+    },
+    {
+      "name": "2_openings_127x440_reference",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "hardware_4hinges_2handles_2catches_reference_only",
+      "status": "PASS",
+      "measured": {
+        "HINGE": 4,
+        "HANDLE": 2,
+        "CATCH": 2
+      }
+    },
+    {
+      "name": "J1_J2_J3_J4_reference_details_present",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "references_never_on_machining_layers",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "two_sided_opening_illustration_reference_only",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "all104_pockets_have_open_edge_intent",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "revision_recorded_matches_parameters",
+      "status": "PASS",
+      "measured": {
+        "revision": "PORTRAIT_DL_R3",
+        "build_date": "2026-09-11"
+      }
+    },
+    {
+      "name": "numeric_policy_recorded",
+      "status": "PASS",
+      "measured": {
+        "version": "HANOK_NUMERIC_V1",
+        "input_representation": "IEEE-754 binary64; no input quantization",
+        "parameter_absolute_mm": 1e-09,
+        "linear_absolute_mm": 1e-07,
+        "ratio_absolute": 1e-09,
+        "overlap_area_mm2": 1e-07,
+        "interpenetration_volume_mm3": 1e-05,
+        "circular_chord_error_mm": 1e-05,
+        "geometry_equivalence": "two-way whole-boundary containment plus perimeter-scaled area difference",
+        "contact_uncertainty": "sum of both circular approximation bounds plus linear tolerance",
+        "manufacturing_allowance": false
+      }
+    },
+    {
+      "name": "design_spec_on_disk_matches_parameters",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "DXF_audit_no_errors_no_fixes",
+      "status": "PASS",
+      "measured": {
+        "errors": 0,
+        "fixes": 0
+      }
+    }
+  ],
+  "numeric_policy": {
+    "version": "HANOK_NUMERIC_V1",
+    "input_representation": "IEEE-754 binary64; no input quantization",
+    "parameter_absolute_mm": 1e-09,
+    "linear_absolute_mm": 1e-07,
+    "ratio_absolute": 1e-09,
+    "overlap_area_mm2": 1e-07,
+    "interpenetration_volume_mm3": 1e-05,
+    "circular_chord_error_mm": 1e-05,
+    "geometry_equivalence": "two-way whole-boundary containment plus perimeter-scaled area difference",
+    "contact_uncertainty": "sum of both circular approximation bounds plus linear tolerance",
+    "manufacturing_allowance": false
+  },
+  "manufacturing_assessment": {
+    "status": "PENDING",
+    "machined_web": {
+      "measured_mm": 29.266666666666424,
+      "required_minimum_mm": null
+    },
+    "edge_web": {
+      "measured_mm": 16.799999999999955,
+      "required_minimum_mm": null
+    },
+    "remaining_thickness": {
+      "measured_mm": 10,
+      "required_minimum_mm": null
+    },
+    "reason": "Material/process-qualified minima and fit coupons are not supplied. Geometric separation is not strength or manufacturing approval."
+  },
+  "parts_total": 24,
+  "part_counts": {
+    "F01": 2,
+    "F02": 2,
+    "S01": 4,
+    "S02": 4,
+    "L01": 4,
+    "L02": 8
+  },
+  "nominal_pockets_total": 104,
+  "pocket_counts": {
+    "J1": 8,
+    "J2": 16,
+    "J4": 48,
+    "J3": 32
+  },
+  "dogbone_reliefs_total": 48,
+  "machining_profiles_total": 176,
+  "mated_joints_total": 52,
+  "minimum_part_gap_mm": 11.999999999999998,
+  "minimum_board_margin_mm": 20.0,
+  "nesting_bounds_mm": [
+    20.0,
+    20.0,
+    1111.0,
+    304.0
+  ],
+  "lattice_per_leaf": {
+    "vertical": 2,
+    "horizontal": 4,
+    "crossings": 8
+  },
+  "overall_width_height_mm": [
+    463,
+    586
+  ],
+  "leaf_width_height_mm": [
+    187.0,
+    500
+  ],
+  "board_mm": [
+    1220,
+    900,
+    20
+  ],
+  "physical_fabrication_validated": false,
+  "visual_inspection_status": "PENDING",
+  "pending": [
+    "Actual hinges, screws, load capacity and swing interference",
+    "Rear backing, mounting, picture protection and fastener clearance",
+    "Stock species, grain integrity, thickness, moisture and movement",
+    "Fit coupons and nominal zero-clearance joint tolerances",
+    "CAM pocket union, open-edge overrun and cutter compensation",
+    "Workholding, tabs/onion skin, feeds/speeds and final manufacturing approval"
+  ],
+  "file": "hanok_window_A3_portrait_double_leaf_one_board_CNC.dxf",
+  "sha256": "34bf267a6a8fec1323fce0166dd0dce46c86dc8290472603c3284372fe55d82f"
+}

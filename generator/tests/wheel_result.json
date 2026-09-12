@@ -1,0 +1,21 @@
+{
+  "wheel": "generator/dist/hanok_window_generator-0.1.0-py3-none-any.whl",
+  "wheel_sha256": "305860f216288b6421cc50b8afdc10d4ba8d6d4c8377878f39d7d0b8783a2d99",
+  "build": {
+    "checks": 66,
+    "dogbones": 16,
+    "manufacturing_status": "PENDING",
+    "package_id": "a5027e158b45070651e39424b48bfc82d9ccc870fcb42d45face70cc815c2807",
+    "parts": 12,
+    "pockets": 32,
+    "status": "PASS",
+    "package": "/private/var/folders/r6/m4qy77696yl62gmq9mpqjbg00000gn/T/hanok-wheel-final-y_2qnwgm/output/packages/a5027e158b45070651e39424b48bfc82d9ccc870fcb42d45face70cc815c2807",
+    "manifest": "/private/var/folders/r6/m4qy77696yl62gmq9mpqjbg00000gn/T/hanok-wheel-final-y_2qnwgm/output/packages/a5027e158b45070651e39424b48bfc82d9ccc870fcb42d45face70cc815c2807/package_manifest.json"
+  },
+  "verify": {
+    "status": "PASS",
+    "package_id": "a5027e158b45070651e39424b48bfc82d9ccc870fcb42d45face70cc815c2807",
+    "files": 34
+  },
+  "installed_module": "/var/folders/r6/m4qy77696yl62gmq9mpqjbg00000gn/T/hanok-wheel-final-y_2qnwgm/lib/hanok_generator/__init__.py"
+}

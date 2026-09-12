@@ -1,0 +1,190 @@
+{
+  "revision": "PORTRAIT_DL_R3",
+  "build_date": "2026-09-11",
+  "source_of_truth": "design_parameters.json",
+  "overall_width_height_mm": [
+    463,
+    586
+  ],
+  "lattice_per_leaf": {
+    "vertical": 2,
+    "horizontal": 4,
+    "crossings": 8
+  },
+  "validation": {
+    "status": "PASS_NOMINAL_DXF_GEOMETRY",
+    "checks_passed": 64,
+    "dxf_sha256": "34bf267a6a8fec1323fce0166dd0dce46c86dc8290472603c3284372fe55d82f"
+  },
+  "reproducible_build": {
+    "dxf": "Byte-reproducible with the same parameters, source and library versions: PYTHONHASHSEED=0 plus fixed DXF metadata. Independent of the installed fonts.",
+    "png": "Reproducible only where the same font files and the same Pillow version resolve; the fonts actually used are recorded below.",
+    "render_environment": {
+      "fonts": {
+        "bold": "Arial.ttf",
+        "regular": "Arial.ttf"
+      },
+      "hanok_font_env": "",
+      "note": "PNG bytes depend on these fonts; the DXF does not."
+    }
+  },
+  "hash_algorithm": "SHA-256",
+  "excluded": [
+    ".DS_Store",
+    ".claude/",
+    ".git/",
+    ".idea/",
+    ".mypy_cache/",
+    ".pytest_cache/",
+    ".venv/",
+    ".vscode/",
+    "__pycache__/",
+    "node_modules/",
+    "package_manifest.json",
+    "validation_report_recheck.json",
+    "venv/"
+  ],
+  "file_count": 28,
+  "files": [
+    {
+      "path": "00_START_HERE.txt",
+      "bytes": 7958,
+      "sha256": "32bebf1a331b420aba1542a7b4882ac3711f0189c8d8dad71289aba1729c4086"
+    },
+    {
+      "path": "01_plan/MERGED_PLAN.md",
+      "bytes": 49118,
+      "sha256": "d32233f13e0f26dd2da6f3bf64f0290fbb96d8d419dc945c27fe1091dc1dabc0"
+    },
+    {
+      "path": "01_plan/PLAN_RECONCILIATION.md",
+      "bytes": 13505,
+      "sha256": "928180e6c4712b6334fb31fa0cd2ebe8e204e6d4b1b8117f313ac41b20b271bd"
+    },
+    {
+      "path": "01_plan/SPEC_UNIFICATION.md",
+      "bytes": 24382,
+      "sha256": "0c8469cef94c454eb82d1c80aee71438b816e336f09fc169ce3cd4f942c09987"
+    },
+    {
+      "path": "02_cnc/01_one_board_nesting.png",
+      "bytes": 361009,
+      "sha256": "6cdce3e15e65a4a1764cd0ec9a32d9bc277d9e6ff41d02d50dc2a967667e20f5"
+    },
+    {
+      "path": "02_cnc/02_joinery_details.png",
+      "bytes": 365809,
+      "sha256": "8ff33ff84e78abe5d27ed267f2691cfe91debbeacfb7f3e51f8bcfff3c50dff5"
+    },
+    {
+      "path": "02_cnc/03_assembly_reference.png",
+      "bytes": 301368,
+      "sha256": "2de15b22d02caae63b75767502e41210142a678f7a5c79ef4a68f105455240da"
+    },
+    {
+      "path": "02_cnc/04_opening_reference.png",
+      "bytes": 234635,
+      "sha256": "1c95247b65607bb9f0f55a8c39665e9b6e8c69006e9b97d996357b72af05462e"
+    },
+    {
+      "path": "02_cnc/05_all_pockets_closeup.png",
+      "bytes": 84917,
+      "sha256": "edee379a561eb60be342df8bec1b938c0489306ed47210ac2af167e5a5f39f22"
+    },
+    {
+      "path": "02_cnc/README.txt",
+      "bytes": 13544,
+      "sha256": "5f01d5246386151dc9284e1893f22c3c7733a1cde56e2951e3b00820cfd65ead"
+    },
+    {
+      "path": "02_cnc/build_portrait_double_leaf.py",
+      "bytes": 77989,
+      "sha256": "9d246e60868c83c71dd476de216eb17c2bac55f1c318582a2714633585c6aa0f"
+    },
+    {
+      "path": "02_cnc/cad_helpers.py",
+      "bytes": 9502,
+      "sha256": "89b408a67d7c2331188930766b5b4add77db4d4ceab8bf4d3143f4ef8bbb4aff"
+    },
+    {
+      "path": "02_cnc/design_parameters.json",
+      "bytes": 3105,
+      "sha256": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba"
+    },
+    {
+      "path": "02_cnc/design_spec.json",
+      "bytes": 54163,
+      "sha256": "f9f2c402141ebd54c95dd89d0f81370daa1bc86b24a7f44f91e3da5b261378ed"
+    },
+    {
+      "path": "02_cnc/dogbone_manifest.csv",
+      "bytes": 4010,
+      "sha256": "4f0f3d3ae18eb838606378801d48cbdb638d0892c75215600e6233331f3b4e39"
+    },
+    {
+      "path": "02_cnc/generate_spec.py",
+      "bytes": 26282,
+      "sha256": "d0f8caedc8e95e8e58ba3236dec70ddf89f7117810cbd3e853b659da104468aa"
+    },
+    {
+      "path": "02_cnc/hanok_window_A3_portrait_double_leaf_one_board_CNC.dxf",
+      "bytes": 215723,
+      "sha256": "34bf267a6a8fec1323fce0166dd0dce46c86dc8290472603c3284372fe55d82f"
+    },
+    {
+      "path": "02_cnc/hardware_reference_manifest.csv",
+      "bytes": 862,
+      "sha256": "02d2084079d80153bf9b284e5b2de0a3af3dc654291aa1201c5b33da44591093"
+    },
+    {
+      "path": "02_cnc/machining_checks.py",
+      "bytes": 4420,
+      "sha256": "34f56d368789ab3e6ddae3b51c883f43f61d2943fa5ac030d3816d359a591176"
+    },
+    {
+      "path": "02_cnc/numeric_policy.py",
+      "bytes": 4576,
+      "sha256": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c"
+    },
+    {
+      "path": "02_cnc/parts_manifest.csv",
+      "bytes": 2042,
+      "sha256": "7e05cd9b4f61876d4010ad8391661b7e67aab34b0252fb086dff5025208dd7e9"
+    },
+    {
+      "path": "02_cnc/pocket_manifest.csv",
+      "bytes": 10080,
+      "sha256": "86a76adab69d08c1f19979e595d7522b727d8e49743ca15495e5f3dcee31e534"
+    },
+    {
+      "path": "02_cnc/requirements.txt",
+      "bytes": 405,
+      "sha256": "1294bacbb98c21908e4405e8ff2b2ce56a957b6cb52ea48472678da91214561d"
+    },
+    {
+      "path": "02_cnc/validation_report.json",
+      "bytes": 12665,
+      "sha256": "32709630c6582d8a99d1294b93718ca6f6c1d2f05f26e563159efef3b47d26ca"
+    },
+    {
+      "path": "02_cnc/verify_package.py",
+      "bytes": 5063,
+      "sha256": "ddd54ddd4e336d1e54cce658a02f131b4610fbe6309a1c31e190ffa7a42337ce"
+    },
+    {
+      "path": "03_tests/r2_geometry_reference.json",
+      "bytes": 59437,
+      "sha256": "501dbad0caa2de169d2184405b3353c75dc7fb6ac3c09f7feb51b01bd4116af0"
+    },
+    {
+      "path": "03_tests/regression_results.json",
+      "bytes": 2348285,
+      "sha256": "86f5254574b8fd0bf31b188d37e85cee06a4562fae0dd209401cfbaa2303f100"
+    },
+    {
+      "path": "03_tests/test_regressions.py",
+      "bytes": 18680,
+      "sha256": "909073e0d1598afa05b5c9f080481a8c0be5b20c4d9008b08387016b331d4ef3"
+    }
+  ]
+}

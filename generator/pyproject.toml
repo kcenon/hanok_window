@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hanok-window-generator"
+version = "0.2.0"
+description = "Parametric single and double leaf hanok window CAD packages"
+requires-python = ">=3.11"
+dependencies = ["ezdxf==1.4.2", "shapely==2.0.7", "Pillow==11.3.0"]
+
+[project.scripts]
+hanok-window = "hanok_generator.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["hanok_generator*"]
+
+[tool.setuptools.package-data]
+hanok_generator = ["presets/*.json", "request.schema.json"]

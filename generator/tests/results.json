@@ -1,0 +1,280 @@
+{
+  "status": "PASS",
+  "tests": 14,
+  "failures": [],
+  "errors": [],
+  "cases": [
+    {
+      "case": "double_None_0_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 12,
+      "pockets": 24,
+      "dogbones": 0,
+      "package_id": "fbc77138451cdabe1f31c4bfd31ea89f0e3f45327060a69d10de64a11dc3091b"
+    },
+    {
+      "case": "double_None_2_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 16,
+      "pockets": 40,
+      "dogbones": 16,
+      "package_id": "11b70568b911dc8e1a0a0d84aa0696ae4a717e1d22c972ec2c63d62977496a71"
+    },
+    {
+      "case": "double_None_0_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 20,
+      "pockets": 56,
+      "dogbones": 32,
+      "package_id": "195655ab147590a2c9794c1e6e6f92544f0c578b1fb6a3479f39f2d50884c957"
+    },
+    {
+      "case": "double_None_2_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "ed9555e7fbced15b9f1f6a5818100ecf1fcf553fc63ef7cd9544d8fb6ed9601b"
+    },
+    {
+      "case": "single_left_0_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 12,
+      "pockets": 32,
+      "dogbones": 16,
+      "package_id": "1b4e461fe70ac88c6f664d16e80159c6ac355714622590e178d4a615ffef3269"
+    },
+    {
+      "case": "single_left_2_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 14,
+      "pockets": 56,
+      "dogbones": 24,
+      "package_id": "d0ee6c6f77307939f454d7514019b4462c6ebec6457d2e6fb94ed71db38af97e"
+    },
+    {
+      "case": "single_left_2_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 10,
+      "pockets": 24,
+      "dogbones": 8,
+      "package_id": "5f5e3ef8fcfb37a8cf3f12d97553cfcc33291d1a6542e3a06db3817ac75058ef"
+    },
+    {
+      "case": "single_left_0_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 8,
+      "pockets": 16,
+      "dogbones": 0,
+      "package_id": "dd2348526f6b34a20ef155f479456ba1a2108b62da1b34769f375c2c33fedfc5"
+    },
+    {
+      "case": "single_right_0_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 8,
+      "pockets": 16,
+      "dogbones": 0,
+      "package_id": "f3c379b2885b8d6c9f46670b59b626e439c29dbac44a7a6e61c10eb4d492882f"
+    },
+    {
+      "case": "single_right_2_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 10,
+      "pockets": 24,
+      "dogbones": 8,
+      "package_id": "e29662a8fbd18b18de2e34dad9473e3b4ce14797b05613bb467373d091ce379d"
+    },
+    {
+      "case": "single_right_0_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 12,
+      "pockets": 32,
+      "dogbones": 16,
+      "package_id": "8bd917301ed4a2fe35c77883ef47acfce8dfc9352fa92826e2261d736610c10f"
+    },
+    {
+      "case": "single_right_2_4",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 14,
+      "pockets": 56,
+      "dogbones": 24,
+      "package_id": "664f6d2aa612bd97549bc4bf48f5f588a18a03925ccb59bfe261f600b4398e59"
+    },
+    {
+      "case": "resize",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "c5cb9d359c41944a6f556ebdb0eff9114a563cdc2c5e6b2a94f5e7a5224663a7"
+    },
+    {
+      "case": "r3",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "3d8e6187780074314208439f3ec46e7634870b769d87756e5fcf8109865939c3"
+    },
+    {
+      "case": "lattice_3_5",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 28,
+      "pockets": 148,
+      "dogbones": 64,
+      "package_id": "7fb2089971a58b63f4f1d90739d3e1dc339ceb06e2134a048fb9568d1fa58d3d"
+    },
+    {
+      "case": "picture",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "cdc58a68d92867628cf944671b835415f0784089191e57ed92c3751c80b79317"
+    },
+    {
+      "case": "inner_r3",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "633d258d7ea7b5a2a203dd2c9530b802ee113afc167bca5bb50e756c2e72d77b"
+    },
+    {
+      "case": "failure_cad",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_csv",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_render",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_manifest",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_publish",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_pointer",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "failure_terminate:render",
+      "status": "PREVIOUS_PACKAGE_PRESERVED"
+    },
+    {
+      "case": "concurrent_mixed",
+      "jobs": 10,
+      "successes": 8,
+      "expected_failures": 2,
+      "status": "PASS"
+    },
+    {
+      "case": "decimal_sweeps",
+      "normal": 200,
+      "optimized": 200,
+      "input_guards": 4,
+      "status": "PASS"
+    },
+    {
+      "case": "dense",
+      "status": "REJECTED",
+      "rule_id": "geometry.validation"
+    },
+    {
+      "case": "oversize_part",
+      "status": "REJECTED",
+      "rule_id": "nesting.part_fits_stock"
+    },
+    {
+      "case": "oversize_layout",
+      "status": "REJECTED",
+      "rule_id": "nesting.board_width"
+    },
+    {
+      "case": "picture_too_large",
+      "status": "REJECTED",
+      "rule_id": "picture.fits_width"
+    },
+    {
+      "case": "portrait_preset",
+      "status": "REJECTED",
+      "rule_id": "leaf.aspect_ratio"
+    },
+    {
+      "case": "invalid_integer",
+      "status": "REJECTED",
+      "rule_id": "input.number"
+    },
+    {
+      "case": "inner_size_basis_r3",
+      "status": "PASS",
+      "inner": [
+        383,
+        506
+      ],
+      "equivalent_outer": [
+        463,
+        586
+      ],
+      "contours_identical": true
+    },
+    {
+      "case": "inner_size_inputs",
+      "status": "PASS",
+      "cli_basis": "inner",
+      "decimal_inner": [
+        340.3,
+        820.7
+      ],
+      "rejections": 4
+    },
+    {
+      "case": "optimized_source_bundle",
+      "status": "PASS",
+      "entire_package_identical": true,
+      "overlap_rejected": true
+    }
+  ],
+  "source_sha256": {
+    "__init__.py": "f8b019154223f387cfb5712435b71e0fc7acecba39a968a643c704ee264757bd",
+    "__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "cli.py": "a199daef085d699bf0d912174d24794d3165b4625338f47c5f9ff457ab0ecea1",
+    "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
+    "engine/builder.py": "50beed0008b6c029402072b89cd2abcc4d670ec0c3b0ee38ddcd8e45d90b4f2a",
+    "engine/cad_helpers.py": "fad3c229dedc1ef69b6a1ed76c2ad8616aac3ff0b4fda8849d8e7b00b94368b3",
+    "engine/generate_spec.py": "d9de869d27fca60dd9fd57d6d9961c89819d19ee5dca5e15ec80f738aa29a171",
+    "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",
+    "engine/numeric_policy.py": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c",
+    "formats.py": "d289a7e381ec36656ae8f865b9d39a8e3be208418195130c79722dc8535b28a5",
+    "jobs.py": "b8d2e8af7951a0b67f84fbe0acafd700a534dc049256d1b51e3576120b79a361",
+    "model.py": "f0f301873d59a1a5ade0dc293b0113e12dcb2e500670ae2b6b160ce2fd06fbd9",
+    "package.py": "dbe630e58c64577f9c4ce6dcb6a425a276e9d327dad07b91bfe9bf2a4cd90c25",
+    "presets/r3_parameters.json": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba",
+    "request.schema.json": "747307770c1ba26ec6be83ad7ec4cc42c02fac511195a2a0da0ebfed6651d5bc",
+    "worker.py": "847bbcd3bb26c9924003cb7536215351617caa8b75760158f35d366cad76aac0"
+  }
+}

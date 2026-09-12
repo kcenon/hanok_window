@@ -1,0 +1,1311 @@
+{
+  "research_date": "2026-09-11",
+  "baseline_revision": "PORTRAIT_DL_R2",
+  "baseline_checks": 59,
+  "baseline_source_sha256": {
+    "generate_spec.py": "eabaf65e73784d07b73e483b1ee83c98bb44c9139f68e434ce87ab4d59e26678",
+    "build_portrait_double_leaf.py": "df3d1d594a19bf24474408c0fd9a29d6d8bee8763f496c88c32c1312f9a30c52",
+    "design_parameters.json": "5021dc5bb63c4e5ddc7bc56a942c1030a5e48a57cb0793059a491c783cadf105"
+  },
+  "baseline_dxf_sha256": "7d821182d939e27951902009d11ce72b96db11001ab46c87b8e890f35819292a",
+  "environment": {
+    "python": "3.9.6 (default, Aug 13 2026, 04:25:06) \n[Clang 21.0.0 (clang-2100.3.33.1)]",
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "ezdxf": "1.4.2",
+    "shapely": "2.0.7"
+  },
+  "method": {
+    "changes_scope": "Temporary copies only. Existing unified and from_codex packages unchanged; research documents updated.",
+    "runs": "Normal means PYTHONOPTIMIZE=0; optimized means PYTHONOPTIMIZE=1. PYTHONHASHSEED=0 and PYTHONDONTWRITEBYTECODE=1 were used. Successful unmodified-code optimized builds were also read back with --validate-only.",
+    "failure_handling": "For a failed build, pre-existing copied artifacts were not treated as new successful outputs.",
+    "prior_evidence": "review_correction_probe_results.json: reuses already executed optimized dense-13, depth-9, aspect-ratio and tool-10 tests after confirming baseline source hashes are unchanged.",
+    "coverage_limit": "Nine assertions were mapped, using specific representative violations. A rejected case does not prove that every possible violation of its rule is covered.",
+    "guard_removal": "For the two lap > opening examples only the opening-bound assert was removed in temporary copies, then normal builds ran with all remaining assertions active."
+  },
+  "parameter_changes": {
+    "picture_width_290": {
+      "picture": {
+        "sheet_width": 290
+      }
+    },
+    "picture_height_410": {
+      "picture": {
+        "sheet_height": 410
+      }
+    },
+    "lap35_open30_sash40": {
+      "frame": {
+        "outer_width": 309
+      },
+      "leaf": {
+        "member_width": 40
+      },
+      "lattice": {
+        "vertical_per_leaf": 1,
+        "end_lap_length": 35
+      },
+      "picture": {
+        "sheet_width": 123,
+        "sheet_height": 400
+      }
+    },
+    "lap35_open30_sash50": {
+      "frame": {
+        "outer_width": 349
+      },
+      "leaf": {
+        "member_width": 50
+      },
+      "lattice": {
+        "vertical_per_leaf": 1,
+        "end_lap_length": 35
+      },
+      "picture": {
+        "sheet_width": 143,
+        "sheet_height": 380
+      }
+    },
+    "lap_zero": {
+      "lattice": {
+        "end_lap_length": 0
+      }
+    },
+    "lap35_sash30": {
+      "lattice": {
+        "end_lap_length": 35
+      }
+    },
+    "decimal_identity_roundoff": {
+      "clearance": {
+        "frame_to_leaf": 3.1
+      },
+      "leaf": {
+        "member_width": 30.2
+      },
+      "picture": {
+        "sheet_width": 296.4,
+        "sheet_height": 419.4
+      }
+    },
+    "optimize_dense_13_4": {
+      "lattice": {
+        "vertical_per_leaf": 13
+      }
+    },
+    "optimize_depth_9": {
+      "machining": {
+        "pocket_depth": 9
+      }
+    },
+    "optimize_ratio_258": {
+      "frame": {
+        "outer_width": 523,
+        "outer_height": 646
+      },
+      "picture": {
+        "region_margin": 40
+      }
+    },
+    "tool10": {
+      "machining": {
+        "tool_diameter": 10
+      }
+    }
+  },
+  "normal_derive_results": [
+    {
+      "case": "picture_width_290",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "picture region width must equal sheet width plus twice the margin"
+    },
+    {
+      "case": "picture_height_410",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "picture region height must equal sheet height plus twice the margin"
+    },
+    {
+      "case": "lap35_open30_sash40",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "end lap longer than the opening"
+    },
+    {
+      "case": "lap35_open30_sash50",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "end lap longer than the opening"
+    },
+    {
+      "case": "lap_zero",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "lattice end lap (0) must fit inside the sash member width (30)"
+    },
+    {
+      "case": "lap35_sash30",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "lattice end lap (35) must fit inside the sash member width (30)"
+    },
+    {
+      "case": "decimal_identity_roundoff",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "picture region height must match the leaf opening height"
+    },
+    {
+      "case": "optimize_dense_13_4",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "lattice bars do not fit"
+    },
+    {
+      "case": "optimize_depth_9",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "half-lap joints need pocket_depth (9) to be exactly half the stock thickness (20); 18 != 20"
+    },
+    {
+      "case": "optimize_ratio_258",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "leaf height / width (560 / 217 = 2.5806) is below the required minimum 2.6"
+    },
+    {
+      "case": "tool10",
+      "accepted": false,
+      "error_type": "AssertionError",
+      "message": "relief_radius (3.2) is smaller than the tool radius (5.0)"
+    }
+  ],
+  "new_full_cli_runs": [
+    {
+      "case": "picture_width_290",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: picture region width must equal sheet width plus twice the margin"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59,
+          "validate_only_exit": 0
+        }
+      ]
+    },
+    {
+      "case": "picture_height_410",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: picture region height must equal sheet height plus twice the margin"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59,
+          "validate_only_exit": 0
+        }
+      ]
+    },
+    {
+      "case": "lap35_open30_sash40",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: end lap longer than the opening"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59,
+          "validate_only_exit": 0
+        },
+        {
+          "mode": "only_opening_bound_removed",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59
+        }
+      ]
+    },
+    {
+      "case": "lap35_open30_sash50",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: end lap longer than the opening"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59,
+          "validate_only_exit": 0
+        },
+        {
+          "mode": "only_opening_bound_removed",
+          "exit": 0,
+          "errors": [],
+          "checks_passed": 59
+        }
+      ]
+    },
+    {
+      "case": "lap_zero",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: lattice end lap (0) must fit inside the sash member width (30)"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 1,
+          "errors": [
+            "AssertionError: DXF validation failed: J4_pocket_count, total_base_pockets_104, pockets_per_part, S01_4_J4_seats_each, S02_2_J4_seats_each, all_lattice_two_end_laps, all_pocket_coordinates_match_exact_formulas, 48_exact_R3.2_corner_reliefs_two_per_seat, 52_joint_pairs_XY_match_opposite_faces"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "lap35_sash30",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: lattice end lap (35) must fit inside the sash member width (30)"
+          ]
+        },
+        {
+          "mode": "optimized",
+          "exit": 1,
+          "errors": [
+            "AssertionError: DXF validation failed: all_pocket_coordinates_match_exact_formulas, 48_exact_R3.2_corner_reliefs_two_per_seat, no_nominal_assembled_solid_interpenetration, all_leaf_envelopes187x500, leaf_height_to_width_ratio_at_least_2.6, centre_gap3_and_outer_gaps3, no_member_bridges_leaves"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "decimal_identity_roundoff",
+      "runs": [
+        {
+          "mode": "normal",
+          "exit": 1,
+          "errors": [
+            "AssertionError: picture region height must match the leaf opening height"
+          ],
+          "region_height_mm": 439.4,
+          "opening_height_mm": 439.40000000000003
+        }
+      ]
+    }
+  ],
+  "temporary_guard_removal_proofs": [
+    {
+      "case": "lap35_open30_sash40",
+      "only_source_difference": "assert lap <= v['open_w'] and lap <= v['open_h'], 'end lap longer than the opening'",
+      "matches_baseline_with_only_that_line_removed": true
+    },
+    {
+      "case": "lap35_open30_sash50",
+      "only_source_difference": "assert lap <= v['open_w'] and lap <= v['open_h'], 'end lap longer than the opening'",
+      "matches_baseline_with_only_that_line_removed": true
+    }
+  ],
+  "guard_coverage": [
+    {
+      "rule_id": "picture.region_width_relation",
+      "source_line": 165,
+      "cases": [
+        "picture_width_290"
+      ],
+      "optimized_result": "59 checks pass; validate-only passes",
+      "decision": "Keep active picture-profile constraint; explicit input error and four actual margins"
+    },
+    {
+      "rule_id": "picture.region_height_relation",
+      "source_line": 167,
+      "cases": [
+        "picture_height_410"
+      ],
+      "optimized_result": "59 checks pass; validate-only passes",
+      "decision": "Keep active picture-profile constraint; explicit input error and four actual margins"
+    },
+    {
+      "rule_id": "picture.region_height_equals_opening",
+      "source_line": 169,
+      "cases": [
+        "decimal_identity_roundoff"
+      ],
+      "optimized_result": "Not used as geometric violation case; algebraic identity",
+      "decision": "Numerical policy: algebraically identical expressions must not reject valid decimal dimensions due to exact float equality"
+    },
+    {
+      "rule_id": "lattice.positive_gaps",
+      "source_line": 170,
+      "cases": [
+        "optimize_dense_13_4"
+      ],
+      "optimized_result": "Rejected by interpenetration and measured spacing checks",
+      "evidence_pointer": "review_correction_probe_results.json#/optimize_three_cases",
+      "decision": "Keep positive gaps, add separate visible gap and machined web limits"
+    },
+    {
+      "rule_id": "leaf.aspect_ratio_minimum",
+      "source_line": 174,
+      "cases": [
+        "optimize_ratio_258"
+      ],
+      "optimized_result": "Rejected by measured ratio check",
+      "evidence_pointer": "review_correction_probe_results.json#/optimize_three_cases",
+      "decision": "Keep when required by selected product profile"
+    },
+    {
+      "rule_id": "machining.half_lap_depth",
+      "source_line": 181,
+      "cases": [
+        "optimize_depth_9"
+      ],
+      "optimized_result": "Rejected by interpenetration and depth checks",
+      "evidence_pointer": "review_correction_probe_results.json#/optimize_three_cases",
+      "decision": "Keep for current common-depth half lap joint"
+    },
+    {
+      "rule_id": "lattice.end_lap_within_sash",
+      "source_line": 184,
+      "cases": [
+        "lap_zero",
+        "lap35_sash30"
+      ],
+      "optimized_result": "Rejected by 9 / 7 checks respectively",
+      "decision": "For current blind seats use strict 0 < lap < sash_width plus actual edge/web checks"
+    },
+    {
+      "rule_id": "lattice.end_lap_within_opening",
+      "source_line": 186,
+      "cases": [
+        "lap35_open30_sash40",
+        "lap35_open30_sash50"
+      ],
+      "optimized_result": "59 checks pass; validate-only passes",
+      "decision": "Remove from general geometric rules; opening > 0 separates the two end laps regardless of lap > opening"
+    },
+    {
+      "rule_id": "machining.relief_tool_radius",
+      "source_line": 190,
+      "cases": [
+        "tool10"
+      ],
+      "optimized_result": "59 checks pass; validate-only passes",
+      "evidence_pointer": "review_correction_probe_results.json#/optimize_tool_diameter_counterexample",
+      "decision": "Keep explicit input error and compare saved arc radius with resolved cutter radius"
+    }
+  ],
+  "geometry_measurements": {
+    "method": {
+      "coordinate_source": "Saved DXF LWPOLYLINE geometry, no design_spec coordinate values used",
+      "curve_conversion": "cad_helpers.entity_polygon: ezdxf.path flattening distance 0.00001 mm, segments 64",
+      "grouping": "Union each nominal pocket with its own dogbones; compare every pair on the same part and machining face with overlapping cut-depth intervals",
+      "thresholds_for_this_measurement": {
+        "overlap_area_mm2": 1e-07,
+        "touch_distance_mm": 1e-06
+      },
+      "threshold_interpretation": "Numerical classification tolerances, not manufacturing minimum wall thickness",
+      "scope": "Cuts from face A, 10 mm deep in 20 mm stock; overlap does not mean full-thickness part separation"
+    },
+    "picture_margins": [
+      {
+        "case": "picture_width_290",
+        "picture_size_mm": [
+          290.0,
+          420.0
+        ],
+        "region_size_mm": [
+          317.0,
+          440.0
+        ],
+        "picture_contained": true,
+        "actual_margins_mm": {
+          "left": 10.0,
+          "right": 17.0,
+          "bottom": 10.0,
+          "top": 10.0
+        },
+        "old_minimum_boundary_distance_mm": 10.0,
+        "required_each_margin_mm": 10
+      },
+      {
+        "case": "picture_height_410",
+        "picture_size_mm": [
+          297.0,
+          410.0
+        ],
+        "region_size_mm": [
+          317.0,
+          440.0
+        ],
+        "picture_contained": true,
+        "actual_margins_mm": {
+          "left": 10.0,
+          "right": 10.0,
+          "bottom": 10.0,
+          "top": 20.0
+        },
+        "old_minimum_boundary_distance_mm": 10.0,
+        "required_each_margin_mm": 10
+      }
+    ],
+    "end_lap_examples": [
+      {
+        "case": "lap35_open30_sash40",
+        "part_id": "L02-1",
+        "actual_length_mm": 100.0,
+        "actual_width_mm": 10.0,
+        "actual_end_lap_intervals_u_mm": [
+          [
+            0.0,
+            35.0
+          ],
+          [
+            65.0,
+            100.0
+          ]
+        ],
+        "actual_interval_separation_mm": 30.0,
+        "S02_1_seat_cut_to_outer_long_edge_mm": 1.7999999999999545,
+        "whole_design_distinct_parent_cut_overlaps": 0,
+        "whole_design_distinct_parent_cut_touches": 0,
+        "whole_design_minimum_distinct_parent_cut_distance_mm": 6.7999999999999545
+      },
+      {
+        "case": "lap35_open30_sash50",
+        "part_id": "L02-1",
+        "actual_length_mm": 100.0,
+        "actual_width_mm": 10.0,
+        "actual_end_lap_intervals_u_mm": [
+          [
+            0.0,
+            35.0
+          ],
+          [
+            65.0,
+            100.0
+          ]
+        ],
+        "actual_interval_separation_mm": 30.0,
+        "S02_1_seat_cut_to_outer_long_edge_mm": 11.799999999999955,
+        "whole_design_distinct_parent_cut_overlaps": 0,
+        "whole_design_distinct_parent_cut_touches": 0,
+        "whole_design_minimum_distinct_parent_cut_distance_mm": 6.7999999999999545
+      }
+    ],
+    "all_parent_cut_overlap_audits": [
+      {
+        "parent_features": 104,
+        "same_part_same_face_pair_count": 196,
+        "overlapping_pair_count": 0,
+        "overlaps_by_joint_type": {},
+        "overlaps_by_part": {},
+        "minimum_distinct_parent_cut_distance_mm": 29.266666666666424,
+        "touching_without_positive_area_count": 0,
+        "overlapping_pairs": [],
+        "case": "baseline_2_4"
+      },
+      {
+        "parent_features": 344,
+        "same_part_same_face_pair_count": 1516,
+        "overlapping_pair_count": 52,
+        "overlaps_by_joint_type": {
+          "J2/J4": 8,
+          "J4/J4": 44
+        },
+        "overlaps_by_part": {
+          "S02-1": 13,
+          "S02-2": 13,
+          "S02-3": 13,
+          "S02-4": 13
+        },
+        "minimum_distinct_parent_cut_distance_mm": 0.0,
+        "touching_without_positive_area_count": 0,
+        "overlapping_pairs": [
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P01",
+              "S02-1-P03"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653169508
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P02",
+              "S02-1-P14"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653169432
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P03",
+              "S02-1-P04"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412106
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P04",
+              "S02-1-P05"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.7367151964123
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P05",
+              "S02-1-P06"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641214
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P06",
+              "S02-1-P07"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.7367151964123
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P07",
+              "S02-1-P08"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641214
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P08",
+              "S02-1-P09"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641214
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P09",
+              "S02-1-P10"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641223
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P10",
+              "S02-1-P11"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412128
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P11",
+              "S02-1-P12"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P12",
+              "S02-1-P13"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412128
+          },
+          {
+            "part_id": "S02-1",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-1-P13",
+              "S02-1-P14"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P01",
+              "S02-2-P03"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653169432
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P02",
+              "S02-2-P14"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653169437
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P03",
+              "S02-2-P04"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P04",
+              "S02-2-P05"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P05",
+              "S02-2-P06"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P06",
+              "S02-2-P07"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412295
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P07",
+              "S02-2-P08"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P08",
+              "S02-2-P09"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P09",
+              "S02-2-P10"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P10",
+              "S02-2-P11"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412295
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P11",
+              "S02-2-P12"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P12",
+              "S02-2-P13"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-2",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-2-P13",
+              "S02-2-P14"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P01",
+              "S02-3-P03"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653169437
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P02",
+              "S02-3-P14"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653170013
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P03",
+              "S02-3-P04"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P04",
+              "S02-3-P05"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P05",
+              "S02-3-P06"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P06",
+              "S02-3-P07"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412295
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P07",
+              "S02-3-P08"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.73671519641195
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P08",
+              "S02-3-P09"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196411993
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P09",
+              "S02-3-P10"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412465
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P10",
+              "S02-3-P11"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413908
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P11",
+              "S02-3-P12"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413154
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P12",
+              "S02-3-P13"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413158
+          },
+          {
+            "part_id": "S02-3",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-3-P13",
+              "S02-3-P14"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413154
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P01",
+              "S02-4-P03"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653170013
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P02",
+              "S02-4-P14"
+            ],
+            "joint_types": [
+              "J2",
+              "J4"
+            ],
+            "overlap_area_mm2": 12.659392653170013
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P03",
+              "S02-4-P04"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413158
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P04",
+              "S02-4-P05"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413154
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P05",
+              "S02-4-P06"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413158
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P06",
+              "S02-4-P07"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413908
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P07",
+              "S02-4-P08"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412465
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P08",
+              "S02-4-P09"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413908
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P09",
+              "S02-4-P10"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196412465
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P10",
+              "S02-4-P11"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413908
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P11",
+              "S02-4-P12"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413154
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P12",
+              "S02-4-P13"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413158
+          },
+          {
+            "part_id": "S02-4",
+            "machining_face": "A",
+            "shared_cut_depth_mm": 10,
+            "features": [
+              "S02-4-P13",
+              "S02-4-P14"
+            ],
+            "joint_types": [
+              "J4",
+              "J4"
+            ],
+            "overlap_area_mm2": 28.736715196413154
+          }
+        ],
+        "case": "dense_12_4"
+      }
+    ]
+  },
+  "implementation_decisions": {
+    "picture_margins": "Measure left/right/bottom/top from saved drawing geometry against the selected profile. A minimum-distance comparison is insufficient.",
+    "relief_tool_compatibility": "Measure actual DXF arc radius, not radius metadata alone, and compare to resolved tool diameter / 2.",
+    "end_lap_opening_bound": "Remove this geometric upper bound; L = opening + 2*lap, end intervals [0,lap] and [lap+opening,2*lap+opening], separation = opening.",
+    "feature_connectivity": "Compare all relevant distinct parent cut footprints per part and overlapping depth interval, including J2/J4. Reject unintended overlap/contact where a wall is required.",
+    "manufacturing_thresholds": "Positive profile thresholds require a material/process basis. Until known use null plus PENDING with actual measurements, not zero or an arbitrary universal millimeter value.",
+    "numerics": "Specify accepted resolution, internal numeric representation and post-DXF tolerance separately from manufacturing allowances."
+  },
+  "material_property_source": {
+    "title": "USDA Wood Handbook (2021), Chapter 5: Mechanical properties of wood",
+    "url": "https://research.fs.usda.gov/treesearch/62244",
+    "scope": "Documents variability of wood properties with material characteristics and manufacturing/service environment. It does not prescribe this design’s CNC minimum web thickness."
+  },
+  "protected_package_hashes": [
+    {
+      "directory": "unified",
+      "recorded_files": 23,
+      "mismatches": []
+    },
+    {
+      "directory": "from_codex/hanok_window_A3_portrait_double_leaf_ALL",
+      "recorded_files": 37,
+      "mismatches": []
+    }
+  ]
+}

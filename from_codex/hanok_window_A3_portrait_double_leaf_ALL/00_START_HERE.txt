@@ -1,0 +1,50 @@
+A3 세로형 한식 양개창 — 프롬프트 + CNC 통합 패키지
+Revision PORTRAIT_DL_R1
+====================================================
+
+현재 제작 기준은 세로형, 좌우로 여는 양개창입니다.
+완성 외곽: 폭463 x 높이586 mm.
+창짝: 폭187 x 높이500 mm, 좌우 각각1개.
+A3 그림: 폭297 x 높이420 mm, 고정틀 뒤에 한 장으로 설치.
+원판: 1220 x900 x20 mm. 모든 부품의 길이 방향은 목리(+X)와 평행.
+
+먼저 열 파일
+1) 01_prompt/hanok_window_A3_portrait_double_leaf_CNC_prompt.txt
+   다른 시스템에 그대로 입력할 수 있는 전체 재구성 프롬프트.
+2) 02_CNC_current/README.txt
+   최신 제작 파일의 layer, 가공 깊이, 조립면, 제작 전 확인사항.
+3) 02_CNC_current/hanok_window_A3_portrait_double_leaf_one_board_CNC.dxf
+   이번에 실제 생성하고 저장 후 재읽기 검증한 최신 DXF.
+
+폴더 구성
+01_prompt: 완전한 UTF-8 프롬프트(TXT/MD)와 생성 리포트.
+02_CNC_current: 최신 세로형 양개창 DXF, PNG 5장, README,
+                부품/홈/도그본/하드웨어 좌표표, 검증 JSON, 생성·검증 Python 소스.
+03_reference_history: 초기 가로형 단일창 CNC 원본과 과거 프롬프트/규격검산 기록.
+package_manifest.json: 파일별 경로·크기·SHA-256 및 CURRENT/LEGACY 구분.
+
+최신 실제 생성 결과
+- 목재24개, 기본 pocket104개, R3.2 도그본48개, 결합52쌍.
+- 53개 명목 CAD 검사항목 PASS. 저장 DXF를 실제로 다시 읽어 검사.
+- 최소 부품 간격12 mm, 최소 원판 여유20 mm.
+- DXF 기반 원판/상세/조립/열림/홈확대 PNG를 열어 시각 확인.
+- 정확한 파일 해시는 02_CNC_current/validation_report.json 참고.
+
+중요: 최신 규격과 구버전 혼합 금지
+03_reference_history/landscape_single_leaf는 초기 가로형 단일창
+(전체586 x463 mm, 목재17개)입니다. 현재 설계가 아닙니다.
+기존 CNC ZIP의 원본 파일을 해제하여 보존했으며 중첩 ZIP으로 넣지 않았습니다.
+기존 파일과 이전 검증 기록은 수정하지 않았고, 과거 검증을 최신 검증으로 쓰지 않았습니다.
+최신 제조 검토에는 02_CNC_current만 사용하십시오.
+
+가공·제작 전 필수 확인
+모든 기본 pocket은 명목10 mm 깊이. DOGBONE은 대응 pocket과 합집합으로 처리.
+가공면A는 F01/S01/L01에서 앞쪽, F02/S02/L02는 조립 시 뒤집어 뒤쪽.
+개방형 반턱은 공구가 폐기재 쪽으로 진행하도록 CAM에서 개방 경계를 처리해야 함.
+HINGE_REF/LATCH_REF는 생산 가공에서 제외. 경첩/나사/캐치/후판은 제품 미확정.
+명목10.00 끼움 치수는 시험편으로 실제 공차 확인 필요.
+원목 상태, 고정 지그, 절삭 조건, 실제 개폐·하중·벽고정 승인은 PENDING.
+실제 CAM toolpath나 G-code, 기계운전 조건은 포함하지 않았습니다.
+
+프롬프트만 있던 세로형 양개안을 이번 패키지에서 실제 CAD 파일로 생성했습니다.
+검증 PASS는 명목 CAD geometry의 합격이며 실제 제작 완료나 개폐 보증이 아닙니다.

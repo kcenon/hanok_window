@@ -1,0 +1,7 @@
+구버전 보관 전용 / DO NOT USE FOR CURRENT PORTRAIT PRODUCTION
+
+landscape_single_leaf 폴더는 초기 가로형 단일 창짝 586 x 463 mm, 17개 부품의 원본입니다.
+현재 세로형 양개창 463 x 586 mm와 부품, 홈, 치수가 다릅니다. 서로 혼합하지 마십시오.
+이 폴더의 validation_report.json은 원래 파일과 함께 보관한 과거 기록이며 이번에 새로 재검증한 결과가 아닙니다.
+최신 제작 자료는 패키지 루트의 02_CNC_current 폴더를 사용하십시오.
+previous_prompts와 portrait_spec_only는 수정 이력과 규격검산 이력입니다.

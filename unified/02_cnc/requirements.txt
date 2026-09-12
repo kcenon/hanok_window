@@ -1,0 +1,9 @@
+# Verified on Python 3.9.6 (PORTRAIT_DL_R3).
+# Versions below record this verification environment; upgrade in a separate tested environment.
+# No font is bundled. The DXF does not depend on one, but reproducing the PNG
+# bytes needs the same faces this build resolved:
+#   bold=Arial.ttf / regular=Arial.ttf
+# Override with the HANOK_FONT environment variable.
+ezdxf==1.4.2
+shapely==2.0.7
+Pillow==11.3.0

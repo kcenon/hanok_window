@@ -1,0 +1,100 @@
+{
+  "revision": "PORTRAIT_DL_R2",
+  "title": "A3 portrait hanok double-leaf window / one-board CNC",
+  "units": "mm",
+  "build_date": "2026-09-11",
+  "note": "SINGLE SOURCE OF TRUTH. Every part, pocket, corner relief and nesting position in this package is derived from the values below by generate_spec.py. Do not hand-edit design_spec.json.",
+
+  "lattice_pattern_decision": {
+    "selected": "2 vertical + 4 horizontal bars per leaf",
+    "decided_on": "2026-09-10",
+    "rejected_alternative": "1 vertical + 5 horizontal bars per leaf",
+    "effect": "8 crossings per leaf, 16 total, lattice cell about 35.67 x 80"
+  },
+
+  "supersedes": {
+    "from_codex/…/02_CNC_current": "PORTRAIT_DL_R1 - same 2+4 lattice, but the spec coordinates were hand-maintained and duplicated in the validator",
+    "from_claude/…_one_board_CNC": "1 vertical + 5 horizontal lattice - a different design choice, not compatible with this package"
+  },
+
+  "stock": {
+    "length": 1220,
+    "width": 900,
+    "thickness": 20,
+    "grain_axis": "X",
+    "edge_margin": 20,
+    "part_gap": 12
+  },
+
+  "machining": {
+    "tool_diameter": 6,
+    "pocket_depth": 10,
+    "relief_radius": 3.2,
+    "machining_face": "A"
+  },
+
+  "frame": {
+    "outer_width": 463,
+    "outer_height": 586,
+    "member_width": 40
+  },
+
+  "clearance": {
+    "frame_to_leaf": 3,
+    "leaf_to_leaf": 3
+  },
+
+  "leaf": {
+    "count": 2,
+    "member_width": 30,
+    "min_height_to_width_ratio": 2.6,
+    "note": "Each leaf must stay a tall portrait panel. The build refuses parameters whose leaf height / width falls below min_height_to_width_ratio, and the validator re-measures the ratio on the saved DXF."
+  },
+
+  "lattice": {
+    "bar_width": 10,
+    "vertical_per_leaf": 2,
+    "horizontal_per_leaf": 4,
+    "end_lap_length": 10
+  },
+
+  "picture": {
+    "sheet_width": 297,
+    "sheet_height": 420,
+    "region_margin": 10,
+    "mounting": "One sheet fixed on a separate rear backing behind the frame. Never attached to the moving leaves."
+  },
+
+  "hardware_reference": {
+    "note": "Positions only. Not selected products, not production machining.",
+    "hinges_per_leaf": 2,
+    "hinge_inset_from_leaf_end": 60,
+    "wing_width": 14,
+    "wing_inset": 2,
+    "hinge_depth_ref": 2,
+    "hinge_length": 40,
+    "handle_width": 10,
+    "handle_height": 20,
+    "catch_size": 10,
+    "catch_inset_from_leaf_top": 12,
+    "catch_inset_from_frame_inner_top": 11
+  },
+
+  "nesting": {
+    "algorithm": "first-fit-decreasing shelves, scoped per (family, member width)",
+    "families": {
+      "FRAME": ["F01", "F02"],
+      "SASH": ["S01", "S02"],
+      "LATTICE": ["L01", "L02"]
+    }
+  },
+
+  "part_kinds": {
+    "F01": {"role": "fixed frame stile", "axis": "V", "family": "FRAME"},
+    "F02": {"role": "fixed frame rail", "axis": "H", "family": "FRAME"},
+    "S01": {"role": "leaf stile", "axis": "V", "family": "SASH"},
+    "S02": {"role": "leaf rail", "axis": "H", "family": "SASH"},
+    "L01": {"role": "vertical lattice bar", "axis": "V", "family": "LATTICE"},
+    "L02": {"role": "horizontal lattice bar", "axis": "H", "family": "LATTICE"}
+  }
+}

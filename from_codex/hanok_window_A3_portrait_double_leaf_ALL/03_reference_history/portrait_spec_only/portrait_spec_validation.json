@@ -1,0 +1,266 @@
+{
+  "scope": "PORTRAIT_PROMPT_SPECIFICATION_ONLY",
+  "dxf_generated": false,
+  "saved_dxf_reread": false,
+  "physical_fabrication_validated": false,
+  "overall_status": "PASS_SPEC_ONLY",
+  "checks_passed": 36,
+  "checks": [
+    {
+      "name": "part_quantities",
+      "status": "PASS",
+      "measured": {
+        "F01": 2,
+        "F02": 2,
+        "S01": 4,
+        "S02": 4,
+        "L01": 4,
+        "L02": 8
+      }
+    },
+    {
+      "name": "parts_total",
+      "status": "PASS",
+      "measured": 24
+    },
+    {
+      "name": "pocket_quantities",
+      "status": "PASS",
+      "measured": {
+        "J1": 8,
+        "J2": 16,
+        "J4": 48,
+        "J3": 32
+      }
+    },
+    {
+      "name": "pockets_total",
+      "status": "PASS",
+      "measured": 104
+    },
+    {
+      "name": "pockets_per_part",
+      "status": "PASS",
+      "measured": {
+        "F01": 2,
+        "F02": 2,
+        "S01": 6,
+        "S02": 4,
+        "L01": 6,
+        "L02": 4
+      }
+    },
+    {
+      "name": "sash_seats",
+      "status": "PASS",
+      "measured": 24
+    },
+    {
+      "name": "dogbones_total",
+      "status": "PASS",
+      "measured": 48
+    },
+    {
+      "name": "dogbones_per_seat",
+      "status": "PASS",
+      "measured": 2
+    },
+    {
+      "name": "S01_seats_per_part",
+      "status": "PASS",
+      "measured": 4
+    },
+    {
+      "name": "S02_seats_per_part",
+      "status": "PASS",
+      "measured": 2
+    },
+    {
+      "name": "spec_polygons_closed_and_valid",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "pocket_containment",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "dogbone_exact_circle_containment",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "board_containment",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "min_edge_margin_mm",
+      "status": "PASS",
+      "measured": 20.0
+    },
+    {
+      "name": "min_nesting_gap_mm",
+      "status": "PASS",
+      "measured": 11.999999999999998
+    },
+    {
+      "name": "no_nesting_overlap",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "grain_parallel_X",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "joint_pair_count",
+      "status": "PASS",
+      "measured": 52
+    },
+    {
+      "name": "joint_pair_XY_match",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "joint_pair_type_match",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "joint_pair_opposite_faces",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "face_transform_consistency",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "nominal_assembled_volume_interference",
+      "status": "PASS",
+      "measured": []
+    },
+    {
+      "name": "each_leaf_187x500",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "centre_gap_3",
+      "status": "PASS",
+      "measured": 3.0
+    },
+    {
+      "name": "external_gaps_3",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "centre_no_fixed_mullion",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "no_leaf_bridging",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "A3_portrait_297x420",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "picture_margin_10",
+      "status": "PASS",
+      "measured": 10
+    },
+    {
+      "name": "overall_height_greater_than_width",
+      "status": "PASS",
+      "measured": {
+        "width": 463,
+        "height": 586
+      }
+    },
+    {
+      "name": "lattice_equal_clear_spaces",
+      "status": "PASS",
+      "measured": {
+        "gap_x": 35.666666666666664,
+        "gap_y": 80.0,
+        "centers_x": [
+          40.666666666666664,
+          86.33333333333333
+        ],
+        "centers_y": [
+          85.0,
+          175.0,
+          265.0,
+          355.0
+        ]
+      }
+    },
+    {
+      "name": "lattice_crossing_pairs_per_leaf",
+      "status": "PASS",
+      "measured": 8
+    },
+    {
+      "name": "hinge_reference_heights_60_from_sash_ends",
+      "status": "PASS",
+      "measured": null
+    },
+    {
+      "name": "handle_reference_centers",
+      "status": "PASS",
+      "measured": null
+    }
+  ],
+  "nominal_spec": {
+    "overall_width_height": [
+      463,
+      586
+    ],
+    "leaf_width_height": [
+      187,
+      500
+    ],
+    "clear_opening_per_leaf": [
+      127,
+      440
+    ],
+    "rear_picture_region": [
+      317,
+      440
+    ],
+    "picture_width_height": [
+      297,
+      420
+    ],
+    "board": [
+      1220,
+      900,
+      20
+    ],
+    "parts": 24,
+    "base_pockets": 104,
+    "dogbones": 48,
+    "joint_pairs": 52,
+    "nest_max_x": 1081.0,
+    "nest_max_y": 326.0
+  },
+  "pending": [
+    "Saved DXF generation and re-read validation",
+    "CNC renderer and visual inspection of the final DXF",
+    "Actual hinge selection, load capacity, screw layout and swing clearance",
+    "Rear backing attachment, picture protection and fastener clearance",
+    "Stock thickness/moisture/movement, tolerances, joint test pieces",
+    "Workholding, toolpaths, cutter measurement, feed and speed"
+  ]
+}

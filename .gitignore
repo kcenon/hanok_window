@@ -1,0 +1,9 @@
+# OS clutter
+.DS_Store
+
+# Python caches (generator/.gitignore covers its own build and package outputs)
+__pycache__/
+*.pyc
+
+# Empty tool marker folders
+.claude/.cc-writes/

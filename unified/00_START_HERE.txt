@@ -1,0 +1,115 @@
+A3 세로형 한식 양개창 — 통합 CNC 패키지
+Revision PORTRAIT_DL_R3
+====================================================
+
+이 폴더가 유일한 제작 기준입니다.
+from_claude/, from_codex/ 는 이 패키지가 대체한 이전 자료이며 혼합 사용 금지입니다.
+
+확정 규격
+- 완성 외곽: 폭463 x 높이586 mm. 세로형, 좌우로 여는 양개창.
+- 창짝: 폭187 x 높이500 mm, 좌우 각각1개.
+- 창살: 창짝당 세로2 + 가로4 (2026-09-10 확정). 창짝당 교차점8개, 전체16개.
+- 창살 빈칸: 약35.67 x 80 mm.
+- A3 그림: 폭297 x 높이420 mm, 고정틀 뒤에 한 장으로 설치.
+- 원판: 1220 x900 x20 mm. 모든 부품의 길이 방향은 목리(+X)와 평행.
+- 목재24개 / 기본 pocket104개 / R3.2 도그본48개 / 결합52쌍.
+
+폴더 구성
+  01_plan/   계획 문서. 무엇을 왜 이렇게 만들었는지.
+  02_cnc/    실제 제작 파일과 생성·검증 소스.
+  03_tests/  R2 회귀 기준, 소수 입력·결함 주입 시험과 실행 결과.
+  package_manifest.json  전체 파일의 경로·크기·SHA-256.
+
+가장 중요한 원칙: 규격 원본은 한 곳뿐입니다
+02_cnc/design_parameters.json 만이 규격 원본입니다.
+design_spec.json, DXF, PNG, CSV, README.txt는 전부 생성물입니다.
+치수나 창살 개수를 바꾸려면 design_parameters.json만 수정한 뒤 재생성하십시오.
+생성물을 직접 손으로 고치면 다음 재생성에서 사라지고, 검증에서 불일치로 걸립니다.
+
+먼저 열 파일
+1) 01_plan/MERGED_PLAN.md
+   선행 계획서 2건을 합친 전체 재생성 사양. 규격·좌표·결합·검증 기준의 원문.
+   다른 시스템에 그대로 입력해 이 패키지를 재구성할 수 있습니다.
+2) 02_cnc/README.txt
+   layer, 가공 깊이, 조립면, 홈 수량, 제작 전 확인사항.
+3) 02_cnc/hanok_window_A3_portrait_double_leaf_one_board_CNC.dxf
+   실제 생성 후 저장 DXF를 다시 읽어 검증한 최신 도면.
+4) 02_cnc/01_one_board_nesting.png ~ 05_all_pockets_closeup.png
+   원판 배치 / 결합 상세 / 조립 정면 / 열림 평면 / 홈 확대.
+5) 01_plan/PLAN_RECONCILIATION.md
+   두 선행 계획서의 항목별 대조와 채택 근거. 창살 1+5 대신 2+4를 택한 이유.
+6) 01_plan/SPEC_UNIFICATION.md
+   이전 패키지와 무엇이 다른지, R2 통합 이력과 R3 검증 보강 내역.
+
+재생성 방법 (02_cnc 폴더에서 실행)
+  cd 02_cnc
+  python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+  ./.venv/bin/python build_portrait_double_leaf.py
+  검증에 실패하면 기존 DXF·design_spec.json·PNG·CSV는 그대로 남습니다.
+검사만 다시 실행:
+  ./.venv/bin/python build_portrait_double_leaf.py --validate-only
+다른 패키지의 규격과 대조:
+  ./.venv/bin/python generate_spec.py --compare <다른 design_spec.json>
+파일 무결성 확인 (읽기 전용. 패키지 전체. 불일치 시 종료코드1):
+  ./.venv/bin/python verify_package.py
+매니페스트를 다시 기록해야 할 때만:
+  ./.venv/bin/python verify_package.py --write
+회귀 시험 (임시 폴더에서 DXF 생성·저장·재읽기):
+  ./.venv/bin/python ../03_tests/test_regressions.py
+  PYTHONOPTIMIZE=1 ./.venv/bin/python ../03_tests/test_regressions.py
+두 실행을 묶어 03_tests/regression_results.json을 다시 기록할 때:
+  ./.venv/bin/python ../03_tests/test_regressions.py --record ../03_tests/regression_results.json
+
+검증 상태
+- 저장한 DXF를 ezdxf로 다시 읽어 64개 명목 CAD 검사 PASS.
+- 기대값은 design_spec.json이 아니라 design_parameters.json에서 다시 유도합니다.
+- 창살 간격만은 유도값을 쓰지 않고 조립된 도형에서 직접 재어 확인합니다.
+  생성기와 검증기가 공유하는 간격 함수가 틀려도 드러나게 하기 위해서입니다.
+- 홈 깊이는 두께의 정확히 절반이어야 하며, 파라미터 단계와 3차원 간섭 검사
+  양쪽에서 확인합니다. 깊이가 어긋나면 결합부에 실제 겹침 부피가 생깁니다.
+- 창짝은 높이/폭 2.6 이상이어야 합니다(현재 500/187 = 2.674). 파라미터 단계에서
+  거부하고, 저장 DXF에서도 조립 도형으로 다시 잽니다. 외곽과 그림 여유를 함께
+  키우면 다른 관계식은 모두 지키면서 창짝만 정사각형 쪽으로 무너질 수 있습니다.
+- 최소 부품 간격12 mm, 최소 원판 여유20 mm, 부품 외접범위 X20~1111 / Y20~304.
+
+R3 검증 보강
+- 입력 오류는 명시적 예외로 거부하며 Python -O에서도 유지됩니다.
+- 소수 치수·좌표·그림·고정틀 비교에 단위별 수치 허용 오차를 적용합니다.
+- 그림 여유는 네 변 각각, 도그본 반경은 실제 원호와 공구를 대조합니다.
+- 각 홈과 자신의 도그본을 합친 뒤 다른 가공 영역과의 겹침·접촉을 거부합니다.
+  J2 모서리 반턱과 J4 안착 홈 사이, 비개방 가장자리 접촉도 검사합니다.
+- 삽입 길이는 개구부보다 길 수 있으나, 삽입 길이 + 도그본 반경이 테두리 폭보다
+  작아야 합니다. 도그본이 닫혀 있어야 할 외측 변을 뚫으면 파라미터 단계에서 거부합니다.
+- 이 패키지는 양문(창짝 2)과 방향별 창살 1개 이상만 생성합니다. 단문과 창살 0개는
+  경첩·하드웨어·간격 규칙이 구현되지 않아 파라미터 단계에서 거부합니다.
+- 회귀 시험도 PYTHONHASHSEED=0으로 스스로 재실행합니다. 그래서 일반·-O 실행의
+  DXF 해시 비교가 우연이 아닌 증거가 됩니다.
+- 최소 홈 사이 폭 29.266667 mm / 비개방 가장자리 폭 16.8 mm를 실측했습니다.
+  제조용 최소값은 미확정(null / PENDING)이며 수치 허용 오차가 대신하지 않습니다.
+- 원호는 실제 bulge에서 직접 계산하며 현 오차 한계는 0.00001 mm입니다.
+- R2 대비 기본 부품·홈·도그본·결합 및 네스팅 좌표는 유지됩니다.
+  R3 리비전·정책 기록으로 DXF 해시는 달라집니다.
+
+재현성 — 산출물마다 조건이 다릅니다
+- 빌드는 PYTHONHASHSEED=0으로 스스로 재실행하고 DXF 메타데이터를 상수로 고정합니다.
+- DXF: 같은 파라미터·코드·라이브러리 버전에서 같은 바이트입니다. 폰트 환경과 무관합니다.
+  DXF 해시가 달라졌다면 파라미터나 코드가 바뀐 것입니다.
+- PNG: 같은 폰트 파일과 같은 Pillow 버전이 잡힐 때만 같습니다.
+  HANOK_FONT만 바꿔도 모든 검사는 그대로 통과하면서 PNG 5장이 전부 달라집니다.
+  PNG 해시만 달라졌다면 먼저 폰트 환경을 확인하십시오.
+  실제로 사용된 폰트는 02_cnc/validation_report.json의 render_environment와
+  02_cnc/requirements.txt 주석, package_manifest.json에 기록됩니다.
+- 그 대신 DXF 헤더의 생성일시와 GUID는 의미 없는 고정값입니다. 이 도면이 어느
+  리비전인지는 원판 도면 우측 상단의 REVISION 표기와 문서 메타데이터에 있습니다.
+- 정확한 파일 해시는 validation_report.json 과 package_manifest.json 참고.
+
+가공·제작 전 필수 확인
+모든 기본 pocket은 명목10 mm 깊이. DOGBONE은 대응 pocket과 합집합으로 처리.
+가공면A는 F01/S01/L01에서 앞쪽, F02/S02/L02는 조립 시 뒤집어 뒤쪽.
+개방형 반턱은 공구가 폐기재 쪽으로 진행하도록 CAM에서 개방 경계를 처리해야 함.
+HINGE_REF/LATCH_REF는 생산 가공에서 제외. 경첩/나사/캐치/후판은 제품 미확정.
+명목10.00 끼움 치수는 시험편으로 실제 공차 확인 필요.
+원목 상태, 고정 지그, 절삭 조건, 실제 개폐·하중·벽고정 승인은 PENDING.
+실제 CAM toolpath나 G-code, 기계운전 조건은 포함하지 않았습니다.
+
+검증 PASS는 명목 CAD geometry의 합격이며 실제 제작 완료나 개폐 보증이 아닙니다.

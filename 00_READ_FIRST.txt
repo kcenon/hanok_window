@@ -2,11 +2,12 @@
 ====================================================
 
 창 외경 또는 내경·창살 수·단문/양문으로 새 설계를 생성하려면 generator/README.md 를 여십시오.
-generator/는 범용 생성기 0.2이며, unified/는 기존 확정 설계 R3의 보존 기준입니다.
+generator/는 범용 생성기 0.3(생성 엔진 0.2.0)이며, unified/는 기존 확정 설계 R3의 보존 기준입니다.
 두 경로 모두 명목 CAD 검증이며 실제 제작용 공차·하드웨어·CAM 확인은 PENDING입니다.
 
   generator/               → 외경/내경 기준 입력·프리셋·단문 좌우/양문·창살 0개 지원.
                               작업별 패키지 생성 CLI, 무결성 검사, 회귀 시험.
+                              브라우저 화면은 generator/ 에서 .venv/bin/hanok-window-web --open
                               새 산출물은 generator/output/packages/ 아래에 생성합니다.
 
   unified/                → 현재 기준. Revision PORTRAIT_DL_R3.

@@ -1,0 +1,393 @@
+"""Web interface: CLI parity, error mapping, request limits, builds, package files and isolation."""
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
+import contextlib
+import hashlib
+import http.client
+import io
+import json
+import os
+from pathlib import Path
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import unittest
+from unittest.mock import patch
+import zipfile
+
+from hanok_generator import __version__, cli, web
+from hanok_generator.jobs import run_job
+from hanok_generator.package import digest, source_files
+from hanok_generator.web.server import Handler, make_server
+
+HERE = Path(__file__).parent
+STATIC = Path(web.__file__).parent / "static"
+NODE_RUNNER = """
+import { compose, formFromRequest } from "./app.js";
+let input = "";
+for await (const chunk of process.stdin) input += chunk;
+const { meta, requests, forms } = JSON.parse(input);
+process.stdout.write(JSON.stringify({
+  requests: requests.map((r) => compose(formFromRequest(r, meta), meta)),
+  forms: forms.map((f) => compose(f, meta)),
+}));
+"""
+EXAMPLE_FILES = {p.stem: p for p in sorted((HERE.parent / "examples").glob("*.json")) if p.name != "built_packages.json"}
+EXAMPLES = {name: json.loads(p.read_text(encoding="utf-8")) for name, p in EXAMPLE_FILES.items()}
+R3 = EXAMPLES["double_r3"]
+# Runs in a fresh interpreter: builder keeps module-level state, so only a job's
+# worker process may import it, never the server process.
+ISOLATION = """
+import http.client, json, sys, tempfile, threading, time
+from hanok_generator.web.server import make_server
+
+def call(port, method, path, body=None):
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=120)
+    conn.request(method, path, body, {"Content-Type": "application/json"} if body else {})
+    response = conn.getresponse()
+    return response.status, json.loads(response.read())
+
+with tempfile.TemporaryDirectory() as tmp:
+    server = make_server(tmp + "/output", port=0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    preview = call(server.port, "POST", "/api/preview", sys.argv[1])[0]
+    build = call(server.port, "POST", "/api/builds", sys.argv[1])[1]["build_id"]
+    while (state := call(server.port, "GET", "/api/builds/" + build)[1]["state"]) in ("queued", "running"):
+        time.sleep(0.2)
+    server.shutdown()
+    server.close()
+print(json.dumps(dict(preview=preview, build=state, builder="hanok_generator.engine.builder" in sys.modules,
+                      ezdxf="ezdxf" in sys.modules)))
+"""
+
+
+def request(kind="double", bars=(2, 4), side=None, **changes):
+    value = dict(type=kind, outer_mm=[463, 586], lattice_per_leaf=list(bars))
+    if side:
+        value["hinge_side"] = side
+    value.update(changes)
+    return value
+
+
+def serve(server):
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+class WebApiTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Rejected requests are expected here; keep their access log out of the report.
+        cls.quiet = patch.object(Handler, "log_request")
+        cls.quiet.start()
+        cls.temp = tempfile.TemporaryDirectory(prefix="hanok-web-tests-")
+        cls.root = Path(cls.temp.name)
+        cls.output = cls.root / "output"
+        cls.server = serve(make_server(cls.output, port=0))
+        # The five examples, once through the web queue and once straight through run_job.
+        submitted = {name: cls.call("POST", "/api/builds", data)[2]["build_id"] for name, data in EXAMPLES.items()}
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            cls.direct = dict(zip(EXAMPLES, pool.map(lambda data: run_job(data, cls.root / "direct"), EXAMPLES.values())))
+        cls.built = {name: cls.wait(build_id) for name, build_id in submitted.items()}
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.close()
+        cls.temp.cleanup()
+        cls.quiet.stop()
+
+    @classmethod
+    def call(cls, method, path, body=None, *, raw=None, headers=None, decode=True, server=None):
+        """One request with explicit headers; returns (status, response, parsed JSON or raw bytes)."""
+        server = server or cls.server
+        sent = {"Host": f"127.0.0.1:{server.port}"}
+        if body is not None:
+            raw = json.dumps(body).encode()
+        if raw is not None:
+            sent["Content-Type"] = "application/json"
+        sent.update(headers or {})
+        conn = http.client.HTTPConnection("127.0.0.1", server.port, timeout=120)
+        try:
+            conn.request(method, path, body=raw, headers=sent)
+            response = conn.getresponse()
+            data = response.read()
+        finally:
+            conn.close()
+        is_json = decode and (response.getheader("Content-Type") or "").startswith("application/json")
+        return response.status, response, json.loads(data) if is_json else data
+
+    @classmethod
+    def wait(cls, build_id, server=None, timeout=240):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            record = cls.call("GET", f"/api/builds/{build_id}", server=server)[2]
+            if record["state"] not in ("queued", "running"):
+                return record
+            time.sleep(0.2)
+        raise AssertionError(f"build {build_id} did not finish in {timeout} s")
+
+    def test_meta_describes_presets_from_the_model(self):
+        status, _, meta = self.call("GET", "/api/meta")
+        self.assertEqual(status, 200)
+        self.assertEqual(meta["engine_version"], __version__)
+        presets = {p["id"]: p for p in meta["presets"]}
+        self.assertEqual(presets["hanok_A3_portrait_R3"]["types"], ["double"])
+        self.assertEqual(presets["standard_v1"]["types"], ["double", "single"])
+        self.assertEqual(presets["hanok_A3_portrait_R3"]["picture"], {"size_mm": [297, 420], "margin_mm": 10})
+        self.assertIsNone(presets["standard_v1"]["picture"])
+        self.assertEqual(presets["hanok_A3_portrait_R3"]["min_leaf_ratio"], 2.6)
+        self.assertEqual((meta["default_preset"], meta["stock_mm"], meta["frame_member_mm"]), ("standard_v1", [1220, 900, 20], 40))
+        self.assertEqual(meta["example"], R3)
+        self.assertEqual((meta["limits"]["size_mm"], meta["limits"]["lattice"]), ([1, 3000], [0, 32]))
+
+    def test_preview_matches_cli_resolve(self):
+        for name, path in EXAMPLE_FILES.items():
+            with self.subTest(example=name):
+                status, _, body = self.call("POST", "/api/preview", EXAMPLES[name])
+                self.assertEqual(status, 200, body)
+                with contextlib.redirect_stdout(io.StringIO()) as out:
+                    self.assertEqual(cli.main(["resolve", "--input", str(path)]), 0)
+                expected = json.loads(out.getvalue())
+                self.assertEqual(body["status"], expected["status"])
+                self.assertEqual(body["revision"], expected["parameters"]["revision"])
+                self.assertEqual(body["request"], expected["request"])
+                self.assertEqual(body["derived"], expected["derived"])
+                parts = expected["derived"]["totals"]["parts"]
+                self.assertEqual((len(body["assembly"]["parts"]), len(body["nesting"]["parts"])), (parts, parts))
+                self.assertEqual(body["size"]["outer_mm"], expected["derived"]["overall_width_height"])
+                self.assertEqual(body["size"]["inner_mm"], expected["derived"]["frame_inner"])
+        status, _, body = self.call("POST", "/api/preview", R3)
+        rects = {p["id"]: p["rect"] for p in body["assembly"]["parts"]}
+        nest = {p["id"]: p["rect"] for p in body["nesting"]["parts"]}
+        self.assertEqual((rects["F01-1"], nest["F01-1"]), ([0, 0, 40, 586], [20, 20, 606, 60]))
+        self.assertEqual(body["assembly"]["picture"]["sheet"], [83, 83, 380, 503])
+        self.assertEqual([leaf["hinge_stile"] for leaf in body["assembly"]["leaves"]], ["S01-1", "S01-4"])
+        self.assertEqual((body["nesting"]["used_mm"], body["nesting"]["usable_mm"]), ([1091, 284], [1180, 860]))
+
+    def test_rule_errors_name_the_input_to_fix(self):
+        cases = [
+            ("input.range", "size", request(outer_mm=[0, 586]), "outer_mm[0]"),
+            ("input.range", "size", dict(type="double", inner_mm=[2990, 506], lattice_per_leaf=[2, 4]), "outer_mm"),
+            ("input.number", "lattice", request(bars=(1.5, 4)), "lattice_per_leaf[0]"),
+            ("input.preset_type", "preset", request("single", side="left", preset="hanok_A3_portrait_R3"), None),
+            ("input.stock_thickness", "stock", request(stock_mm=[1220, 900, 4]), None),
+            ("opening.positive_size", "size", request(outer_mm=[100, 586]), None),
+            ("lattice.positive_gap", "lattice", request(outer_mm=[300, 300], bars=(5, 4)), None),
+            ("leaf.aspect_ratio", "size", dict(R3, outer_mm=[600, 586]), None),
+            ("hardware.reference_spacing", "size", request(outer_mm=[463, 200]), None),
+            ("picture.fits_width", "picture", request(picture=dict(size_mm=[500, 500])), None),
+            ("nesting.part_fits_stock", "stock", request(outer_mm=[900, 1500]), None),
+            ("nesting.board_width", "stock", request(stock_mm=[1220, 150, 20]), None),
+        ]
+        for rule, group, data, field in cases:
+            with self.subTest(rule=rule, data=str(data)):
+                status, _, body = self.call("POST", "/api/preview", data)
+                self.assertEqual((status, body["status"], body["rule_id"], body["where"]), (422, "FAIL", rule, group))
+                if field:
+                    self.assertEqual(body["details"]["field"], field)
+        # A closed lattice gap comes with the largest count the engine accepts, and the
+        # size is still resolved so the page can switch between outer and inner.
+        status, _, body = self.call("POST", "/api/preview", request(outer_mm=[300, 300], bars=(5, 4)))
+        self.assertAlmostEqual(body["details"]["horizontal"], -0.75)
+        self.assertEqual((body["suggestion"], body["size"]["inner_mm"]), ({"vertical_per_leaf": 4}, [220, 220]))
+        # A layout failure keeps the front view so the page can still draw it.
+        status, _, body = self.call("POST", "/api/preview", request(stock_mm=[1220, 150, 20]))
+        self.assertEqual((body["stage"], len(body["assembly"]["parts"])), ("nesting", 24))
+
+    def test_request_limits_and_same_origin(self):
+        port = self.server.port
+        cases = [
+            (421, "http.host", "GET", "/api/meta", None, None, {"Host": f"evil.example:{port}"}),
+            (421, "http.host", "GET", "/api/meta", None, None, {"Host": "127.0.0.1:1"}),
+            (403, "http.origin", "POST", "/api/preview", R3, None, {"Origin": "http://evil.example"}),
+            (403, "http.origin", "POST", "/api/preview", R3, None, {"Origin": "null"}),
+            (415, "http.content_type", "POST", "/api/preview", None, json.dumps(R3).encode(), {"Content-Type": "text/plain"}),
+            (413, "input.too_large", "POST", "/api/preview", None, b'{"pad":"' + b"a" * 70 * 1024 + b'"}', None),
+            (400, "input.number", "POST", "/api/preview", None,
+             b'{"type":"double","outer_mm":[NaN,586],"lattice_per_leaf":[2,4]}', None),
+            (400, "input.json", "POST", "/api/preview", None, b'{"type":', None),
+            (404, "http.not_found", "GET", "/../../etc/passwd", None, None, None),
+            (404, "http.not_found", "GET", "/files/" + "0" * 64 + "/../../etc/passwd", None, None, None),
+            (404, "http.not_found", "GET", "/api/packages/not-a-package-id", None, None, None),
+            (405, "http.method", "PUT", "/api/preview", None, b"{}", None),
+        ]
+        for status, rule, method, path, body, raw, headers in cases:
+            with self.subTest(status=status, path=path, headers=headers):
+                got, response, reply = self.call(method, path, body, raw=raw, headers=headers)
+                self.assertEqual((got, reply["rule_id"]), (status, rule))
+                self.assertIn("frame-ancestors 'none'", response.getheader("Content-Security-Policy"))
+                self.assertEqual(response.getheader("X-Content-Type-Options"), "nosniff")
+                self.assertIsNone(response.getheader("Access-Control-Allow-Origin"))
+        for host in (f"localhost:{port}", f"[::1]:{port}", f"LOCALHOST:{port}"):
+            self.assertEqual(self.call("GET", "/api/meta", headers={"Host": host})[0], 200)
+        self.assertEqual(self.call("POST", "/api/preview", R3, headers={"Origin": f"http://127.0.0.1:{port}"})[0], 200)
+
+    def test_server_process_never_imports_the_builder(self):
+        env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+        p = subprocess.run([sys.executable, "-c", ISOLATION, json.dumps(R3)], cwd=HERE.parent, env=env,
+                           capture_output=True, text=True, timeout=300)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(json.loads(p.stdout), dict(preview=200, build="passed", builder=False, ezdxf=False))
+
+    def test_web_builds_match_run_job(self):
+        for name, data in EXAMPLES.items():
+            with self.subTest(example=name):
+                record = self.built[name]
+                self.assertEqual(record["state"], "passed", record["error"])
+                self.assertEqual(record["request"], data)
+                self.assertEqual(record["result"]["package_id"], self.direct[name]["package_id"])
+                self.assertEqual(record["result"]["checks"], 67)
+
+    def test_package_files_zip_and_history(self):
+        r3 = self.built["double_r3"]["result"]["package_id"]
+        listing = self.call("GET", "/api/packages")[2]
+        ids = {b["result"]["package_id"] for b in self.built.values()}
+        self.assertEqual({p["package_id"] for p in listing["packages"]}, ids)
+        self.assertIn(listing["latest"], ids)
+        self.assertEqual(self.call("POST", "/api/preview", R3)[2]["same_revision"], [r3])
+        status, _, detail = self.call("GET", f"/api/packages/{r3}")
+        self.assertEqual(status, 200)
+        self.assertEqual((detail["type"], detail["preset"], detail["size"]["outer_mm"], detail["lattice_per_leaf"]),
+                         ("double", "hanok_A3_portrait_R3", [463, 586], [2, 4]))
+        self.assertEqual((detail["checks"], len(detail["validation"]["checks"]), len(detail["validation"]["pending"])),
+                         ({"passed": 67, "total": 67}, 67, 6))
+        self.assertEqual((detail["request"], detail["file_count"], len(detail["files"])), (R3, 34, 34))
+        for row in detail["files"]:
+            status, response, data = self.call("GET", f"/files/{r3}/{row['path']}", decode=False)
+            self.assertEqual((status, hashlib.sha256(data).hexdigest()), (200, row["sha256"]), row["path"])
+            inline = row["path"].endswith(".png")
+            self.assertTrue(response.getheader("Content-Disposition").startswith("inline" if inline else "attachment"))
+            self.assertIn("immutable", response.getheader("Cache-Control"))
+        status, response, data = self.call("GET", f"/files/{r3}.zip", decode=False)
+        top = f"hanok_double_outer_463x586_2x4_{r3[:8]}"
+        self.assertEqual((status, response.getheader("Content-Disposition")), (200, f'attachment; filename="{top}.zip"'))
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            paths = [row["path"] for row in detail["files"]] + ["package_manifest.json"]
+            self.assertEqual(sorted(archive.namelist()), sorted(f"{top}/{p}" for p in paths))
+            for row in detail["files"]:
+                self.assertEqual(hashlib.sha256(archive.read(f"{top}/{row['path']}")).hexdigest(), row["sha256"])
+        self.assertEqual(self.call("GET", f"/api/packages/{r3}/verify")[2], dict(status="PASS", package_id=r3, files=34))
+        # Drawing sizes come from the PNG headers; thumbnails are 480 px wide copies.
+        png = self.call("GET", f"/files/{r3}/03_assembly_reference.png", decode=False)[2]
+        self.assertEqual(detail["drawings"]["03_assembly_reference.png"], list(struct.unpack(">II", png[16:24])))
+        status, response, thumb = self.call("GET", f"/thumbs/{r3}/03_assembly_reference.png", decode=False)
+        self.assertEqual((status, response.getheader("Content-Type"), struct.unpack(">I", thumb[16:20])[0]), (200, "image/png", 480))
+        for path in (f"/files/{r3}/not-in-manifest.txt", f"/files/{r3}/../latest.json", f"/files/{r3}/source/../window.dxf",
+                     f"/files/{r3}/%2e%2e/latest.json", f"/api/packages/{'0' * 64}", f"/files/{'0' * 64}.zip",
+                     f"/api/builds/{'0' * 32}", f"/thumbs/{r3}/window.dxf", f"/thumbs/{r3}/source.png"):
+            with self.subTest(path=path):
+                self.assertEqual(self.call("GET", path)[0], 404)
+
+    def test_changed_package_file_is_refused(self):
+        r3 = self.built["double_r3"]["result"]["package_id"]
+        root = self.root / "tampered"
+        shutil.copytree(self.output / "packages" / r3, root / "packages" / r3)
+        with (root / "packages" / r3 / "README.txt").open("a", encoding="utf-8") as f:
+            f.write("changed")
+        server = serve(make_server(root, port=0))
+        try:
+            self.assertEqual(self.call("GET", f"/files/{r3}/window.dxf", decode=False, server=server)[0], 200)
+            for path in (f"/files/{r3}/README.txt", f"/files/{r3}.zip"):
+                status, _, body = self.call("GET", path, server=server)
+                self.assertEqual((status, body["rule_id"]), (409, "package.integrity"))
+            result = self.call("GET", f"/api/packages/{r3}/verify", server=server)[2]
+            self.assertEqual((result["status"], result["rule_id"]), ("FAIL", "package.integrity"))
+        finally:
+            server.shutdown()
+            server.close()
+
+    def test_failed_build_reports_the_failed_checks(self):
+        status, _, record = self.call("POST", "/api/builds", request(bars=(12, 4)))
+        self.assertEqual(status, 202)
+        record = self.wait(record["build_id"])
+        error = record["error"]
+        self.assertEqual((record["state"], error["rule_id"], error["where"]), ("failed", "geometry.validation", "result"))
+        validation = error["validation"]
+        self.assertEqual(validation["failed_checks"], ["distinct_machining_regions_separated"])
+        self.assertEqual(validation["passed"], validation["total"] - 1)
+        self.assertEqual(validation["failed"][0]["measured"]["closest_pair"]["part_id"], "S02-1")
+        self.assertTrue((self.output / error["failure_report"]).is_file())
+        # A rule the preview already rejects is refused before anything is queued.
+        status, _, body = self.call("POST", "/api/builds", request(outer_mm=[300, 300], bars=(5, 4)))
+        self.assertEqual((status, body["rule_id"], body["where"]), (422, "lattice.positive_gap", "lattice"))
+
+    def test_queue_limit_and_waiting_position(self):
+        release, started = threading.Event(), threading.Event()
+
+        def runner(data, output, *, timeout):
+            started.set()
+            release.wait(60)
+            return dict(status="PASS", package_id="0" * 64, checks=67, parts=24, pockets=104, dogbones=48,
+                        manufacturing_status="PENDING")
+        server = serve(make_server(self.root / "stub", port=0, workers=1, waiting=1, runner=runner))
+        try:
+            first = self.call("POST", "/api/builds", R3, server=server)
+            self.assertTrue(started.wait(30))
+            second = self.call("POST", "/api/builds", R3, server=server)
+            third = self.call("POST", "/api/builds", R3, server=server)
+            self.assertEqual([first[0], second[0], third[0]], [202, 202, 429])
+            self.assertEqual((third[2]["rule_id"], third[1].getheader("Retry-After")), ("build.queue_full", "5"))
+            waiting = self.call("GET", f"/api/builds/{second[2]['build_id']}", server=server)[2]
+            self.assertEqual((waiting["state"], waiting["position"]), ("queued", 1))
+            release.set()
+            for reply in (first, second):
+                self.assertEqual(self.wait(reply[2]["build_id"], server=server)["state"], "passed")
+        finally:
+            release.set()
+            server.shutdown()
+            server.close()
+
+    def test_source_bundle_excludes_the_web_layer(self):
+        # Packages copy these files into source/, and the package_id covers them.
+        names = {name for name, _ in source_files()}
+        self.assertFalse({name for name in names if name.startswith("web/")})
+        recorded = json.loads((HERE / "results.json").read_text(encoding="utf-8"))["source_sha256"]
+        self.assertEqual({name: digest(path) for name, path in source_files()}, recorded)
+
+    def test_static_pages_are_served(self):
+        for path, kind in (("/", "text/html"), ("/app.css", "text/css"), ("/app.js", "text/javascript"),
+                           ("/preview.js", "text/javascript"), ("/packages.js", "text/javascript"),
+                           ("/messages.js", "text/javascript")):
+            with self.subTest(path=path):
+                status, response, _ = self.call("GET", path, decode=False)
+                self.assertEqual((status, response.getheader("Content-Type").split(";")[0]), (200, kind))
+                self.assertEqual(response.getheader("Cache-Control"), "no-cache")
+        page = self.call("GET", "/", decode=False)[2].decode("utf-8")
+        self.assertIn('<script type="module" src="/app.js"></script>', page)
+        # Local first: no script, style or font is fetched from another host.
+        self.assertNotRegex(page + (STATIC / "app.css").read_text(encoding="utf-8"), r"https?://")
+
+    @unittest.skipUnless(shutil.which("node"), "node is not installed")
+    def test_form_composes_the_example_requests(self):
+        # The page builds requests in app.js. They must keep the hand-written example shape
+        # (optional keys only when not default, integers stay integers), or the same design
+        # would get a different package_id from the web than from the CLI.
+        meta = self.call("GET", "/api/meta")[2]
+        requests = [*EXAMPLES.values(), dict(R3, picture=None),
+                    request(outer_mm=[600, 800], picture=dict(size_mm=[297, 420], margin_mm=10), stock_mm=[1220, 900, 18]),
+                    dict(type="single", hinge_side="right", inner_mm=[340.3, 820.7], lattice_per_leaf=[2, 6])]
+        typed = dict(type="double", hinge="left", basis="outer", size=["463.0", " 586 "], lattice=["2", "4"],
+                     preset="hanok_A3_portrait_R3", picture=dict(on=True, w="297", h="420", margin="10"),
+                     stock=["1220", "900", "20"])
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in ("app.js", "preview.js", "packages.js", "messages.js"):
+                shutil.copy(STATIC / name, tmp)
+            Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
+            Path(tmp, "run.js").write_text(NODE_RUNNER, encoding="utf-8")
+            p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(dict(meta=meta, requests=requests, forms=[typed])),
+                               capture_output=True, text=True, timeout=60)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        out = json.loads(p.stdout)
+        exact = lambda value: json.dumps(value, sort_keys=True)  # 463 and 463.0 differ here
+        self.assertEqual([exact(v) for v in out["requests"]], [exact(v) for v in requests])
+        self.assertEqual(exact(out["forms"][0]), exact(R3))
+
+
+if __name__ == "__main__":
+    unittest.main()

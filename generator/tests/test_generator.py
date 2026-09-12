@@ -75,10 +75,10 @@ class GeneratorTests(unittest.TestCase):
             if e.dxf.layer in ("CUT_THROUGH","DOGBONE") or e.dxf.layer.startswith("POCKET_"):
                 contours.append(dict(layer=e.dxf.layer,points=[list(v) for v in e.get_points("xyb")],metadata=meta(e)))
         self.assertEqual(contours,reference["contours"])
+        # R1 (from_codex) left the working tree; tags R1-R3 keep it in git history.
         project=HERE.parents[1]
-        for manifest,folder in [("source_manifest",project/"unified"),("original_manifest",project/"from_codex/hanok_window_A3_portrait_double_leaf_ALL")]:
-            for row in reference[manifest]["files"]:
-                self.assertEqual(digest(folder/row["path"]),row["sha256"],row["path"])
+        for row in reference["source_manifest"]["files"]:
+            self.assertEqual(digest(project/"unified"/row["path"]),row["sha256"],row["path"])
 
     def test_inner_size_basis_reproduces_outer_geometry(self):
         inner,outer=self.path("inner_r3"),self.path("r3")

@@ -138,7 +138,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py
 
 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다. 테스트 기록은 `tests/results.json`에 저장됩니다.
 R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다.
-원래 `unified/`의 28개 파일과 `from_codex` 매니페스트의 37개 원본도 대조합니다.
+원래 `unified/`의 28개 파일도 대조합니다. 이전 리비전(R1·R2)과 조사 기록은 작업 트리에서 정리했고 git 태그 `R1`·`R2`·`R3`로 보관합니다.
 새 시스템은 R3 코드를 별도 모듈로 확장했으며 기존 패키지를 덮어쓰지 않습니다.
 
 시험 범위는 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향,

@@ -86,15 +86,6 @@
       "package_id": "f3c379b2885b8d6c9f46670b59b626e439c29dbac44a7a6e61c10eb4d492882f"
     },
     {
-      "case": "single_right_2_0",
-      "status": "PASS",
-      "checks": 67,
-      "parts": 10,
-      "pockets": 24,
-      "dogbones": 8,
-      "package_id": "e29662a8fbd18b18de2e34dad9473e3b4ce14797b05613bb467373d091ce379d"
-    },
-    {
       "case": "single_right_0_4",
       "status": "PASS",
       "checks": 67,
@@ -102,6 +93,15 @@
       "pockets": 32,
       "dogbones": 16,
       "package_id": "8bd917301ed4a2fe35c77883ef47acfce8dfc9352fa92826e2261d736610c10f"
+    },
+    {
+      "case": "single_right_2_0",
+      "status": "PASS",
+      "checks": 67,
+      "parts": 10,
+      "pockets": 24,
+      "dogbones": 8,
+      "package_id": "e29662a8fbd18b18de2e34dad9473e3b4ce14797b05613bb467373d091ce379d"
     },
     {
       "case": "single_right_2_4",

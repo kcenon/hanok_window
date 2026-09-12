@@ -38,7 +38,7 @@ CAD·CSV·렌더·매니페스트·공개·참조 전환 단계의 예외와 렌
 
 최종 설치용 wheel을 별도 경로에 설치해 단문 우측 경첩·창살 0+4의 전체 패키지를 생성했다.
 저장 DXF 66개 검사와 파일 34개 무결성 검사를 통과했고, 설치된 소스가 회귀 시험에 사용한 소스와 일치했다.
-예제 4종도 같은 최종 소스로 생성했다. [최종 대조 기록](generator/tests/release_verification.json)에
+예제 4종도 같은 최종 소스로 생성했다. 최종 대조 기록(`tests/release_verification.json`, 지금은 커밋 `d974f4a`에만 있음)에
 wheel 해시, 예제 패키지 ID, R3 28개·from_codex 37개 원본의 무변경 결과를 기록했다.
 
 다중 원판, 웹 화면, 실물 하드웨어·부재 강도·끼움 공차·동적 개폐 간섭·CAM 경로는 이 버전에서 확정하지 않는다.
@@ -65,4 +65,12 @@ CLI는 `--size`에 `--size-basis outer|inner`를 더하며 기본은 `outer`다.
 | 회귀 시험 | 14개 메서드 PASS, 101.6초. `tests/results.json`의 소스 해시 16개가 현재 소스와 일치 |
 | 예제 | `double_inner_r3` 추가, 5종 재생성. 각 67개 검사와 파일 34개 무결성 대조 PASS |
 
-0.1.0 wheel과 `tests/release_verification.json`·`tests/wheel_result.json`은 0.1.0 배포 기록으로 남겨 두었다. 0.2.0 wheel 설치 검증은 하지 않았다.
+0.2.0 wheel 설치 검증은 하지 않았다.
+
+### 작업 트리 정리 (0.2.0 이후)
+
+git 도입 뒤 과거 파일을 작업 트리에서 정리했다. 아래 추적 파일은 첫 커밋 `d974f4a`(태그 `R1`·`R2`·`R3`·`v0.2.0`)에 그대로 있어 `git checkout R1 -- from_codex`처럼 복원할 수 있다.
+- `from_codex/`(R1), `from_claude/`(기각된 1+5 안), `research/`(R2 보관본과 조사 기록)
+- 0.1.0 배포 기록 `tests/release_verification.json`·`tests/wheel_result.json`
+
+생성기 시험의 원본 무변경 대조는 `unified/` 28개 파일만 남겼다. 추적하지 않던 0.1.0 wheel·`build/`·`egg-info`와 참조되지 않는 0.1.0 산출 패키지 8개는 삭제했다.

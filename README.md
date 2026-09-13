@@ -49,6 +49,7 @@ hanok_window/
 │   ├── examples/              입력 예제 5종과 생성 결과
 │   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, MCP SDK 확인, R3 기준값
 │   ├── docs/CHANGELOG.md      버전별 구현·검증 기록
+│   ├── docs/manual/           그림으로 보는 사용 설명서
 │   └── output/                생성한 패키지 (git에 넣지 않음)
 └── r3_reference/              확정 설계 R3 원본 (수정 금지)
     ├── 00_START_HERE.txt      R3 안내: 규격, 먼저 열 파일, 재생성·검증 방법
@@ -62,6 +63,7 @@ hanok_window/
 
 | 하려는 일 | 갈 곳 |
 |---|---|
+| 설치와 웹 화면 사용법을 그림으로 보기 | [generator/docs/manual/README.md](generator/docs/manual/README.md) |
 | 새 크기·창살·형식으로 설계하고 패키지 받기 | `generator/`의 웹 화면 또는 명령줄 |
 | LLM(Claude·GPT·Gemini·로컬 모델)에게 설계를 맡기기 | [generator/README.md의 LLM 연동](generator/README.md#llm-연동) (`mcp.sh`, `hanok-window-llm`) |
 | R3 설계를 생성기로 다시 만들기 | `generator/examples/double_r3.json` (내경 입력은 `double_inner_r3.json`) |

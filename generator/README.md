@@ -4,7 +4,7 @@
 배포 버전은 0.4.1이고 생성 엔진은 0.2.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를, 0.4에서 LLM이 도구 호출로 생성기를 쓰는 [LLM 연동](#llm-연동)을, 0.4.1에서 규칙을 통과하는 값을 알려 주는 고침 제안과 LLM 도구 보강을 추가했습니다.
 생성 엔진이 그대로이므로 같은 입력의 revision과 패키지 ID는 바뀌지 않습니다.
 
-함께 볼 문서: [생성 예제 5종](examples/README.md) · [버전별 구현·검증 기록](docs/CHANGELOG.md) · [저장소 안내](../README.md) · [R3 원본 안내](../r3_reference/00_START_HERE.txt)
+함께 볼 문서: [그림으로 보는 사용 설명서](docs/manual/README.md) · [생성 예제 5종](examples/README.md) · [버전별 구현·검증 기록](docs/CHANGELOG.md) · [저장소 안내](../README.md) · [R3 원본 안내](../r3_reference/00_START_HERE.txt)
 
 > 검증 PASS는 명목 CAD 기하의 합격입니다. 실제 제작 전에 확인할 항목은 [범위와 한계](#범위와-한계)에 있습니다.
 
@@ -39,7 +39,7 @@ python3.11 -m venv .venv
 
 ## 웹 화면
 
-명령어 대신 브라우저에서 입력하고, 입력하는 동안 정면도·원판 배치·핵심 치수를 확인한 뒤 CLI와 똑같이 검증한 패키지를 받습니다.
+명령어 대신 브라우저에서 입력하고, 입력하는 동안 정면도·원판 배치·핵심 치수를 확인한 뒤 CLI와 똑같이 검증한 패키지를 받습니다. 화면별 그림과 사용 순서는 [사용 설명서](docs/manual/README.md)에 있습니다.
 
 ### 켜고 끄기
 
@@ -343,6 +343,7 @@ generator/
 ├── examples/                입력 예제 5종과 생성 결과
 ├── tests/                   test_generator.py, test_web.py, test_llm.py, interop_mcp_sdk.py, fixtures/, results.json
 ├── docs/CHANGELOG.md        버전별 구현·검증 기록
+├── docs/manual/             그림으로 보는 사용 설명서와 그림 만드는 스크립트
 └── output/                  생성한 패키지 (git에 넣지 않음)
 ```
 

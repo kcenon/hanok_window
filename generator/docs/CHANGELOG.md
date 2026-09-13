@@ -150,3 +150,29 @@ pid 파일에는 비정상 종료나 재부팅 뒤 남은 pid가 다른 프로�
 | 웹 시험 | 18개 PASS, 15.1초 |
 | 문서 링크 | 네 문서의 상대 링크 48개와 제목 앵커가 모두 실제 파일·제목을 가리킨다 |
 | 절대 경로 | `r3_reference/` 밖의 추적 파일에 `/Users/` 경로가 없다 |
+
+## 0.4.0 추가: LLM 도구와 MCP 서버
+
+2026-09-13. LLM이 도구 호출로 생성기를 쓰도록 도구 7개와 연동 통로를 추가했다. 범위(LLM이 생성기를 부르는 쪽만), 표준 라이브러리로 직접 만든 MCP 서버, 영어로 쓴 모델용 문구, v0.4.0 태그는 사용자가 추천안대로 골랐다. 생성기가 LLM API를 불러 대화하는 명령은 만들지 않았다. 새 의존성과 외부 네트워크는 없고 엔진은 0.2.0 그대로다.
+
+| 파일 | 내용 |
+|---|---|
+| `llm/tools.py` | 도구 7개(`describe_generator`, `check_design`, `build_package`, `list_packages`, `get_package`, `verify_package`, `get_drawing`), 입력 스키마, 규칙별 영어 고침 안내(`hint`), 요청 정규화, 네 형식(`mcp`·`openai`·`openai-responses`·`anthropic`) 정의 내보내기 |
+| `llm/mcp.py` | MCP stdio 서버(JSON-RPC 2.0). 프로토콜 버전 협상, `initialize`·`ping`·`tools/list`·`tools/call`, 일괄 요청, 표준 오류 코드. stdout에는 프로토콜 메시지만 쓴다 |
+| `llm/__main__.py` | `hanok-window-llm tools`(도구 정의 출력)와 `call`(도구 하나 실행, 도면 이미지 파일 저장, 종료 코드 0·1·2) |
+| `mcp.sh` | MCP 클라이언트에 등록하는 진입점. generator 폴더로 옮겨 `output/`을 쓰므로 클라이언트의 작업 폴더에 좌우되지 않는다 |
+| `pyproject.toml` | 0.4.0, 명령 `hanok-window-llm`·`hanok-window-mcp` |
+
+도구는 새 계산을 하지 않는다. 사전 확인은 웹의 `Service.preview`(`resolve` → `derive` → `build`)를, 생성은 `run_job`을, 조회는 패키지 색인을 그대로 쓴다. 그래서 도구로 만든 패키지는 웹·CLI와 패키지 ID가 같고, 도구를 부르는 프로세스(MCP 서버)에는 builder가 올라가지 않는다.
+패키지 ID는 제출한 요청 JSON(`design_request.json`)을 포함한다. 모델은 `463.0`처럼 실수로 쓰거나 기본값을 적어 넣기 쉬우므로, 도구는 웹 폼과 같은 규칙으로 요청을 정규화한다(기본값 생략, 정수는 정수로). 잘못된 값(양문의 `hinge_side`, 모르는 필드)은 고치지 않고 `resolve`의 규칙 오류로 돌려준다.
+도구 스키마에는 `oneOf`·`if/then`·`prefixItems`를 쓰지 않았다. 일부 함수 호출 API가 받지 않는 구성이며, 전체 규칙은 여전히 `resolve`가 검사한다. OpenAI 형식에는 `strict: false`를 명시했다.
+오류 결과는 `rule_id`, `details`, 입력 묶음(`where`), 단계(`stage`), 영어 `hint`, 창살 개수 제안(`suggestion`)을 담는다. MCP에서는 도구 실패를 `isError: true` 결과로 돌려주어 모델이 스스로 고치게 하고, 알 수 없는 도구와 잘못된 인자 형태만 JSON-RPC 오류로 보낸다.
+generator README에 LLM 연동 절(도구 표, MCP 등록, 함수 호출, 파이썬 사용)을 더했다.
+
+| 확인 | 결과 |
+|---|---|
+| LLM 시험 `tests/test_llm.py` | 15개 PASS, 5.2초. 네 형식 정의(ASCII·호환 스키마), 예제 5종 정규화 불변, 실수·기본값을 섞은 요청으로 CLI와 같은 패키지 ID, 규칙 오류의 `hint`·`suggestion`, 생성 실패 보고(창살 12+4), 패키지 도구와 id 앞자리, 도면 PNG, MCP 초기화·버전 협상 3종·도구 호출·오류 코드 4종·일괄 요청, stdio로 생성하고 도면 보기, `hanok-window-llm` 종료 코드, builder 미로드 |
+| 웹 시험 | 18개 PASS, 14.2초 |
+| 기존 시험 | 14개 메서드 PASS, 101.3초 |
+| `mcp.sh` | 편집 가능 설치를 다시 한 뒤 `initialize`에 버전 0.4.0, 프로토콜 2025-11-25로 답하고 `tools/list`가 도구 7개를 돌려준다 |
+| 실제 클라이언트 | Claude·Cursor 같은 MCP 클라이언트에 등록하는 일은 사용자 환경 설정을 바꾸므로 하지 않았다. 시험은 클라이언트가 보내는 메시지를 그대로 보내 확인했다 |

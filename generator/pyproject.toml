@@ -6,14 +6,16 @@ build-backend = "setuptools.build_meta"
 name = "hanok-window-generator"
 # Distribution version. The engine keeps hanok_generator.__version__ (0.2.0):
 # that module is copied into every package, so bumping it would change every package_id.
-version = "0.3.1"
-description = "Parametric single and double leaf hanok window CAD packages, with a local web interface"
+version = "0.4.0"
+description = "Parametric single and double leaf hanok window CAD packages, with a local web interface and LLM tools"
 requires-python = ">=3.11"
 dependencies = ["ezdxf==1.4.2", "shapely==2.0.7", "Pillow==11.3.0"]
 
 [project.scripts]
 hanok-window = "hanok_generator.cli:main"
 hanok-window-web = "hanok_generator.web.__main__:main"
+hanok-window-llm = "hanok_generator.llm.__main__:main"
+hanok-window-mcp = "hanok_generator.llm.mcp:main"
 
 [tool.setuptools.packages.find]
 include = ["hanok_generator*"]

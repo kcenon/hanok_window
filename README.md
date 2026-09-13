@@ -31,6 +31,7 @@ cd generator
 .venv/bin/python -m hanok_generator build --input examples/double_r3.json --output output
 ```
 
+LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하려면 `generator/mcp.sh`의 절대 경로를 MCP 서버로 등록합니다. OpenAI·Anthropic 형식의 함수 호출 정의도 내보낼 수 있습니다.
 자세한 사용법은 [generator/README.md](generator/README.md)에 있습니다.
 
 ## 폴더 구성
@@ -38,14 +39,15 @@ cd generator
 ```text
 hanok_window/
 ├── README.md                  이 문서
-├── generator/                 한옥 창호 생성기 0.3.1 (생성 엔진 0.2.0). 새 설계는 여기서
-│   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·입력·산출물·검증
+├── generator/                 한옥 창호 생성기 0.4.0 (생성 엔진 0.2.0). 새 설계는 여기서
+│   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
 │   ├── web-start.command      Finder에서 두 번 누르면 켜기
 │   ├── web-stop.command       Finder에서 두 번 누르면 끄기
-│   ├── hanok_generator/       파이썬 패키지: 엔진, 명령줄, 웹 서버와 화면
+│   ├── mcp.sh                 LLM 클라이언트에 등록하는 MCP 서버
+│   ├── hanok_generator/       파이썬 패키지: 엔진, 명령줄, 웹 화면, LLM 도구
 │   ├── examples/              입력 예제 5종과 생성 결과
-│   ├── tests/                 회귀 시험, 웹 시험, R3 기준값
+│   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, R3 기준값
 │   ├── docs/CHANGELOG.md      버전별 구현·검증 기록
 │   └── output/                생성한 패키지 (git에 넣지 않음)
 └── r3_reference/              확정 설계 R3 원본 (수정 금지)
@@ -61,6 +63,7 @@ hanok_window/
 | 하려는 일 | 갈 곳 |
 |---|---|
 | 새 크기·창살·형식으로 설계하고 패키지 받기 | `generator/`의 웹 화면 또는 명령줄 |
+| LLM(Claude·GPT·Gemini·로컬 모델)에게 설계를 맡기기 | [generator/README.md의 LLM 연동](generator/README.md#llm-연동) (`mcp.sh`, `hanok-window-llm`) |
 | R3 설계를 생성기로 다시 만들기 | `generator/examples/double_r3.json` (내경 입력은 `double_inner_r3.json`) |
 | R3 원본 도면과 계획 문서 보기 | `r3_reference/00_START_HERE.txt`부터 |
 | 생성기가 버전마다 바꾼 것 | [generator/docs/CHANGELOG.md](generator/docs/CHANGELOG.md) |
@@ -70,7 +73,7 @@ hanok_window/
 
 - **`r3_reference/`는 고치지 않습니다.** 생성기 회귀 시험이 이 폴더의 파일 28개를 SHA-256으로 대조하므로 한 바이트만 바뀌어도 실패합니다. 2026-09-13에 `unified/`에서 이름만 바꿨고 내용은 그대로입니다. 그 안의 문서가 가리키는 `from_codex/`·`from_claude/`는 작업 트리에서 정리해 git 기록에만 있습니다([이력](#이력)).
 - **패키지를 섞어 쓰지 않습니다.** 각 패키지의 DXF는 그 패키지 안의 부품표·홈 좌표·가공 지침과 함께 씁니다. 태그에서 꺼낸 옛 DXF, 특히 `from_claude/`의 DXF(채택하지 않은 창살 1+5 안)는 CAM에 넘기지 마십시오.
-- **패키지 ID를 정하는 파일은 신중히 고칩니다.** 모든 패키지는 생성기의 최상위 모듈, `engine/`, `presets/`, 입력 스키마를 `source/`에 복사하고 그 해시를 패키지 ID에 넣습니다. 이 파일을 고치면 같은 입력이라도 패키지 ID가 바뀝니다. 웹 코드를 `hanok_generator/web/`에 따로 둔 이유입니다.
+- **패키지 ID를 정하는 파일은 신중히 고칩니다.** 모든 패키지는 생성기의 최상위 모듈, `engine/`, `presets/`, 입력 스키마를 `source/`에 복사하고 그 해시를 패키지 ID에 넣습니다. 이 파일을 고치면 같은 입력이라도 패키지 ID가 바뀝니다. 웹 코드와 LLM 도구를 `hanok_generator/web/`, `llm/`에 따로 둔 이유입니다.
 
 ## R3 확정 규격
 
@@ -83,11 +86,12 @@ hanok_window/
 
 ## 이력
 
-| 태그 | 커밋 | 내용 |
-|---|---|---|
-| `R1`, `R2`, `R3`, `v0.2.0` | `d974f4a` | 첫 커밋. 지금은 정리한 `from_codex/`, `from_claude/`, `research/`가 들어 있습니다 |
-| `v0.3.0` | `35ae802` | 로컬 웹 화면 |
-| `v0.3.1` | `bc7d05d` | 웹 서버를 켜고 끄는 `web.sh` |
+| 태그 | 내용 |
+|---|---|
+| `R1`, `R2`, `R3`, `v0.2.0` | 첫 커밋 `d974f4a`. 지금은 정리한 `from_codex/`, `from_claude/`, `research/`가 들어 있습니다 |
+| `v0.3.0` | 로컬 웹 화면 |
+| `v0.3.1` | 웹 서버를 켜고 끄는 `web.sh` |
+| `v0.4.0` | LLM 도구 7개, MCP 서버, 함수 호출 정의 |
 
 - `from_codex/`: PORTRAIT_DL_R1. 창살 패턴은 지금과 같지만 규격을 손으로 관리하던 버전입니다. 계획서 원본(`01_prompt/`)이 병합 계획서의 뼈대가 되었습니다.
 - `from_claude/`: 창살 세로 1 + 가로 5 안. 2026-09-10에 세로 2 + 가로 4로 확정하면서 채택하지 않았습니다. 중앙 맞댐부에 반턱을 넣지 않는 이유 같은 고유 내용은 병합 계획서에 흡수했습니다.
@@ -105,6 +109,7 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 cd generator
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 5초
 ```
 
-두 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+세 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.

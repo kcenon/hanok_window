@@ -1,7 +1,7 @@
 # 한옥 창호 생성기
 
 창의 외경(완성 외곽) 또는 내경(고정틀 안목) 가로·세로, 창짝당 창살 수, 단문(왼쪽·오른쪽 경첩)·양문을 입력하면 CNC용 한옥 창호 패키지를 만듭니다. 패키지에는 DXF, PNG 5장, CSV 4종과 저장한 DXF를 다시 읽어 확인한 검증 기록이 들어 있습니다.
-배포 버전은 0.3.1이고 생성 엔진은 0.2.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를 추가했습니다.
+배포 버전은 0.4.0이고 생성 엔진은 0.2.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를, 0.4에서 LLM이 도구 호출로 생성기를 쓰는 [LLM 연동](#llm-연동)을 추가했습니다.
 생성 엔진이 그대로이므로 같은 입력의 revision과 패키지 ID는 바뀌지 않습니다.
 
 함께 볼 문서: [생성 예제 5종](examples/README.md) · [버전별 구현·검증 기록](docs/CHANGELOG.md) · [저장소 안내](../README.md) · [R3 원본 안내](../r3_reference/00_START_HERE.txt)
@@ -13,6 +13,7 @@
 - [설치](#설치)
 - [웹 화면](#웹-화면)
 - [명령줄](#명령줄)
+- [LLM 연동](#llm-연동)
 - [입력](#입력)
 - [산출물](#산출물)
 - [검증](#검증)
@@ -29,6 +30,8 @@ python3.11 -m venv .venv
 .venv/bin/python -m pip install -e .
 .venv/bin/hanok-window --help
 .venv/bin/hanok-window-web --help
+.venv/bin/hanok-window-llm --help
+.venv/bin/hanok-window-mcp --help
 ```
 
 `requirements.lock`은 CPython 3.11.15, macOS arm64에서 검증한 실행 의존 버전 전체입니다. `pyproject.toml`은 직접 쓰는 ezdxf·shapely·Pillow만 고정합니다.
@@ -104,6 +107,68 @@ Finder에서는 `web-start.command`를 두 번 누르면 켜지고 `web-stop.com
 명령은 생성한 패키지 경로와 수량을 JSON으로 출력합니다. 입력 오류·기하 검증 실패는 종료 코드가 0이 아니며, 고정 `rule_id`와 원인 수치가 포함된 JSON을 표준 오류로 출력합니다.
 `build`의 작업 오류 기록은 `output/failures/`에 남습니다. 명령 구문 오류와 입력 파일을 읽지 못하는 오류는 작업 생성 전에 반환합니다.
 `resolve`는 규격과 네스팅을 유도하는 사전 확인입니다. 실제 절삭 영역의 겹침 등 저장 DXF 검사를 통과했다는 뜻은 아닙니다.
+
+## LLM 연동
+
+Claude, GPT, Gemini, 로컬 모델(Ollama 등) 같은 LLM이 도구 호출로 이 생성기를 다룰 수 있도록 도구 7개를 제공합니다.
+도구는 웹 화면·명령줄과 같은 코드를 쓰므로 같은 설계면 어느 통로로 만들어도 패키지 ID가 같고, 외부 네트워크는 쓰지 않습니다.
+모델이 읽는 도구 설명과 오류 안내(`hint`)는 어떤 모델이든 잘 따르도록 영어로 씁니다.
+
+| 도구 | 하는 일 | 파일 쓰기 |
+|---|---|---|
+| `describe_generator` | 창 형식, 외경/내경, 프리셋 규칙, 입력 범위, 기본값, 예제 요청, 상태의 뜻을 알려 줍니다 | 없음 |
+| `check_design` | 사전 확인입니다. 치수·창짝·창살 칸·원판 사용량을 돌려주거나, 어긴 규칙의 `rule_id`와 수치, 고치는 방법(`hint`), 창살 개수 제안을 돌려줍니다 | 없음 |
+| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 67개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
+| `list_packages` | 만든 패키지 목록(최신순) | 없음 |
+| `get_package` | 패키지 하나의 요청·치수·검사·PENDING 항목·파일 | 없음 |
+| `verify_package` | 패키지 파일 해시 대조(읽기 전용) | 없음 |
+| `get_drawing` | 도면 5장 중 하나를 PNG 이미지(가로 480 px 이하)로 돌려줍니다. 이미지를 읽는 모델은 결과를 직접 봅니다 | 없음 |
+
+`package_id`는 앞 8자 이상만 줘도 됩니다. 모델이 보낸 요청은 웹 폼처럼 기본값을 빼고 정수를 정수로 맞춘 뒤 처리하므로, `463.0`처럼 보내도 예제와 같은 패키지가 나옵니다. 잘못된 값은 고치지 않고 규칙 오류로 돌려줍니다.
+
+### MCP 클라이언트에 등록
+
+MCP를 지원하는 클라이언트(Claude Code, Claude Desktop, Cursor, VS Code, Gemini CLI 등)에는 이 폴더의 `mcp.sh` 절대 경로를 서버 명령으로 등록합니다. 패키지는 `mcp.sh` 옆의 `output/`에 생깁니다.
+
+```bash
+claude mcp add hanok-window -- /절대/경로/generator/mcp.sh        # Claude Code
+```
+
+```json
+{"mcpServers": {"hanok-window": {"command": "/절대/경로/generator/mcp.sh"}}}
+```
+
+위 JSON은 Claude Desktop(`claude_desktop_config.json`), Cursor(`.cursor/mcp.json`), Gemini CLI(`settings.json`)의 형식입니다. VS Code(`.vscode/mcp.json`)는 `{"servers": {"hanok-window": {"type": "stdio", "command": "/절대/경로/generator/mcp.sh"}}}`로 씁니다.
+다른 출력 폴더를 쓰려면 `mcp.sh --output /절대/경로`처럼 인자를 붙입니다. 서버는 표준 라이브러리로 만든 stdio JSON-RPC 서버이고, 프로토콜 버전 2025-11-25·2025-06-18·2025-03-26·2024-11-05를 협상합니다.
+
+### 함수 호출 API에서 쓰기
+
+MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내보내 모델에 넘기고, 모델이 요청한 도구를 `call`로 실행합니다.
+
+```bash
+.venv/bin/hanok-window-llm tools --format openai          # Chat Completions, Ollama·vLLM·LM Studio 등 OpenAI 호환
+.venv/bin/hanok-window-llm tools --format openai-responses
+.venv/bin/hanok-window-llm tools --format anthropic       # Messages API
+.venv/bin/hanok-window-llm tools --format mcp
+.venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "3d8e6187", "drawing": "assembly"}'
+```
+
+`call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.
+파이썬 프로그램에서는 같은 기능을 바로 씁니다.
+
+```python
+from hanok_generator.llm import Toolbox
+
+box = Toolbox("output")
+tools = box.definitions("anthropic")         # 모델에 넘길 도구 정의 (mcp, openai, openai-responses, anthropic)
+result = box.call("check_design", {"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]})
+result.data, result.is_error, result.images  # JSON 결과, 실패 여부, [(MIME 형식, PNG 바이트)]
+```
+
+- 도구가 파일을 쓰는 곳은 `build_package`의 `output/`뿐이며, 기존 패키지를 덮어쓰거나 지우지 않습니다. 모델이 넘긴 값으로 임의의 파일 경로를 열지 않습니다.
+- MCP 서버는 요청을 차례로 처리합니다. 생성은 작업 프로세스에서 하므로 서버 프로세스에는 builder를 올리지 않습니다.
+- 검사 PASS는 명목 CAD 기하의 합격입니다. 모델에게 주는 안내(`instructions`, `describe_generator`)에도 이 점과 시험 가공이 필요하다는 것을 적었습니다.
 
 ## 입력
 
@@ -215,9 +280,10 @@ DXF와 PNG의 재현 조건은 `environment.json`에 기록하며 폰트 파일 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 5초
 ```
 
-두 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
+세 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
 실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다.
 
 ```bash
@@ -227,6 +293,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/
 - **생성기 시험:** 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향, R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부, 동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사를 확인합니다.
 - **R3 보존:** R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다. 저장소의 `r3_reference/` 폴더에서 파일 28개도 SHA-256으로 대조합니다.
 - **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지는 `node`가 있을 때만 확인합니다.
+- **LLM 시험:** 네 형식의 도구 정의(영어·스키마 호환), 요청 정규화, 모델이 실수로 섞은 실수·기본값으로도 CLI와 같은 패키지 ID가 나오는지, 규칙 오류의 `hint`와 제안, 생성 실패 보고, 패키지 도구와 도면 이미지, MCP 서버의 초기화·버전 협상·도구 호출·오류 코드·일괄 요청, `hanok-window-llm` 종료 코드, 도구를 부르는 프로세스에 builder가 올라가지 않는지를 확인합니다.
 
 새 시스템은 R3 코드를 별도 모듈로 확장했으며 기존 패키지를 덮어쓰지 않습니다. 이전 리비전(R1·R2)과 조사 기록은 작업 트리에서 정리했고 git 태그로 보관합니다([저장소 안내의 이력](../README.md#이력)).
 
@@ -237,17 +304,19 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/
 - 입력 상한은 계산 범위 제한이며 제작 가능 범위가 아닙니다([입력 범위](#입력-범위)).
 - 하드웨어의 모양과 위치는 실제 제품을 선정하기 전의 참고 정보입니다.
 - `web.sh`는 파일 잠금과 세션 기능을 쓰므로 macOS와 Linux에서만 동작합니다.
+- LLM 연동은 LLM이 생성기를 부르는 방향만 있습니다. 생성기가 LLM API를 불러 자연어로 설계하는 기능은 없습니다.
 
 ## 폴더 구성
 
 ```text
 generator/
 ├── README.md                이 문서
-├── pyproject.toml           배포 정보와 명령 hanok-window·hanok-window-web
+├── pyproject.toml           배포 정보와 명령 hanok-window·hanok-window-web·hanok-window-llm·hanok-window-mcp
 ├── requirements.lock        검증한 의존 버전
 ├── web.sh                   웹 서버 켜고 끄기
 ├── web-start.command        Finder에서 켜기
 ├── web-stop.command         Finder에서 끄기
+├── mcp.sh                   LLM 클라이언트에 등록하는 MCP 서버
 ├── hanok_generator/
 │   ├── cli.py               명령줄: 패키지 생성·입력 해석·무결성 대조
 │   ├── model.py             공개 입력 검사와 버전별 프리셋 해석
@@ -258,12 +327,13 @@ generator/
 │   ├── engine/              R3 엔진에서 확장한 기하·DXF·렌더·가공 검사
 │   ├── presets/             프리셋 값 (r3_parameters.json)
 │   ├── request.schema.json  입력 스키마
-│   └── web/                 웹 서버와 화면, web.sh의 제어 코드
+│   ├── web/                 웹 서버와 화면, web.sh의 제어 코드
+│   └── llm/                 LLM 도구, 함수 호출 정의, MCP 서버
 ├── examples/                입력 예제 5종과 생성 결과
-├── tests/                   test_generator.py, test_web.py, fixtures/, results.json
+├── tests/                   test_generator.py, test_web.py, test_llm.py, fixtures/, results.json
 ├── docs/CHANGELOG.md        버전별 구현·검증 기록
 └── output/                  생성한 패키지 (git에 넣지 않음)
 ```
 
 `hanok_generator/`의 최상위 모듈, `engine/`, `presets/`, `request.schema.json`은 모든 패키지의 `source/`에 복사되고 그 해시가 패키지 ID에 들어갑니다. 이 파일을 고치면 같은 입력이라도 패키지 ID가 바뀝니다.
-`package.source_files()`는 이것들만 모으고 `web/` 같은 다른 하위 폴더는 모으지 않으므로, 화면이나 도구처럼 생성 결과와 무관한 코드는 하위 폴더에 둡니다.
+`package.source_files()`는 이것들만 모으고 `web/`, `llm/` 같은 다른 하위 폴더는 모으지 않으므로, 화면이나 도구처럼 생성 결과와 무관한 코드는 하위 폴더에 둡니다.

@@ -1,0 +1,8 @@
+﻿hardware_id,hardware_type,part_id,layer,production_machining,front_face_position_only,depth_ref_mm,dxf_handle
+H-RIGHT-1,HINGE,F01-2,HINGE_REF,False,True,2,146
+H-RIGHT-1,HINGE,S01-2,HINGE_REF,False,True,2,148
+H-RIGHT-2,HINGE,F01-2,HINGE_REF,False,True,2,14A
+H-RIGHT-2,HINGE,S01-2,HINGE_REF,False,True,2,14C
+HANDLE-1,HANDLE,S01-1,LATCH_REF,False,True,UNSPECIFIED,14E
+CATCH-1,CATCH,S01-1,LATCH_REF,False,True,UNSPECIFIED,150
+CATCH-1,CATCH,F01-1,LATCH_REF,False,True,UNSPECIFIED,152

@@ -1,0 +1,12 @@
+{
+  "hinge_side": "left",
+  "lattice_per_leaf": [
+    0,
+    0
+  ],
+  "outer_mm": [
+    420,
+    900
+  ],
+  "type": "single"
+}

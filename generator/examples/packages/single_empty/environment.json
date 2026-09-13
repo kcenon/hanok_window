@@ -1,0 +1,47 @@
+{
+  "fonts": {
+    "bold": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    },
+    "mono": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    },
+    "regular": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    }
+  },
+  "libraries": {
+    "Pillow": "11.3.0",
+    "ezdxf": "1.4.2",
+    "fonttools": "4.65.0",
+    "numpy": "2.4.6",
+    "pyparsing": "3.3.2",
+    "shapely": "2.0.7",
+    "typing_extensions": "4.16.0"
+  },
+  "machine": "arm64",
+  "platform": "darwin",
+  "python": "3.11.15",
+  "python_hash_seed": "0",
+  "source_sha256": {
+    "__init__.py": "f8b019154223f387cfb5712435b71e0fc7acecba39a968a643c704ee264757bd",
+    "__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "cli.py": "a199daef085d699bf0d912174d24794d3165b4625338f47c5f9ff457ab0ecea1",
+    "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
+    "engine/builder.py": "50beed0008b6c029402072b89cd2abcc4d670ec0c3b0ee38ddcd8e45d90b4f2a",
+    "engine/cad_helpers.py": "fad3c229dedc1ef69b6a1ed76c2ad8616aac3ff0b4fda8849d8e7b00b94368b3",
+    "engine/generate_spec.py": "d9de869d27fca60dd9fd57d6d9961c89819d19ee5dca5e15ec80f738aa29a171",
+    "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",
+    "engine/numeric_policy.py": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c",
+    "formats.py": "d289a7e381ec36656ae8f865b9d39a8e3be208418195130c79722dc8535b28a5",
+    "jobs.py": "b8d2e8af7951a0b67f84fbe0acafd700a534dc049256d1b51e3576120b79a361",
+    "model.py": "f0f301873d59a1a5ade0dc293b0113e12dcb2e500670ae2b6b160ce2fd06fbd9",
+    "package.py": "dbe630e58c64577f9c4ce6dcb6a425a276e9d327dad07b91bfe9bf2a4cd90c25",
+    "presets/r3_parameters.json": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba",
+    "request.schema.json": "747307770c1ba26ec6be83ad7ec4cc42c02fac511195a2a0da0ebfed6651d5bc",
+    "worker.py": "847bbcd3bb26c9924003cb7536215351617caa8b75760158f35d366cad76aac0"
+  }
+}

@@ -1,0 +1,3 @@
+# Example packages are sealed by SHA-256 in their package_manifest.json. Keep their bytes exactly
+# as generated (no line-ending conversion on checkout) and let GitHub treat them as generated files.
+generator/examples/packages/** -text linguist-generated

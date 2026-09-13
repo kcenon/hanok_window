@@ -1,0 +1,7 @@
+Pillow==11.3.0
+ezdxf==1.4.2
+fonttools==4.65.0
+numpy==2.4.6
+pyparsing==3.3.2
+shapely==2.0.7
+typing_extensions==4.16.0

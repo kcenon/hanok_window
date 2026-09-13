@@ -243,3 +243,27 @@ generator README에 LLM 연동 절(도구 표, MCP 등록, 함수 호출, 파이
 | 현재 파일 | main의 트리 해시가 다시 쓰기 전과 같다 |
 | 보존 | 커밋 18개의 작성자·날짜·메시지와 태그 8개의 메시지. `r3_reference/`(옛 `unified/`) 파일은 바뀌지 않았다 |
 | 비밀값 | 모든 커밋에서 키·토큰·비밀번호 패턴 0건, 본문의 이메일 주소 0건 |
+
+## 예제 패키지 추가 (0.4.1 이후)
+
+2026-09-14. 예제 입력 5종으로 만든 실제 패키지를 `examples/packages/<예제 이름>/`에 넣었다. 지금까지는 `output/`(git에 넣지 않음)에만 있어서 예제 안내의 패키지 연결이 이 컴퓨터에서만 열렸다. 이제 GitHub에서도 도면·DXF·CSV를 바로 볼 수 있다. 생성기 코드와 패키지 ID는 바뀌지 않는다.
+
+| 파일 | 내용 |
+|---|---|
+| `examples/packages/` (새 폴더) | 예제마다 패키지 하나. 매니페스트를 포함해 파일 35개씩, 모두 175개, 8.6 MB. 폴더 이름만 패키지 ID 대신 예제 이름이다 |
+| `examples/make_packages.py` (새 파일) | 예제를 CLI와 같은 방식(`run_job`)으로 임시 폴더에 만들고, 모두 통과해야 `packages/`를 바꾼다. 사본마다 무결성을 대조하고 `built_packages.json`을 새로 쓴다 |
+| `examples/built_packages.json` | 경로가 저장소 안의 사본을 가리킨다. 스크립트가 쓰므로 예제 이름 순서다. 값은 그대로다 |
+| `examples/README.md` | 패키지 표(도면 다섯 장, README, DXF, 부품표, 홈 좌표, 검사 기록), 무결성 확인과 다시 만드는 방법 |
+| 저장소 `.gitattributes` (새 파일) | 예제 패키지를 줄바꿈 변환 없이 받게 하고(`-text`), GitHub에서 생성 파일로 표시한다(`linguist-generated`) |
+| `README.md`, 저장소 `README.md`, `docs/manual/README.md` | 예제 패키지로 가는 연결 |
+
+패키지는 파일마다 SHA-256으로 봉인되어 있다. Windows의 `core.autocrlf`처럼 받을 때 줄바꿈을 바꾸면 해시가 달라져 무결성 대조가 실패하므로, `.gitattributes`로 예제 패키지의 줄바꿈 변환을 끈다.
+
+| 확인 | 결과 |
+|---|---|
+| 재현 | 5종을 7.4초에 만들었고 패키지 ID가 기존 기록과 같다. `output/packages/`의 기존 패키지와 파일 단위로 같다 |
+| 무결성 | `hanok_generator verify examples/packages/<예제 이름>` 5종 PASS, 각 파일 34개 |
+| 경로 | 새 파일에 로컬 계정·임시 경로 0건. `environment.json`에는 시스템 폰트 경로만 있다 |
+| 속성 | `git check-attr`로 패키지 파일만 `text: unset`, `linguist-generated: set`임을 확인했다 |
+| 시험 | 기존 14개 PASS(101.8초), 웹 20개 PASS(14.1초), LLM 21개 PASS(8.7초). 예제 입력을 읽는 시험은 `examples/*.json`만 보므로 하위 폴더의 영향을 받지 않는다 |
+| 문서 링크 | 다섯 문서의 상대 링크 112개와 제목 앵커가 모두 맞다 |

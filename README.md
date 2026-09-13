@@ -66,6 +66,7 @@ hanok_window/
 |---|---|
 | 설치와 웹 화면 사용법을 그림으로 보기 | [generator/docs/manual/README.md](generator/docs/manual/README.md) |
 | 새 크기·창살·형식으로 설계하고 패키지 받기 | `generator/`의 웹 화면 또는 명령줄 |
+| 만들어진 패키지(DXF·도면·부품표)를 먼저 보기 | [generator/examples/](generator/examples/README.md#만들어진-패키지)의 예제 패키지 5종 |
 | LLM(Claude·GPT·Gemini·로컬 모델)에게 설계를 맡기기 | [generator/README.md의 LLM 연동](generator/README.md#llm-연동) (`mcp.sh`, `hanok-window-llm`) |
 | R3 설계를 생성기로 다시 만들기 | `generator/examples/double_r3.json` (내경 입력은 `double_inner_r3.json`) |
 | R3 원본 도면과 계획 문서 보기 | `r3_reference/00_START_HERE.txt`부터 |

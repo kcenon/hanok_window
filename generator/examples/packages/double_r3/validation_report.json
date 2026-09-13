@@ -1,0 +1,1649 @@
+{
+  "board_mm": [
+    1220,
+    900,
+    20
+  ],
+  "checks": [
+    {
+      "actual": 24,
+      "expected": 24,
+      "measured": 24,
+      "message": "unique part ids and total",
+      "name": "unique_part_ids_and_total",
+      "rule_id": "unique_part_ids_and_total",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 2,
+      "expected": 2,
+      "measured": {
+        "actual": 2,
+        "required": 2
+      },
+      "message": "F01 part count",
+      "name": "F01_part_count",
+      "rule_id": "F01_part_count",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 2,
+      "expected": 2,
+      "measured": {
+        "actual": 2,
+        "required": 2
+      },
+      "message": "F02 part count",
+      "name": "F02_part_count",
+      "rule_id": "F02_part_count",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 4,
+      "expected": 4,
+      "measured": {
+        "actual": 4,
+        "required": 4
+      },
+      "message": "S01 part count",
+      "name": "S01_part_count",
+      "rule_id": "S01_part_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 4,
+      "expected": 4,
+      "measured": {
+        "actual": 4,
+        "required": 4
+      },
+      "message": "S02 part count",
+      "name": "S02_part_count",
+      "rule_id": "S02_part_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 4,
+      "expected": 4,
+      "measured": {
+        "actual": 4,
+        "required": 4
+      },
+      "message": "L01 part count",
+      "name": "L01_part_count",
+      "rule_id": "L01_part_count",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 8,
+      "expected": 8,
+      "measured": {
+        "actual": 8,
+        "required": 8
+      },
+      "message": "L02 part count",
+      "name": "L02_part_count",
+      "rule_id": "L02_part_count",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": 176,
+      "message": "all machining entities closed lwpolyline",
+      "name": "all_machining_entities_closed_lwpolyline",
+      "rule_id": "all_machining_entities_closed_lwpolyline",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "valid positive area no self intersection",
+      "name": "valid_positive_area_no_self_intersection",
+      "rule_id": "valid_positive_area_no_self_intersection",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": 0,
+      "message": "no duplicate complete machining contours",
+      "name": "no_duplicate_complete_machining_contours",
+      "rule_id": "no_duplicate_complete_machining_contours",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all part sizes match spec",
+      "name": "all_part_sizes_match_spec",
+      "rule_id": "all_part_sizes_match_spec",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "bounds": [
+          0.0,
+          0.0,
+          1220.0,
+          900.0
+        ],
+        "count": 1
+      },
+      "expected": {
+        "bounds": [
+          0,
+          0,
+          1220,
+          900
+        ],
+        "count": 1
+      },
+      "measured": {
+        "bounds": [
+          0.0,
+          0.0,
+          1220.0,
+          900.0
+        ],
+        "count": 1
+      },
+      "message": "board boundary",
+      "name": "board_boundary",
+      "rule_id": "board_boundary",
+      "status": "PASS",
+      "targets": [
+        "stock_mm"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all parts within board",
+      "name": "all_parts_within_board",
+      "rule_id": "all_parts_within_board",
+      "status": "PASS",
+      "targets": [
+        "stock_mm"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": 0.0,
+      "message": "no nesting overlap",
+      "name": "no_nesting_overlap",
+      "rule_id": "no_nesting_overlap",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": 11.999999999999998,
+      "expected": 12,
+      "measured": 11.999999999999998,
+      "message": "minimum nesting gap",
+      "name": "minimum_nesting_gap",
+      "rule_id": "minimum_nesting_gap",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": 20.0,
+      "expected": 20,
+      "measured": 20.0,
+      "message": "minimum board edge margin",
+      "name": "minimum_board_edge_margin",
+      "rule_id": "minimum_board_edge_margin",
+      "status": "PASS",
+      "targets": [
+        "stock_mm"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all lengths parallel X grain",
+      "name": "all_lengths_parallel_X_grain",
+      "rule_id": "all_lengths_parallel_X_grain",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": 8,
+      "expected": 8,
+      "measured": 8,
+      "message": "J1 pocket count",
+      "name": "J1_pocket_count",
+      "rule_id": "J1_pocket_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 16,
+      "expected": 16,
+      "measured": 16,
+      "message": "J2 pocket count",
+      "name": "J2_pocket_count",
+      "rule_id": "J2_pocket_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 32,
+      "expected": 32,
+      "measured": 32,
+      "message": "J3 pocket count",
+      "name": "J3_pocket_count",
+      "rule_id": "J3_pocket_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 48,
+      "expected": 48,
+      "measured": 48,
+      "message": "J4 pocket count",
+      "name": "J4_pocket_count",
+      "rule_id": "J4_pocket_count",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": 104,
+      "expected": 104,
+      "measured": 104,
+      "message": "total base pockets",
+      "name": "total_base_pockets",
+      "rule_id": "total_base_pockets",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "pockets per part",
+      "name": "pockets_per_part",
+      "rule_id": "pockets_per_part",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "S01-1": 4,
+        "S01-2": 4,
+        "S01-3": 4,
+        "S01-4": 4
+      },
+      "expected": 4,
+      "measured": {
+        "S01-1": 4,
+        "S01-2": 4,
+        "S01-3": 4,
+        "S01-4": 4
+      },
+      "message": "S01 J4 seats each",
+      "name": "S01_J4_seats_each",
+      "rule_id": "S01_J4_seats_each",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "S02-1": 2,
+        "S02-2": 2,
+        "S02-3": 2,
+        "S02-4": 2
+      },
+      "expected": 2,
+      "measured": {
+        "S02-1": 2,
+        "S02-2": 2,
+        "S02-3": 2,
+        "S02-4": 2
+      },
+      "message": "S02 J4 seats each",
+      "name": "S02_J4_seats_each",
+      "rule_id": "S02_J4_seats_each",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all lattice two end laps",
+      "name": "all_lattice_two_end_laps",
+      "rule_id": "all_lattice_two_end_laps",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "lattice crossing pockets",
+      "name": "lattice_crossing_pockets",
+      "rule_id": "lattice_crossing_pockets",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "LEFT_LEAF": [
+          2,
+          4
+        ],
+        "RIGHT_LEAF": [
+          2,
+          4
+        ]
+      },
+      "expected": [
+        2,
+        4
+      ],
+      "measured": {
+        "LEFT_LEAF": [
+          2,
+          4
+        ],
+        "RIGHT_LEAF": [
+          2,
+          4
+        ]
+      },
+      "message": "lattice bars per leaf",
+      "name": "lattice_bars_per_leaf",
+      "rule_id": "lattice_bars_per_leaf",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all pocket coordinates match exact formulas",
+      "name": "all_pocket_coordinates_match_exact_formulas",
+      "rule_id": "all_pocket_coordinates_match_exact_formulas",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "count": 48,
+        "radii_mm": [
+          3.1999999999999886,
+          3.1999999999999957,
+          3.200000000000003,
+          3.2000000000000455
+        ]
+      },
+      "expected": {
+        "count": 48,
+        "radius_mm": 3.2
+      },
+      "measured": {
+        "count": 48,
+        "radii_mm": [
+          3.1999999999999886,
+          3.1999999999999957,
+          3.200000000000003,
+          3.2000000000000455
+        ]
+      },
+      "message": "corner reliefs",
+      "name": "corner_reliefs",
+      "rule_id": "corner_reliefs",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "minimum_actual_radius_mm": 3.1999999999999886,
+        "tool_radius_mm": 3.0
+      },
+      "message": "machining relief radius at least tool radius",
+      "name": "machining_relief_radius_at_least_tool_radius",
+      "rule_id": "machining_relief_radius_at_least_tool_radius",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "closest_pair": {
+          "distance_mm": 29.266666666666424,
+          "features": [
+            "S02-4-P03",
+            "S02-4-P04"
+          ],
+          "joints": [
+            "J4",
+            "J4"
+          ],
+          "part_id": "S02-4",
+          "shared_cut_depth_mm": 10.0,
+          "uncertainty_mm": 2.01e-05
+        },
+        "connections": [],
+        "method": "each nominal pocket union its own reliefs; same part and overlapping actual cut-depth intervals",
+        "pairs_compared": 196
+      },
+      "message": "distinct machining regions separated",
+      "name": "distinct_machining_regions_separated",
+      "rule_id": "distinct_machining_regions_separated",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "closest_edge": {
+          "distance_mm": 16.799999999999955,
+          "edge": "V_MIN",
+          "feature_id": "S02-3-P04",
+          "part_id": "S02-3",
+          "uncertainty_mm": 1.0100000000000002e-05
+        },
+        "edges_compared": 184,
+        "failures": []
+      },
+      "message": "machining preserves non open edges",
+      "name": "machining_preserves_non_open_edges",
+      "rule_id": "machining_preserves_non_open_edges",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all pockets reliefs inside own part",
+      "name": "all_pockets_reliefs_inside_own_part",
+      "rule_id": "all_pockets_reliefs_inside_own_part",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "layer depth and face separation",
+      "name": "layer_depth_and_face_separation",
+      "rule_id": "layer_depth_and_face_separation",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "all required layers exist",
+      "name": "all_required_layers_exist",
+      "rule_id": "all_required_layers_exist",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "mm modelspace flat geometry",
+      "name": "mm_modelspace_flat_geometry",
+      "rule_id": "mm_modelspace_flat_geometry",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "part annotations separate and unique",
+      "name": "part_annotations_separate_and_unique",
+      "rule_id": "part_annotations_separate_and_unique",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "assembly transform faces consistent",
+      "name": "assembly_transform_faces_consistent",
+      "rule_id": "assembly_transform_faces_consistent",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "max_mismatch_area_mm2": 1.1368683772161603e-12,
+        "pairs": 52
+      },
+      "message": "joint pairs XY match opposite faces",
+      "name": "joint_pairs_XY_match_opposite_faces",
+      "rule_id": "joint_pairs_XY_match_opposite_faces",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "mate feature links bidirectional",
+      "name": "mate_feature_links_bidirectional",
+      "rule_id": "mate_feature_links_bidirectional",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "max_volume_mm3": 5.6843418860808015e-12,
+        "method": "per-region Z ranges from depth 10 in stock 20; actual circular bulges sampled with chord error <= 1e-05 mm",
+        "worst_pair": "L01-2/L02-1"
+      },
+      "message": "no nominal assembled solid interpenetration",
+      "name": "no_nominal_assembled_solid_interpenetration",
+      "rule_id": "no_nominal_assembled_solid_interpenetration",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "retained_back": 10.0,
+        "retained_front": 10.0,
+        "stock": 20
+      },
+      "expected": {
+        "retained_back": 10.0,
+        "retained_front": 10.0,
+        "stock": 20
+      },
+      "measured": {
+        "retained_back": 10.0,
+        "retained_front": 10.0,
+        "stock": 20
+      },
+      "message": "half lap depth",
+      "name": "half_lap_depth",
+      "rule_id": "half_lap_depth",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "area_mm2": 77520.0,
+        "bounds": [
+          0.0,
+          0.0,
+          463.0,
+          586.0
+        ]
+      },
+      "expected": {
+        "area_mm2": 77520,
+        "bounds": [
+          0,
+          0,
+          463,
+          586
+        ]
+      },
+      "measured": {
+        "area_mm2": 77520.0,
+        "bounds": [
+          0.0,
+          0.0,
+          463.0,
+          586.0
+        ]
+      },
+      "message": "frame geometry",
+      "name": "frame_geometry",
+      "rule_id": "frame_geometry",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": [
+        463.0,
+        586.0
+      ],
+      "expected": [
+        463,
+        586
+      ],
+      "measured": {
+        "actual": [
+          463.0,
+          586.0
+        ],
+        "basis": "outer",
+        "measured_mm": {
+          "inner": [
+            383.0,
+            506.0
+          ],
+          "outer": [
+            463.0,
+            586.0
+          ]
+        },
+        "required": [
+          463,
+          586
+        ]
+      },
+      "message": "requested size matches measured frame",
+      "name": "requested_size_matches_measured_frame",
+      "rule_id": "requested_size_matches_measured_frame",
+      "status": "PASS",
+      "targets": [
+        "outer_mm"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": [
+        [
+          187.0,
+          500.0
+        ],
+        [
+          187.0,
+          500.0
+        ]
+      ],
+      "expected": [
+        [
+          187.0,
+          500
+        ],
+        [
+          187.0,
+          500
+        ]
+      ],
+      "measured": [
+        [
+          187.0,
+          500.0
+        ],
+        [
+          187.0,
+          500.0
+        ]
+      ],
+      "message": "leaf envelopes",
+      "name": "leaf_envelopes",
+      "rule_id": "leaf_envelopes",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": [
+        2.673797,
+        2.673797
+      ],
+      "expected": 2.6,
+      "measured": [
+        2.673797,
+        2.673797
+      ],
+      "message": "leaf height to width ratio",
+      "name": "leaf_height_to_width_ratio",
+      "rule_id": "leaf_height_to_width_ratio",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "external": [
+          2.9999999999999996,
+          2.9999999999999996
+        ],
+        "meeting": [
+          3.0
+        ]
+      },
+      "expected": {
+        "external": 3,
+        "meeting": 3
+      },
+      "measured": {
+        "external": [
+          2.9999999999999996,
+          2.9999999999999996
+        ],
+        "meeting": [
+          3.0
+        ]
+      },
+      "message": "leaf clearances",
+      "name": "leaf_clearances",
+      "rule_id": "leaf_clearances",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "LEFT_LEAF/L01": 35.666667,
+        "LEFT_LEAF/L02": 80.0,
+        "RIGHT_LEAF/L01": 35.666667,
+        "RIGHT_LEAF/L02": 80.0
+      },
+      "message": "lattice bars evenly spaced in measured opening",
+      "name": "lattice_bars_evenly_spaced_in_measured_opening",
+      "rule_id": "lattice_bars_evenly_spaced_in_measured_opening",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "no fixed centre mullion",
+      "name": "no_fixed_centre_mullion",
+      "rule_id": "no_fixed_centre_mullion",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "no member bridges leaves",
+      "name": "no_member_bridges_leaves",
+      "rule_id": "no_member_bridges_leaves",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "assembly reference matches all cut parts",
+      "name": "assembly_reference_matches_all_cut_parts",
+      "rule_id": "assembly_reference_matches_all_cut_parts",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "enabled": true,
+        "pictures": 1,
+        "regions": 1
+      },
+      "expected": {
+        "enabled": true,
+        "size_mm": [
+          297,
+          420
+        ]
+      },
+      "measured": {
+        "enabled": true,
+        "pictures": 1,
+        "regions": 1
+      },
+      "message": "picture geometry",
+      "name": "picture_geometry",
+      "rule_id": "picture_geometry",
+      "status": "PASS",
+      "targets": [
+        "picture"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "measured_mm": {
+          "bottom": 10.0,
+          "left": 10.0,
+          "right": 10.0,
+          "top": 10.0
+        },
+        "required_minimum_mm": 10
+      },
+      "expected": {
+        "centred": true,
+        "minimum_mm": 10
+      },
+      "measured": {
+        "measured_mm": {
+          "bottom": 10.0,
+          "left": 10.0,
+          "right": 10.0,
+          "top": 10.0
+        },
+        "required_minimum_mm": 10
+      },
+      "message": "picture margins match each side",
+      "name": "picture_margins_match_each_side",
+      "rule_id": "picture_margins_match_each_side",
+      "status": "PASS",
+      "targets": [
+        "picture"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "picture reference linetypes",
+      "name": "picture_reference_linetypes",
+      "rule_id": "picture_reference_linetypes",
+      "status": "PASS",
+      "targets": [
+        "picture"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "count": 2,
+        "sizes_mm": [
+          [
+            127.0,
+            440.0
+          ],
+          [
+            127.0,
+            440.0
+          ]
+        ]
+      },
+      "expected": {
+        "count": 2,
+        "size_mm": [
+          127.0,
+          440
+        ]
+      },
+      "measured": {
+        "count": 2,
+        "sizes_mm": [
+          [
+            127.0,
+            440.0
+          ],
+          [
+            127.0,
+            440.0
+          ]
+        ]
+      },
+      "message": "leaf opening references",
+      "name": "leaf_opening_references",
+      "rule_id": "leaf_opening_references",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": {
+        "CATCH": 2,
+        "HANDLE": 2,
+        "HINGE": 4
+      },
+      "expected": {
+        "CATCH": 2,
+        "HANDLE": 2,
+        "HINGE": 4
+      },
+      "measured": {
+        "CATCH": 2,
+        "HANDLE": 2,
+        "HINGE": 4
+      },
+      "message": "hardware counts and references",
+      "name": "hardware_counts_and_references",
+      "rule_id": "hardware_counts_and_references",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "absolute": 0,
+        "unit": "count"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "attachments": [
+          [
+            "H-LEFT-1",
+            "F01-1"
+          ],
+          [
+            "H-LEFT-1",
+            "S01-1"
+          ],
+          [
+            "H-LEFT-2",
+            "F01-1"
+          ],
+          [
+            "H-LEFT-2",
+            "S01-1"
+          ],
+          [
+            "H-RIGHT-1",
+            "F01-2"
+          ],
+          [
+            "H-RIGHT-1",
+            "S01-4"
+          ],
+          [
+            "H-RIGHT-2",
+            "F01-2"
+          ],
+          [
+            "H-RIGHT-2",
+            "S01-4"
+          ],
+          [
+            "HANDLE-1",
+            "S01-2"
+          ],
+          [
+            "HANDLE-2",
+            "S01-3"
+          ],
+          [
+            "CATCH-1",
+            "S02-2"
+          ],
+          [
+            "CATCH-1",
+            "F02-2"
+          ],
+          [
+            "CATCH-2",
+            "S02-4"
+          ],
+          [
+            "CATCH-2",
+            "F02-2"
+          ]
+        ]
+      },
+      "message": "hardware attachment geometry",
+      "name": "hardware_attachment_geometry",
+      "rule_id": "hardware_attachment_geometry",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": [
+        "J1",
+        "J2",
+        "J3",
+        "J4H",
+        "J4V"
+      ],
+      "expected": [
+        "J1",
+        "J2",
+        "J3",
+        "J4H",
+        "J4V"
+      ],
+      "measured": [
+        "J1",
+        "J2",
+        "J3",
+        "J4H",
+        "J4V"
+      ],
+      "message": "reference details match existing joints",
+      "name": "reference_details_match_existing_joints",
+      "rule_id": "reference_details_match_existing_joints",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": [
+        [
+          "F01",
+          "F02"
+        ],
+        [
+          "S01",
+          "S02"
+        ],
+        [
+          "L01",
+          "L02"
+        ],
+        [
+          "S02",
+          "L01"
+        ],
+        [
+          "S01",
+          "L02"
+        ]
+      ],
+      "message": "reference detail members exist",
+      "name": "reference_detail_members_exist",
+      "rule_id": "reference_detail_members_exist",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "references never on machining layers",
+      "name": "references_never_on_machining_layers",
+      "rule_id": "references_never_on_machining_layers",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": 2,
+      "expected": 2,
+      "measured": 2,
+      "message": "opening illustration matches leaves",
+      "name": "opening_illustration_matches_leaves",
+      "rule_id": "opening_illustration_matches_leaves",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "pockets open edge intent",
+      "name": "pockets_open_edge_intent",
+      "rule_id": "pockets_open_edge_intent",
+      "status": "PASS",
+      "targets": [
+        "lattice_per_leaf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "build_date": "2026-09-12",
+        "revision": "HANOK_GEN_V1_04a2ec4c4f06"
+      },
+      "message": "revision recorded matches parameters",
+      "name": "revision_recorded_matches_parameters",
+      "rule_id": "revision_recorded_matches_parameters",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "circular_chord_error_mm": 1e-05,
+        "contact_uncertainty": "sum of both circular approximation bounds plus linear tolerance",
+        "geometry_equivalence": "two-way whole-boundary containment plus perimeter-scaled area difference",
+        "input_representation": "IEEE-754 binary64; no input quantization",
+        "interpenetration_volume_mm3": 1e-05,
+        "linear_absolute_mm": 1e-07,
+        "manufacturing_allowance": false,
+        "overlap_area_mm2": 1e-07,
+        "parameter_absolute_mm": 1e-09,
+        "ratio_absolute": 1e-09,
+        "version": "HANOK_NUMERIC_V1"
+      },
+      "message": "numeric policy recorded",
+      "name": "numeric_policy_recorded",
+      "rule_id": "numeric_policy_recorded",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": null,
+      "message": "design spec on disk matches parameters",
+      "name": "design_spec_on_disk_matches_parameters",
+      "rule_id": "design_spec_on_disk_matches_parameters",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "measured": {
+        "errors": 0,
+        "fixes": 0
+      },
+      "message": "DXF audit no errors no fixes",
+      "name": "DXF_audit_no_errors_no_fixes",
+      "rule_id": "DXF_audit_no_errors_no_fixes",
+      "status": "PASS",
+      "targets": [
+        "saved_dxf"
+      ],
+      "tolerance": {
+        "length_mm": 1e-07,
+        "policy": "HANOK_NUMERIC_V1"
+      }
+    }
+  ],
+  "checks_passed": 67,
+  "dogbone_reliefs_total": 48,
+  "ezdxf_version": "1.4.2",
+  "file": "window.dxf",
+  "lattice_per_leaf": {
+    "crossings": 8,
+    "horizontal": 4,
+    "vertical": 2
+  },
+  "leaf_width_height_mm": [
+    187.0,
+    500
+  ],
+  "machining_profiles_total": 176,
+  "manufacturing_assessment": {
+    "edge_web": {
+      "measured_mm": 16.799999999999955,
+      "required_minimum_mm": null
+    },
+    "machined_web": {
+      "measured_mm": 29.266666666666424,
+      "required_minimum_mm": null
+    },
+    "reason": "Material/process-qualified minima and fit coupons are not supplied. Geometric separation is not strength or manufacturing approval.",
+    "remaining_thickness": {
+      "measured_mm": 10.0,
+      "required_minimum_mm": null
+    },
+    "status": "PENDING"
+  },
+  "mated_joints_total": 52,
+  "minimum_board_margin_mm": 20.0,
+  "minimum_part_gap_mm": 11.999999999999998,
+  "nesting_bounds_mm": [
+    20.0,
+    20.0,
+    1111.0,
+    304.0
+  ],
+  "nominal_pockets_total": 104,
+  "numeric_policy": {
+    "circular_chord_error_mm": 1e-05,
+    "contact_uncertainty": "sum of both circular approximation bounds plus linear tolerance",
+    "geometry_equivalence": "two-way whole-boundary containment plus perimeter-scaled area difference",
+    "input_representation": "IEEE-754 binary64; no input quantization",
+    "interpenetration_volume_mm3": 1e-05,
+    "linear_absolute_mm": 1e-07,
+    "manufacturing_allowance": false,
+    "overlap_area_mm2": 1e-07,
+    "parameter_absolute_mm": 1e-09,
+    "ratio_absolute": 1e-09,
+    "version": "HANOK_NUMERIC_V1"
+  },
+  "overall_width_height_mm": [
+    463,
+    586
+  ],
+  "part_counts": {
+    "F01": 2,
+    "F02": 2,
+    "L01": 4,
+    "L02": 8,
+    "S01": 4,
+    "S02": 4
+  },
+  "parts_total": 24,
+  "pending": [
+    "Actual hinges, screws, load capacity and swing interference",
+    "Rear backing, mounting, picture protection and fastener clearance",
+    "Stock species, grain integrity, thickness, moisture and movement",
+    "Fit coupons and nominal zero-clearance joint tolerances",
+    "CAM pocket union, open-edge overrun and cutter compensation",
+    "Workholding, tabs/onion skin, feeds/speeds and final manufacturing approval"
+  ],
+  "phase": "READ_BACK_FROM_SAVED_DXF",
+  "physical_fabrication_validated": false,
+  "pocket_counts": {
+    "J1": 8,
+    "J2": 16,
+    "J3": 32,
+    "J4": 48
+  },
+  "pre_save_status": "PASS_NOMINAL_DXF_GEOMETRY",
+  "render_environment": {
+    "fonts": {
+      "bold": {
+        "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+      },
+      "mono": {
+        "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+      },
+      "regular": {
+        "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+      }
+    },
+    "libraries": {
+      "Pillow": "11.3.0",
+      "ezdxf": "1.4.2",
+      "fonttools": "4.65.0",
+      "numpy": "2.4.6",
+      "pyparsing": "3.3.2",
+      "shapely": "2.0.7",
+      "typing_extensions": "4.16.0"
+    }
+  },
+  "revision": "HANOK_GEN_V1_04a2ec4c4f06",
+  "saved_dxf_reread": true,
+  "sha256": "f13d4aef2a05278d6be3a2d3f68908cf5845b97f2a5d56a735b978c9f91ae23c",
+  "status": "PASS_NOMINAL_DXF_GEOMETRY",
+  "visual_inspection_status": "AUTOMATED_CONTENT_CHECKS_ONLY",
+  "window": {
+    "hinge_side": null,
+    "preset": "hanok_A3_portrait_R3",
+    "type": "double"
+  }
+}

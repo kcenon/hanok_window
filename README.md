@@ -39,6 +39,7 @@ LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하�
 ```text
 hanok_window/
 ├── README.md                  이 문서
+├── LICENSE                    MIT 라이선스
 ├── generator/                 한옥 창호 생성기 0.4.1 (생성 엔진 0.2.0). 새 설계는 여기서
 │   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
@@ -90,7 +91,7 @@ hanok_window/
 
 | 태그 | 내용 |
 |---|---|
-| `R1`, `R2`, `R3`, `v0.2.0` | 첫 커밋 `d974f4a`. 지금은 정리한 `from_codex/`, `from_claude/`, `research/`가 들어 있습니다 |
+| `R1`, `R2`, `R3`, `v0.2.0` | 첫 커밋 `a489cad`. 지금은 정리한 `from_codex/`, `from_claude/`, `research/`가 들어 있습니다 |
 | `v0.3.0` | 로컬 웹 화면 |
 | `v0.3.1` | 웹 서버를 켜고 끄는 `web.sh` |
 | `v0.4.0` | LLM 도구 7개, MCP 서버, 함수 호출 정의 |
@@ -116,3 +117,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'tes
 ```
 
 세 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+
+## 라이선스
+
+[MIT 라이선스](LICENSE)입니다. 저작권은 kcenon에게 있습니다. 검사 PASS는 명목 CAD 기하의 합격일 뿐이며, 이 저장소의 도면과 파일은 시험 가공으로 확인하기 전에는 기계로 보내지 마십시오.

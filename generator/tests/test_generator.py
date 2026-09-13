@@ -78,7 +78,7 @@ class GeneratorTests(unittest.TestCase):
         # R1 (from_codex) left the working tree; tags R1-R3 keep it in git history.
         project=HERE.parents[1]
         for row in reference["source_manifest"]["files"]:
-            self.assertEqual(digest(project/"unified"/row["path"]),row["sha256"],row["path"])
+            self.assertEqual(digest(project/"r3_reference"/row["path"]),row["sha256"],row["path"])
 
     def test_inner_size_basis_reproduces_outer_geometry(self):
         inner,outer=self.path("inner_r3"),self.path("r3")

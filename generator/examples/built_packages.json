@@ -7,8 +7,8 @@
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "generator/output/packages/3d8e6187780074314208439f3ec46e7634870b769d87756e5fcf8109865939c3",
-    "manifest": "generator/output/packages/3d8e6187780074314208439f3ec46e7634870b769d87756e5fcf8109865939c3/package_manifest.json"
+    "package": "output/packages/3d8e6187780074314208439f3ec46e7634870b769d87756e5fcf8109865939c3",
+    "manifest": "output/packages/3d8e6187780074314208439f3ec46e7634870b769d87756e5fcf8109865939c3/package_manifest.json"
   },
   "double_inner_r3": {
     "checks": 67,
@@ -18,8 +18,8 @@
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "generator/output/packages/633d258d7ea7b5a2a203dd2c9530b802ee113afc167bca5bb50e756c2e72d77b",
-    "manifest": "generator/output/packages/633d258d7ea7b5a2a203dd2c9530b802ee113afc167bca5bb50e756c2e72d77b/package_manifest.json"
+    "package": "output/packages/633d258d7ea7b5a2a203dd2c9530b802ee113afc167bca5bb50e756c2e72d77b",
+    "manifest": "output/packages/633d258d7ea7b5a2a203dd2c9530b802ee113afc167bca5bb50e756c2e72d77b/package_manifest.json"
   },
   "single_right": {
     "checks": 67,
@@ -29,8 +29,8 @@
     "parts": 16,
     "pockets": 72,
     "status": "PASS",
-    "package": "generator/output/packages/46b4d41d8a05008e2d0c773da0712a45bf41578304a49437353bda80b3570264",
-    "manifest": "generator/output/packages/46b4d41d8a05008e2d0c773da0712a45bf41578304a49437353bda80b3570264/package_manifest.json"
+    "package": "output/packages/46b4d41d8a05008e2d0c773da0712a45bf41578304a49437353bda80b3570264",
+    "manifest": "output/packages/46b4d41d8a05008e2d0c773da0712a45bf41578304a49437353bda80b3570264/package_manifest.json"
   },
   "single_empty": {
     "checks": 67,
@@ -40,8 +40,8 @@
     "parts": 8,
     "pockets": 16,
     "status": "PASS",
-    "package": "generator/output/packages/58b3a3cab72f3224f90e9efd112d751a8140132ce80929a52e5f2a442d9e77f3",
-    "manifest": "generator/output/packages/58b3a3cab72f3224f90e9efd112d751a8140132ce80929a52e5f2a442d9e77f3/package_manifest.json"
+    "package": "output/packages/58b3a3cab72f3224f90e9efd112d751a8140132ce80929a52e5f2a442d9e77f3",
+    "manifest": "output/packages/58b3a3cab72f3224f90e9efd112d751a8140132ce80929a52e5f2a442d9e77f3/package_manifest.json"
   },
   "double_600_800": {
     "checks": 67,
@@ -51,7 +51,7 @@
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "generator/output/packages/c5cb9d359c41944a6f556ebdb0eff9114a563cdc2c5e6b2a94f5e7a5224663a7",
-    "manifest": "generator/output/packages/c5cb9d359c41944a6f556ebdb0eff9114a563cdc2c5e6b2a94f5e7a5224663a7/package_manifest.json"
+    "package": "output/packages/c5cb9d359c41944a6f556ebdb0eff9114a563cdc2c5e6b2a94f5e7a5224663a7",
+    "manifest": "output/packages/c5cb9d359c41944a6f556ebdb0eff9114a563cdc2c5e6b2a94f5e7a5224663a7/package_manifest.json"
   }
 }

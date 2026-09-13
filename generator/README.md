@@ -1,42 +1,46 @@
-# 한옥 창호 생성기 0.3
+# 한옥 창호 생성기
 
-창틀의 외경(완성 외곽) 또는 내경(고정틀 안목) 가로·세로, 창짝당 창살 수, 단문 좌우/양문을 입력하면 DXF·PNG 5장·CSV 4종과 검증 기록을 생성합니다.
-입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를 추가했습니다.
-생성 엔진은 0.2.0 그대로이므로 같은 입력의 revision과 패키지 ID가 바뀌지 않습니다.
+창의 외경(완성 외곽) 또는 내경(고정틀 안목) 가로·세로, 창짝당 창살 수, 단문(왼쪽·오른쪽 경첩)·양문을 입력하면 CNC용 한옥 창호 패키지를 만듭니다. 패키지에는 DXF, PNG 5장, CSV 4종과 저장한 DXF를 다시 읽어 확인한 검증 기록이 들어 있습니다.
+배포 버전은 0.3.1이고 생성 엔진은 0.2.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를 추가했습니다.
+생성 엔진이 그대로이므로 같은 입력의 revision과 패키지 ID는 바뀌지 않습니다.
 
-바로 볼 수 있는 [생성 예제 5종](generator/examples/GENERATED.md)과
-[구현·검증 기록](generator/IMPLEMENTATION.md)을 함께 제공합니다.
+함께 볼 문서: [생성 예제 5종](examples/README.md) · [버전별 구현·검증 기록](docs/CHANGELOG.md) · [저장소 안내](../README.md) · [R3 원본 안내](../r3_reference/00_START_HERE.txt)
 
-## 실행
+> 검증 PASS는 명목 CAD 기하의 합격입니다. 실제 제작 전에 확인할 항목은 [범위와 한계](#범위와-한계)에 있습니다.
 
-Python 3.11 이상이 필요합니다. 이 작업 공간에는 `.venv/`를 구성했습니다.
+## 목차
 
-```bash
-cd generator
-.venv/bin/python -m hanok_generator build --type double --size 600x800 --lattice 2x4 --output output
-.venv/bin/python -m hanok_generator build --type double --size 383x506 --size-basis inner --lattice 2x4 --output output
-.venv/bin/python -m hanok_generator build --type single --hinge-side right --size 420x900 --lattice 2x6 --output output
-.venv/bin/python -m hanok_generator build --input examples/single_empty.json --output output
-.venv/bin/python -m hanok_generator build --input examples/double_r3.json --output output
-```
+- [설치](#설치)
+- [웹 화면](#웹-화면)
+- [명령줄](#명령줄)
+- [입력](#입력)
+- [산출물](#산출물)
+- [검증](#검증)
+- [범위와 한계](#범위와-한계)
+- [폴더 구성](#폴더-구성)
 
-다른 환경에는 다음과 같이 설치합니다.
+## 설치
+
+Python 3.11 이상이 필요합니다. 이 작업 공간에는 `.venv/`를 구성해 두었습니다. 다른 컴퓨터에서는 이 폴더(`generator/`)에서 다음과 같이 설치합니다.
 
 ```bash
 python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock    # 검증한 의존 버전으로 맞출 때
 .venv/bin/python -m pip install -e .
 .venv/bin/hanok-window --help
 .venv/bin/hanok-window-web --help
 ```
 
-명령은 생성한 패키지 경로와 수량을 JSON으로 출력합니다. 입력 오류·기하 검증 실패는 종료 코드가 0이 아니며,
-고정 `rule_id`와 원인 수치가 포함된 JSON을 표준 오류로 출력합니다.
-`build`의 작업 오류 기록은 `output/failures/`에 남습니다. 명령 구문 오류와 입력 파일을 읽지 못하는 오류는 작업 생성 전에 반환합니다.
+`requirements.lock`은 CPython 3.11.15, macOS arm64에서 검증한 실행 의존 버전 전체입니다. `pyproject.toml`은 직접 쓰는 ezdxf·shapely·Pillow만 고정합니다.
+이 문서의 명령은 모두 이 폴더에서 실행합니다.
 
 ## 웹 화면
 
 명령어 대신 브라우저에서 입력하고, 입력하는 동안 정면도·원판 배치·핵심 치수를 확인한 뒤 CLI와 똑같이 검증한 패키지를 받습니다.
-서버는 generator 폴더의 `web.sh`로 켜고 끕니다. Finder에서는 `web-start.command`와 `web-stop.command`를 두 번 누르면 `start`, `stop`과 같습니다.
+
+### 켜고 끄기
+
+Finder에서는 `web-start.command`를 두 번 누르면 켜지고 `web-stop.command`를 두 번 누르면 꺼집니다. 터미널에서는 `web.sh`를 씁니다.
 
 ```bash
 ./web.sh start      # 켜고 기본 브라우저로 엽니다 → http://127.0.0.1:8765
@@ -57,11 +61,15 @@ python3.11 -m venv .venv
 .venv/bin/python -m hanok_generator.web --port 8800      # 같은 서버, 모듈로 실행
 ```
 
+### 화면
+
 | 화면 | 하는 일 |
 |---|---|
 | 설계 `#/design` | 형식·외경/내경·창살·프리셋·그림·원판을 입력합니다. 입력이 멈추고 150 ms 뒤 서버가 해석해 정면도와 원판 배치를 그리고, 규칙 위반은 해당 칸 옆에 원인과 고치는 방법을 적습니다. 외경↔내경을 바꾸면 같은 창이 되도록 숫자를 바꿔 넣습니다. JSON 불러오기·저장 |
 | 기록 `#/packages` | `output/packages/`의 패키지를 형식·크기·창살로 보여 주고, 열기와 불러오기(그 패키지의 입력을 설계 화면에 채움)를 제공합니다 |
 | 패키지 `#/packages/<id>` | 검사 결과, 읽기 전용 무결성 확인, 제작 전 확인 항목(PENDING) 6개, 도면 5장과 확대·이동 뷰어, 파일별·ZIP 내려받기 |
+
+### 동작과 보안
 
 - 사전 확인 통과는 “도면 검사 전”입니다. 홈끼리 붙는지 같은 판정은 DXF를 저장해 다시 읽어야 알 수 있으므로, 생성 단계에서 실패하면 실패한 검사와 이유를 결과 카드에 따로 보여 줍니다.
 - 생성은 CLI와 같은 `jobs.run_job`으로 합니다. 동시 2개(`--workers`로 변경), 대기 8개까지 받습니다.
@@ -70,7 +78,34 @@ python3.11 -m venv .venv
 - 웹 코드는 `hanok_generator/web/`에 있습니다. 패키지 `source/`에 들어가는 파일(최상위 모듈·엔진·프리셋·스키마)을 건드리지 않아 기존 패키지 ID가 그대로입니다. 같은 이유로 `hanok-window` CLI에 명령을 붙이지 않고 별도 명령 `hanok-window-web`을 둡니다.
 - 진행 중인 생성 상태는 서버 메모리에만 있습니다. 서버를 다시 켜면 진행 기록은 사라지고 완료 패키지와 `failures/` 기록은 남습니다. Ctrl+C와 `./web.sh stop`은 진행 중인 생성을 끝까지 기다리고 대기 중인 생성은 취소합니다. `stop`은 150초 안에 끝나지 않으면 강제로 끕니다.
 
-## 입력과 프리셋
+## 명령줄
+
+`.venv/bin/python -m hanok_generator`와 `.venv/bin/hanok-window`는 같은 명령입니다.
+
+| 명령 | 하는 일 |
+|---|---|
+| `build` | 입력을 검증한 패키지로 만듭니다 |
+| `resolve` | 입력·프리셋을 해석하고 기하를 미리 검사합니다. 패키지는 만들지 않습니다 |
+| `verify <패키지 폴더>` | 패키지 파일의 누락과 해시를 읽기 전용으로 대조합니다 |
+| `schema` | JSON 입력 스키마를 출력합니다 |
+| `presets` | 지원 프리셋 목록을 출력합니다 |
+
+```bash
+.venv/bin/python -m hanok_generator build --type double --size 600x800 --lattice 2x4 --output output
+.venv/bin/python -m hanok_generator build --type double --size 383x506 --size-basis inner --lattice 2x4 --output output
+.venv/bin/python -m hanok_generator build --type single --hinge-side right --size 420x900 --lattice 2x6 --output output
+.venv/bin/python -m hanok_generator build --input examples/single_empty.json --output output
+.venv/bin/python -m hanok_generator build --input examples/double_r3.json --output output
+.venv/bin/python -m hanok_generator resolve --type double --size 600x800 --lattice 2x4
+.venv/bin/python -m hanok_generator verify output/packages/<패키지 ID>
+```
+
+`build`와 `resolve`는 입력을 `--input` JSON 파일로 받거나 `--type`, `--hinge-side`, `--size`, `--size-basis`, `--lattice`, `--preset`, `--picture`, `--picture-margin` 옵션으로 받습니다. 각 옵션의 형식은 `--help`에 있습니다.
+명령은 생성한 패키지 경로와 수량을 JSON으로 출력합니다. 입력 오류·기하 검증 실패는 종료 코드가 0이 아니며, 고정 `rule_id`와 원인 수치가 포함된 JSON을 표준 오류로 출력합니다.
+`build`의 작업 오류 기록은 `output/failures/`에 남습니다. 명령 구문 오류와 입력 파일을 읽지 못하는 오류는 작업 생성 전에 반환합니다.
+`resolve`는 규격과 네스팅을 유도하는 사전 확인입니다. 실제 절삭 영역의 겹침 등 저장 DXF 검사를 통과했다는 뜻은 아닙니다.
+
+## 입력
 
 ```json
 {
@@ -92,30 +127,30 @@ python3.11 -m venv .venv
 | `picture` | 선택. `{"size_mm":[297,420],"margin_mm":10}` 또는 `null` |
 | `stock_mm` | 선택. 기본 `[1220,900,20]` |
 
+전체 스키마는 `.venv/bin/python -m hanok_generator schema`로, 프리셋 목록은 `presets`로 볼 수 있습니다.
+
+### 외경과 내경
+
 크기는 `outer_mm`(외경)과 `inner_mm`(내경) 중 하나로 지정합니다. CLI에서는 `--size`에 `--size-basis outer|inner`를 더하며 기본은 `outer`입니다.
 내경은 창짝이 들어가는 고정틀 안쪽 치수입니다. 엔진은 외곽 = 내경 + 2 × 고정틀 폭(현재 프리셋 40 mm)으로 유도하므로, 내경 383 × 506은 R3 외경 463 × 586과 같은 설계입니다.
 입력한 기준의 치수는 저장 DXF의 고정틀에서 다시 재어 `requested_size_matches_measured_frame` 검사로 기록합니다. 조립도에는 외경과 내경을 모두 표기하고 입력 기준에 `(INPUT)`을 붙입니다.
 외경 입력의 정규화 요청은 0.1과 같아서 기존 설계의 `revision`이 바뀌지 않습니다.
 
+### 프리셋
+
 `standard_v1`은 R3의 부재 폭·공구·간극 기본값을 사용하고 그림과 세장비 제한은 두지 않습니다.
 `hanok_A3_portrait_R3`은 양문 전용이며 창짝 세장비 2.6 하한과 A3 그림을 기본으로 둡니다.
 그림을 지정하면 외곽에서 계산한 후면 기준영역에 중앙 배치하고 네 변의 최소 여유를 검사합니다.
 그림을 외곽 치수의 등식 제약으로 사용하지 않습니다. 홈 깊이는 원판 두께의 절반으로 유도합니다.
+부재 폭·공구·경첩 모양은 공개 입력으로 열지 않고 버전 프리셋에서 공급합니다.
+
+### 입력 범위
 
 현재 API 상한은 외곽(내경 입력이면 유도한 외곽)·원판 길이 각 3000 mm, 창살 각 32개, 두께 5~60 mm입니다.
 이는 계산 범위 제한이며 제작 가능 범위를 뜻하지 않습니다. 기하·원판 배치 검사가 별도로 거부할 수 있습니다.
-부재 폭·공구·경첩 모양은 공개 입력으로 열지 않고 버전 프리셋에서 공급합니다.
 기본 참고 경첩 2개가 겹치지 않도록 창짝 높이가 160 mm보다 커야 합니다.
 
-```bash
-.venv/bin/python -m hanok_generator schema
-.venv/bin/python -m hanok_generator presets
-.venv/bin/python -m hanok_generator resolve --type double --size 600x800 --lattice 2x4
-```
-
-`resolve`는 규격과 네스팅을 유도하는 사전 확인입니다. 실제 절삭 영역의 겹침 등 저장 DXF 검사를 통과했다는 뜻은 아닙니다.
-
-## 산출물과 공개 경계
+## 산출물
 
 ```text
 output/
@@ -133,8 +168,12 @@ output/
 │   ├── package_manifest.json
 │   ├── README.txt
 │   └── source/                         실행 소스와 의존 버전
-└── failures/<작업 ID>.json
+├── failures/<작업 ID>.json
+├── .staging/                           생성 중인 작업 폴더 (완료 전에는 공개하지 않음)
+└── .web/                               web.sh 서버 기록 (server.json, server.log)
 ```
+
+### 공개 방식
 
 매 작업은 별도 프로세스와 `.staging/` 아래 새 폴더를 사용합니다.
 DXF 저장·재읽기, CSV·PNG·README·소스 생성, 누락·PNG 디코딩·해시 검사를 모두 마친 패키지만
@@ -146,6 +185,8 @@ DXF 저장·재읽기, CSV·PNG·README·소스 생성, 누락·PNG 디코딩·�
 강제 종료로 남은 `.staging/` 폴더도 완료 패키지로 취급하지 않습니다.
 전원 장애 후 저장 영속성까지 보장하는 시스템으로 구현한 것은 아닙니다.
 
+### 무결성과 재생성
+
 ```bash
 .venv/bin/python -m hanok_generator verify output/packages/<패키지 ID>
 ```
@@ -155,7 +196,7 @@ DXF 기하 검증은 빌드 안에서 저장 전과 저장 후 모두 수행합�
 패키지의 `source/`를 `PYTHONPATH`로 지정하면 원래 저장소 없이 재생성할 수 있습니다.
 DXF와 PNG의 재현 조건은 `environment.json`에 기록하며 폰트 파일 자체는 배포하지 않습니다.
 
-## 형식과 상세도
+### 형식과 상세도
 
 단문은 지정한 쪽의 세로재에 경첩 2개, 반대 세로재에 손잡이와 캐치 참고 위치를 둡니다.
 양문은 양쪽 바깥 경첩을 쓰고 R3의 중앙 손잡이·상단 캐치 배치를 사용합니다.
@@ -169,31 +210,60 @@ DXF와 PNG의 재현 조건은 `environment.json`에 기록하며 폰트 파일 
 검사 결과는 `rule_id`, `expected`, `actual`, `tolerance`, `targets`, `status`를 구분합니다.
 창살 수나 치수를 바꿔도 검사 ID는 변하지 않습니다. 결합 상세에 실제 존재하는 부재 계열이 쓰였는지도 확인합니다.
 
-## 검증과 R3 보존
+## 검증
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
 ```
 
-시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다. 테스트 기록은 `tests/results.json`에 저장됩니다.
-기록을 바꾸지 않고 다시 확인하려면 `unittest`로 실행합니다. 웹 시험도 같은 방식입니다.
+두 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
+실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다.
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/results.json을 다시 씁니다
 ```
 
-웹 시험은 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다.
-화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지는 `node`가 있을 때만 확인합니다.
+- **생성기 시험:** 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향, R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부, 동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사를 확인합니다.
+- **R3 보존:** R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다. 저장소의 `r3_reference/` 폴더에서 파일 28개도 SHA-256으로 대조합니다.
+- **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지는 `node`가 있을 때만 확인합니다.
 
-R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다.
-원래 `unified/`의 28개 파일도 대조합니다. 이전 리비전(R1·R2)과 조사 기록은 작업 트리에서 정리했고 git 태그 `R1`·`R2`·`R3`로 보관합니다.
-새 시스템은 R3 코드를 별도 모듈로 확장했으며 기존 패키지를 덮어쓰지 않습니다.
+새 시스템은 R3 코드를 별도 모듈로 확장했으며 기존 패키지를 덮어쓰지 않습니다. 이전 리비전(R1·R2)과 조사 기록은 작업 트리에서 정리했고 git 태그로 보관합니다([저장소 안내의 이력](../README.md#이력)).
 
-시험 범위는 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향,
-R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부,
-동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사입니다.
+## 범위와 한계
 
-실제 제작용 최소 잔존 폭·끼움 공차·경첩/나사·후판/벽 고정·개폐 간섭·CAM·고정 지그는 PENDING입니다.
-다중 원판은 후속 범위입니다. 개별 부재 초과(`nesting.part_fits_stock`)와
-한 장 전체 배치 부족(`nesting.board_width`)은 각각 이유를 밝혀 거부합니다.
+- 실제 제작용 최소 잔존 폭·끼움 공차·경첩/나사·후판/벽 고정·개폐 간섭·CAM·고정 지그는 PENDING입니다. 시험편으로 확인하기 전에는 기계로 보내지 마십시오.
+- 다중 원판은 후속 범위입니다. 개별 부재 초과(`nesting.part_fits_stock`)와 한 장 전체 배치 부족(`nesting.board_width`)은 각각 이유를 밝혀 거부합니다.
+- 입력 상한은 계산 범위 제한이며 제작 가능 범위가 아닙니다([입력 범위](#입력-범위)).
+- 하드웨어의 모양과 위치는 실제 제품을 선정하기 전의 참고 정보입니다.
+- `web.sh`는 파일 잠금과 세션 기능을 쓰므로 macOS와 Linux에서만 동작합니다.
+
+## 폴더 구성
+
+```text
+generator/
+├── README.md                이 문서
+├── pyproject.toml           배포 정보와 명령 hanok-window·hanok-window-web
+├── requirements.lock        검증한 의존 버전
+├── web.sh                   웹 서버 켜고 끄기
+├── web-start.command        Finder에서 켜기
+├── web-stop.command         Finder에서 끄기
+├── hanok_generator/
+│   ├── cli.py               명령줄: 패키지 생성·입력 해석·무결성 대조
+│   ├── model.py             공개 입력 검사와 버전별 프리셋 해석
+│   ├── formats.py           창짝 구성, 참고 하드웨어 위치, 열림 방향
+│   ├── jobs.py              작업별 격리 생성, 완료 패키지 보존, latest.json 전환
+│   ├── worker.py            작업 프로세스 진입점
+│   ├── package.py           패키지 매니페스트와 읽기 전용 무결성 검사
+│   ├── engine/              R3 엔진에서 확장한 기하·DXF·렌더·가공 검사
+│   ├── presets/             프리셋 값 (r3_parameters.json)
+│   ├── request.schema.json  입력 스키마
+│   └── web/                 웹 서버와 화면, web.sh의 제어 코드
+├── examples/                입력 예제 5종과 생성 결과
+├── tests/                   test_generator.py, test_web.py, fixtures/, results.json
+├── docs/CHANGELOG.md        버전별 구현·검증 기록
+└── output/                  생성한 패키지 (git에 넣지 않음)
+```
+
+`hanok_generator/`의 최상위 모듈, `engine/`, `presets/`, `request.schema.json`은 모든 패키지의 `source/`에 복사되고 그 해시가 패키지 ID에 들어갑니다. 이 파일을 고치면 같은 입력이라도 패키지 ID가 바뀝니다.
+`package.source_files()`는 이것들만 모으고 `web/` 같은 다른 하위 폴더는 모으지 않으므로, 화면이나 도구처럼 생성 결과와 무관한 코드는 하위 폴더에 둡니다.

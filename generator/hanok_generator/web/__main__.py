@@ -3,10 +3,15 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import signal
 import sys
 import webbrowser
 
 from .server import make_server
+
+
+def _interrupt(signum, frame):
+    raise KeyboardInterrupt
 
 
 def main(argv=None):
@@ -26,12 +31,14 @@ def main(argv=None):
     try:
         server = make_server(args.output, port=args.port, workers=args.workers, verbose=args.verbose)
     except OSError as exc:
-        print(f"127.0.0.1:{args.port}을 열 수 없습니다: {exc.strerror or exc}", file=sys.stderr)
+        print(f"127.0.0.1:{args.port} 포트를 열 수 없습니다: {exc.strerror or exc}", file=sys.stderr)
         return 1
     url = f"http://127.0.0.1:{server.port}/"
     print(f"한옥 창호 생성기  {url}\n출력 폴더        {server.service.root}\n끝내려면 Ctrl+C", flush=True)
     if args.open:
         webbrowser.open(url)
+    # `./web.sh stop` and `kill` send SIGTERM: shut down exactly as for Ctrl+C.
+    signal.signal(signal.SIGTERM, _interrupt)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

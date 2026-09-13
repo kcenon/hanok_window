@@ -7,7 +7,8 @@ generator/는 범용 생성기 0.3(생성 엔진 0.2.0)이며, unified/는 기�
 
   generator/               → 외경/내경 기준 입력·프리셋·단문 좌우/양문·창살 0개 지원.
                               작업별 패키지 생성 CLI, 무결성 검사, 회귀 시험.
-                              브라우저 화면은 generator/ 에서 .venv/bin/hanok-window-web --open
+                              브라우저 화면은 generator/web-start.command 를 두 번 누르거나
+                              generator/ 에서 ./web.sh start. 끌 때는 web-stop.command 또는 ./web.sh stop
                               새 산출물은 generator/output/packages/ 아래에 생성합니다.
 
   unified/                → 현재 기준. Revision PORTRAIT_DL_R3.

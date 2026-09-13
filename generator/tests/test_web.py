@@ -1,4 +1,5 @@
-"""Web interface: CLI parity, error mapping, request limits, builds, package files and isolation."""
+"""Web interface: CLI parity, error mapping, request limits, builds, package files, isolation,
+and the background server behind web.sh."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +11,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
+import socket
 import struct
 import subprocess
 import sys
@@ -23,6 +26,7 @@ import zipfile
 from hanok_generator import __version__, cli, web
 from hanok_generator.jobs import run_job
 from hanok_generator.package import digest, source_files
+from hanok_generator.web.control import Record
 from hanok_generator.web.server import Handler, make_server
 
 HERE = Path(__file__).parent
@@ -387,6 +391,145 @@ class WebApiTests(unittest.TestCase):
         exact = lambda value: json.dumps(value, sort_keys=True)  # 463 and 463.0 differ here
         self.assertEqual([exact(v) for v in out["requests"]], [exact(v) for v in requests])
         self.assertEqual(exact(out["forms"][0]), exact(R3))
+
+
+def free_port():
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
+def status_of(port, path="/api/meta"):
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+    try:
+        conn.request("GET", path)
+        return conn.getresponse().status
+    finally:
+        conn.close()
+
+
+@unittest.skipUnless(os.name == "posix", "the background server needs POSIX sessions and file locks")
+class BackgroundServerTests(unittest.TestCase):
+    """web.sh start|stop|restart|status|log, which run python -m hanok_generator.web.control."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory(prefix="hanok-web-control-")
+        self.addCleanup(temp.cleanup)
+        self.output = Path(temp.name)
+        self.record = Record(self.output)
+        self.port = free_port()
+        self.addCleanup(self.kill_leftover)
+
+    def kill_leftover(self):
+        record = self.record.running()
+        if record and record.get("pid"):
+            os.kill(record["pid"], signal.SIGKILL)
+            self.wait_stopped()
+
+    def wait_stopped(self, timeout=10):
+        deadline = time.monotonic() + timeout
+        while self.record.running() is not None:
+            self.assertLess(time.monotonic(), deadline, "the server still holds its lock")
+            time.sleep(0.05)
+
+    def control(self, *args, env=None):
+        return subprocess.run([sys.executable, "-m", "hanok_generator.web.control", *args, "--output", str(self.output)],
+                              cwd=HERE.parent, env=env, capture_output=True, text=True, timeout=240)
+
+    def recorded_pid(self):
+        return json.loads(self.record.path.read_text(encoding="utf-8"))["pid"]
+
+    def test_start_restart_and_stop(self):
+        home, port = f"http://127.0.0.1:{self.port}/", ("--port", str(self.port))
+        status = self.control("status", *port)
+        self.assertEqual((status.returncode, status.stdout), (3, "꺼져 있습니다.\n"))
+        # Once the server answers, start opens it; BROWSER stands in for the default browser.
+        started = self.control("start", *port, env=dict(os.environ, BROWSER="/bin/echo OPENED %s"))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        self.assertIn(f"켜졌습니다: {home}", started.stdout)
+        self.assertIn(f"OPENED {home}", started.stdout)
+        first = self.recorded_pid()
+        self.assertEqual(status_of(self.port), 200)
+        again = self.control("start", *port, "--no-open")
+        self.assertEqual(again.stdout, f"이미 켜져 있습니다: {home} (pid {first})\n")
+        status = self.control("status", *port)
+        self.assertEqual((status.returncode, status.stdout), (0, f"켜져 있습니다: {home} (pid {first})\n"))
+        restarted = self.control("restart", "--no-open")  # without --port: the port it runs on
+        self.assertEqual(restarted.returncode, 0, restarted.stderr)
+        self.assertNotEqual(self.recorded_pid(), first)
+        self.assertEqual(status_of(self.port), 200)
+        self.assertIn(f"한옥 창호 생성기  {home}", self.control("log").stdout)
+        stopped = self.control("stop", *port)
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        self.assertTrue(stopped.stdout.endswith("껐습니다.\n"), stopped.stdout)
+        # SIGTERM took the Ctrl+C path: the server announced its shutdown before it exited.
+        self.assertIn("종료합니다.", self.record.log.read_text(encoding="utf-8"))
+        with self.assertRaises(ConnectionRefusedError):
+            status_of(self.port)
+        self.assertEqual(self.control("status", *port).returncode, 3)
+
+    def test_a_record_left_by_a_dead_server_is_never_signalled(self):
+        port = ("--port", str(self.port))
+        started = self.control("start", *port, "--no-open")
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = self.recorded_pid()
+        os.kill(pid, signal.SIGKILL)  # a crash: no shutdown, and the record stays behind
+        self.wait_stopped()
+        status = self.control("status", *port)
+        self.assertEqual(status.returncode, 3)
+        self.assertIn(f"지난번 서버(pid {pid})는 ./web.sh stop 없이 끝났습니다", status.stdout)
+        # After a reboot the recorded pid may belong to any process; stop must leave it alone.
+        with subprocess.Popen(["sleep", "60"]) as other:
+            try:
+                self.record.path.write_text(json.dumps(dict(pid=other.pid, port=self.port)), encoding="utf-8")
+                stopped = self.control("stop", *port)
+                self.assertEqual((stopped.returncode, stopped.stdout), (0, "꺼져 있습니다.\n"))
+                self.assertIsNone(other.poll())
+                self.assertEqual(self.record.path.read_text(encoding="utf-8"), "")
+            finally:
+                other.kill()
+
+    def test_start_leaves_the_port_to_a_server_already_there(self):
+        other = serve(make_server(self.output / "other", port=0))
+        try:
+            refused = self.control("start", "--port", str(other.port), "--no-open")
+        finally:
+            other.shutdown()
+            other.close()
+        self.assertEqual(refused.returncode, 1)
+        self.assertIn(f"127.0.0.1:{other.port}에서 이미 다른 서버가 응답합니다", refused.stderr)
+        self.assertFalse(self.record.path.exists())
+
+    def test_a_failed_start_shows_the_server_log(self):
+        with socket.socket() as busy:  # holds the port without answering HTTP
+            busy.bind(("127.0.0.1", 0))
+            busy.listen()
+            port = busy.getsockname()[1]
+            failed = self.control("start", "--port", str(port), "--no-open")
+        self.assertEqual(failed.returncode, 1)
+        self.assertIn(f"127.0.0.1:{port} 포트를 열 수 없습니다", failed.stderr)
+        status = self.control("status", "--port", str(port))
+        self.assertEqual((status.returncode, status.stdout), (3, "꺼져 있습니다.\n"))
+
+    @unittest.skipUnless((HERE.parent / ".venv" / "bin" / "python").exists(), "web.sh runs .venv/bin/python")
+    def test_web_sh_and_the_finder_files(self):
+        root = HERE.parent
+        for name in ("web.sh", "web-start.command", "web-stop.command"):
+            self.assertTrue(os.access(root / name, os.X_OK), f"{name} is not executable")
+
+        def run(name, *args):  # Finder runs a .command from the home folder, not from generator/
+            return subprocess.run([str(root / name), *args, "--output", str(self.output)], cwd=self.output,
+                                  capture_output=True, text=True, timeout=240)
+
+        started = run("web-start.command", "--port", str(self.port), "--no-open")
+        self.assertEqual(started.returncode, 0, started.stderr)
+        self.assertEqual(status_of(self.port), 200)
+        stopped = run("web-stop.command")
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        self.assertTrue(stopped.stdout.endswith("껐습니다.\n"), stopped.stdout)
+        usage = subprocess.run([str(root / "web.sh")], capture_output=True, text=True, timeout=60)
+        self.assertEqual(usage.returncode, 0, usage.stderr)
+        self.assertIn("start", usage.stdout)
 
 
 if __name__ == "__main__":

@@ -6,4 +6,4 @@
 # Override with the HANOK_FONT environment variable.
 ezdxf==1.4.2
 shapely==2.0.7
-Pillow==11.3.0
+Pillow==12.3.0

@@ -22,6 +22,7 @@ from ..engine import generate_spec
 from ..engine.generate_spec import ParameterError
 from ..model import InputError, PRESETS, canonical, resolve
 from ..package import PNG_FILES, PackageError, verify as verify_package
+from .suggest import suggest
 
 PACKAGE_ID = re.compile(r"[0-9a-f]{64}")
 # The request the page opens with; identical to examples/double_r3.json.
@@ -115,29 +116,6 @@ def nesting(params, spec):
                        for p in spec["parts"]],
                 bounds=[x0, y0, x1, y1], used_mm=[x1 - x0, y1 - y0],
                 usable_mm=[stock["length"] - 2 * margin, stock["width"] - 2 * margin])
-
-
-def lattice_suggestion(params, exc):
-    """Largest bar count per closed axis that clears the engine's own gap rule."""
-    if exc.rule_id != "lattice.positive_gap":
-        return None
-    found = {}
-    # details["horizontal"] is the gap between vertical bars, so it closes when
-    # there are too many vertical bars; details["vertical"] likewise.
-    for count, gap in (("vertical_per_leaf", "horizontal"), ("horizontal_per_leaf", "vertical")):
-        if exc.details[gap] > 0:
-            continue
-        trial = copy.deepcopy(params)
-        for n in range(params["lattice"][count] - 1, -1, -1):
-            trial["lattice"][count] = n
-            try:
-                generate_spec.derive(trial)
-            except ParameterError as again:
-                if again.rule_id == "lattice.positive_gap" and again.details[gap] <= 0:
-                    continue
-            found[count] = n
-            break
-    return found or None
 
 
 def created_at(folder):
@@ -238,17 +216,19 @@ class Service:
             return 422, failure(exc.rule_id, exc.message, exc.details, stage="input")
         params = design.parameters
         body = dict(revision=params["revision"], request=design.request, size=size_of(params))
+        size_key = "inner_mm" if "inner_mm" in design.request else "outer_mm"
         try:
             derived = generate_spec.derive(params)
         except ParameterError as exc:
             return 422, {**failure(exc.rule_id, str(exc), exc.details, stage="geometry",
-                                   suggestion=lattice_suggestion(params, exc)), **body}
+                                   suggestion=suggest(params, exc, size_key)), **body}
         body["assembly"] = assembly(params, derived)
         try:
             spec = generate_spec.build(params)
         except ParameterError as exc:
             # Layout limits leave the front view valid, so the page can still draw it.
-            return 422, {**failure(exc.rule_id, str(exc), exc.details, stage="nesting"), **body}
+            return 422, {**failure(exc.rule_id, str(exc), exc.details, stage="nesting",
+                                   suggestion=suggest(params, exc, size_key)), **body}
         return 200, dict(status="RESOLVED_NOT_DXF_VALIDATED", **body, derived=spec["derived"],
                          nesting=nesting(params, spec), same_revision=self.same_revision(params["revision"]))
 

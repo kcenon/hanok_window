@@ -39,7 +39,7 @@ LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하�
 ```text
 hanok_window/
 ├── README.md                  이 문서
-├── generator/                 한옥 창호 생성기 0.4.0 (생성 엔진 0.2.0). 새 설계는 여기서
+├── generator/                 한옥 창호 생성기 0.4.1 (생성 엔진 0.2.0). 새 설계는 여기서
 │   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
 │   ├── web-start.command      Finder에서 두 번 누르면 켜기
@@ -47,7 +47,7 @@ hanok_window/
 │   ├── mcp.sh                 LLM 클라이언트에 등록하는 MCP 서버
 │   ├── hanok_generator/       파이썬 패키지: 엔진, 명령줄, 웹 화면, LLM 도구
 │   ├── examples/              입력 예제 5종과 생성 결과
-│   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, R3 기준값
+│   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, MCP SDK 확인, R3 기준값
 │   ├── docs/CHANGELOG.md      버전별 구현·검증 기록
 │   └── output/                생성한 패키지 (git에 넣지 않음)
 └── r3_reference/              확정 설계 R3 원본 (수정 금지)
@@ -92,6 +92,7 @@ hanok_window/
 | `v0.3.0` | 로컬 웹 화면 |
 | `v0.3.1` | 웹 서버를 켜고 끄는 `web.sh` |
 | `v0.4.0` | LLM 도구 7개, MCP 서버, 함수 호출 정의 |
+| `v0.4.1` | 고침 제안 확대(웹 화면·LLM), 패키지 파일 읽기 도구, MCP 동시 처리·진행 알림·취소, 결과 스키마 |
 
 - `from_codex/`: PORTRAIT_DL_R1. 창살 패턴은 지금과 같지만 규격을 손으로 관리하던 버전입니다. 계획서 원본(`01_prompt/`)이 병합 계획서의 뼈대가 되었습니다.
 - `from_claude/`: 창살 세로 1 + 가로 5 안. 2026-09-10에 세로 2 + 가로 4로 확정하면서 채택하지 않았습니다. 중앙 맞댐부에 반턱을 넣지 않는 이유 같은 고유 내용은 병합 계획서에 흡수했습니다.

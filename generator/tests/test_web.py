@@ -199,10 +199,81 @@ class WebApiTests(unittest.TestCase):
         # size is still resolved so the page can switch between outer and inner.
         status, _, body = self.call("POST", "/api/preview", request(outer_mm=[300, 300], bars=(5, 4)))
         self.assertAlmostEqual(body["details"]["horizontal"], -0.75)
-        self.assertEqual((body["suggestion"], body["size"]["inner_mm"]), ({"vertical_per_leaf": 4}, [220, 220]))
+        self.assertEqual((body["suggestion"]["vertical_per_leaf"], body["size"]["inner_mm"]), (4, [220, 220]))
+        self.assertIn("width_at_least", body["suggestion"]["outer_mm"])
         # A layout failure keeps the front view so the page can still draw it.
         status, _, body = self.call("POST", "/api/preview", request(stock_mm=[1220, 150, 20]))
         self.assertEqual((body["stage"], len(body["assembly"]["parts"])), ("nesting", 24))
+
+    def test_suggestions_clear_the_rule_they_answer(self):
+        def each_change(data, suggestion):
+            """(what changed, request) for every suggested value, each applied to its own copy."""
+            for key, value in suggestion.items():
+                if key in ("vertical_per_leaf", "horizontal_per_leaf"):
+                    changed = json.loads(json.dumps(data))
+                    changed["lattice_per_leaf"][key == "horizontal_per_leaf"] = value
+                    yield key, changed
+                    continue
+                for bound, amount in value.items():
+                    changed = json.loads(json.dumps(data))
+                    if key in ("outer_mm", "inner_mm"):
+                        changed[key][bound.startswith("height")] = amount
+                    elif key == "picture" and bound == "margin_at_most":
+                        changed["picture"]["margin_mm"] = amount
+                    elif key == "picture":
+                        changed["picture"]["size_mm"][bound.startswith("height")] = amount
+                    else:
+                        changed.setdefault("stock_mm", [1220, 900, 20])[bound.startswith("width")] = amount
+                    yield f"{key}.{bound}", changed
+
+        cases = [
+            ("opening.positive_size", request(outer_mm=[100, 586])),
+            ("lattice.positive_gap", request(outer_mm=[300, 300], bars=(5, 4))),
+            ("leaf.aspect_ratio", dict(R3, outer_mm=[600, 586])),
+            ("leaf.aspect_ratio", dict(type="double", inner_mm=[520, 506], lattice_per_leaf=[2, 4],
+                                       preset="hanok_A3_portrait_R3")),
+            ("hardware.reference_spacing", request(outer_mm=[463, 200])),
+            ("picture.fits_width", request(picture=dict(size_mm=[500, 500]))),
+            ("nesting.part_fits_stock", request(outer_mm=[900, 1500])),
+            ("nesting.board_width", request(stock_mm=[1220, 150, 20])),
+        ]
+        # Every suggested value, applied on its own, makes the engine stop reporting that rule.
+        for rule, data in cases:
+            with self.subTest(rule=rule, data=str(data)):
+                body = self.call("POST", "/api/preview", data)[2]
+                self.assertEqual(body["rule_id"], rule)
+                changes = list(each_change(data, body["suggestion"]))
+                self.assertTrue(changes, body)
+                for what, changed in changes:
+                    status, _, again = self.call("POST", "/api/preview", changed)
+                    self.assertTrue(status == 200 or again["rule_id"] != rule, (what, changed, again.get("details")))
+        # An inner-size request gets inner sizes back.
+        self.assertEqual(set(self.call("POST", "/api/preview", cases[3][1])[2]["suggestion"]), {"inner_mm"})
+
+    @unittest.skipUnless(shutil.which("node"), "node is not installed")
+    def test_page_words_the_suggested_values(self):
+        runner = """
+import { describeError } from "./messages.js";
+let input = "";
+for await (const chunk of process.stdin) input += chunk;
+process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeError(body).text)));
+"""
+        bodies = [self.call("POST", "/api/preview", data)[2] for data in (
+            dict(R3, outer_mm=[600, 586]), request(outer_mm=[463, 200]), request(stock_mm=[1220, 150, 20]))]
+        with tempfile.TemporaryDirectory() as tmp:
+            shutil.copy(STATIC / "messages.js", tmp)
+            Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
+            Path(tmp, "run.js").write_text(runner, encoding="utf-8")
+            p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(bodies), capture_output=True,
+                               text=True, timeout=60)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        aspect, hinge, board = json.loads(p.stdout)
+        size = bodies[0]["suggestion"]["outer_mm"]
+        self.assertIn(f"외경 가로를 {size['width_at_most']} mm 이하로 줄이거나 외경 세로를 "
+                      f"{size['height_at_least']} mm 이상으로 늘리세요.", aspect)
+        self.assertIn(f"외경 세로를 {bodies[1]['suggestion']['outer_mm']['height_at_least']} mm 이상으로 늘리세요.", hinge)
+        self.assertIn(f"원판 폭을 {bodies[2]['suggestion']['stock_mm']['width_at_least']} mm 이상으로 늘리거나 "
+                      "창살을 줄이세요.", board)
 
     def test_request_limits_and_same_origin(self):
         port = self.server.port

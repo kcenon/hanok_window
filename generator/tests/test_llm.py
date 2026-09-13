@@ -1,5 +1,6 @@
-"""LLM tools: definitions for every format, canonical requests, tool results, the CLI runner, the MCP stdio
-server (handshake, version negotiation, tool calls, error codes, image content) and process isolation."""
+"""LLM tools: definitions for every format (with output schemas), canonical requests, tool results and their
+schemas, fix suggestions, package file reading, the CLI runner, the MCP stdio server (handshake, version
+negotiation, concurrent calls, progress, cancellation, error codes, image content) and process isolation."""
 from __future__ import annotations
 
 import base64
@@ -14,12 +15,12 @@ import unittest
 from hanok_generator.jobs import run_job
 from hanok_generator.llm import FORMATS, Toolbox
 from hanok_generator.llm.mcp import PROTOCOL_VERSIONS
-from hanok_generator.llm.tools import DRAWINGS, EXAMPLES, canonical_request
+from hanok_generator.llm.tools import DRAWINGS, EXAMPLES, MAX_TEXT, canonical_request
 from hanok_generator.package import source_files
 
 ROOT = Path(__file__).parent.parent
 NAMES = ["describe_generator", "check_design", "build_package", "list_packages", "get_package", "verify_package",
-         "get_drawing"]
+         "get_drawing", "read_package_file"]
 PNG = b"\x89PNG\r\n\x1a\n"
 # Fresh interpreter: like the web server, a process that serves tools must never load the builder.
 ISOLATION = """
@@ -49,6 +50,23 @@ def initialize(version):
 INITIALIZED = {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
 
+def conforms(value, schema):
+    """A small JSON Schema check for the keywords the output schemas use: type, properties, required, items."""
+    kinds = schema.get("type")
+    if kinds is not None:
+        simple = {"object": dict, "array": list, "string": str, "boolean": bool, "null": type(None)}
+        allowed = kinds if isinstance(kinds, list) else [kinds]
+        if not any(type(value) is int if kind == "integer" else type(value) in (int, float) if kind == "number"
+                   else type(value) is simple[kind] for kind in allowed):
+            return False
+    if isinstance(value, dict):
+        return all(key in value for key in schema.get("required", [])) and \
+            all(conforms(value[key], sub) for key, sub in schema.get("properties", {}).items() if key in value)
+    if isinstance(value, list) and "items" in schema:
+        return all(conforms(item, schema["items"]) for item in value)
+    return True
+
+
 class ToolboxTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -74,7 +92,7 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual([t["name"] for t in mcp], NAMES)
         for tool in mcp:
             with self.subTest(tool=tool["name"]):
-                self.assertEqual(tool["inputSchema"]["type"], "object")
+                self.assertEqual((tool["inputSchema"]["type"], tool["outputSchema"]["type"]), ("object", "object"))
                 self.assertEqual(tool["annotations"]["readOnlyHint"], tool["name"] != "build_package")
                 # English for every model, and none of the schema constructs some function-calling APIs refuse.
                 text = json.dumps(tool, ensure_ascii=False)
@@ -124,10 +142,18 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual((dense.data["rule_id"], dense.data["where"], dense.data["stage"]),
                          ("lattice.positive_gap", "lattice", "geometry"))
         self.assertIn("vertical_per_leaf", dense.data["suggestion"])
-        self.assertIn("fewer bars", dense.data["hint"])
+        self.assertIn("suggestion gives the largest bar count", dense.data["hint"])
         hinge = self.box.call("check_design", dict(EXAMPLES["double_600_800"], hinge_side="left"))
         self.assertEqual((hinge.is_error, hinge.data["rule_id"]), (True, "input.hinge_side"))
         self.assertIn("double window must not have hinge_side", hinge.data["hint"])
+
+    def test_a_model_can_follow_a_suggestion(self):
+        wide = self.box.call("check_design", dict(EXAMPLES["double_r3"], outer_mm=[600, 586]))
+        self.assertEqual(wide.data["rule_id"], "leaf.aspect_ratio")
+        bounds = wide.data["suggestion"]["outer_mm"]
+        self.assertEqual(set(bounds), {"width_at_most", "height_at_least"})
+        narrower = self.box.call("check_design", dict(EXAMPLES["double_r3"], outer_mm=[bounds["width_at_most"], 586]))
+        self.assertFalse(narrower.is_error, narrower.data)
 
     def test_build_matches_the_cli_package(self):
         self.assertFalse(self.built.is_error, self.built.data)
@@ -137,6 +163,13 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual((data["status"], data["checks"], data["manufacturing_status"]),
                          ("PASS", {"passed": 67, "total": 67}, "PENDING"))
         self.assertEqual((len(data["pending"]), data["drawings"]), (6, list(DRAWINGS)))
+
+    def test_a_build_reports_its_stages(self):
+        stages = []
+        again = self.box.call("build_package", EXAMPLES["double_r3"],
+                              progress=lambda done, total, message: stages.append((done, total)))
+        self.assertEqual((again.data["package_id"], again.data["already_existed"]), (self.built.data["package_id"], True))
+        self.assertEqual(stages, [(0, 3), (1, 3), (2, 3), (3, 3)])
 
     def test_package_tools_accept_an_id_prefix(self):
         package_id = self.built.data["package_id"]
@@ -163,6 +196,43 @@ class ToolboxTests(unittest.TestCase):
                 self.assertEqual((result.is_error, result.data["rule_id"]), (True, rule))
                 self.assertTrue(result.data["hint"])
 
+    def test_read_package_file_in_pages(self):
+        package_id = self.built.data["package_id"]
+        folder = self.output / "packages" / package_id
+        readme = self.box.call("read_package_file", {"package_id": package_id[:8], "path": "README.txt"})
+        self.assertFalse(readme.is_error, readme.data)
+        self.assertEqual((readme.data["text"], readme.data["truncated"], readme.data["next_offset"]),
+                         ((folder / "README.txt").read_text(encoding="utf-8"), False, None))
+        whole = (folder / "design_spec.json").read_text(encoding="utf-8")
+        self.assertGreater(len(whole), MAX_TEXT)
+        first = self.box.call("read_package_file", {"package_id": package_id, "path": "design_spec.json"}).data
+        rest = self.box.call("read_package_file", {"package_id": package_id, "path": "design_spec.json",
+                                                   "offset": first["next_offset"]}).data
+        self.assertEqual((first["truncated"], rest["truncated"], first["text"] + rest["text"]), (True, False, whole))
+        source = self.box.call("read_package_file", {"package_id": package_id, "path": "source/hanok_generator/model.py"})
+        self.assertIn("def resolve", source.data["text"])
+        for arguments, rule in (({"path": "03_assembly_reference.png"}, "tool.arguments"),
+                                ({"path": "window.dxf"}, "tool.arguments"),
+                                ({"path": "notes.txt"}, "package.file_not_found"),
+                                ({"path": "README.txt", "offset": -1}, "tool.arguments")):
+            with self.subTest(arguments=arguments):
+                result = self.box.call("read_package_file", dict(arguments, package_id=package_id))
+                self.assertEqual((result.is_error, result.data["rule_id"]), (True, rule))
+
+    def test_results_match_their_output_schemas(self):
+        package_id = self.built.data["package_id"]
+        calls = [("describe_generator", {}), ("check_design", EXAMPLES["double_r3"]),
+                 ("check_design", dict(EXAMPLES["double_r3"], lattice_per_leaf=[30, 4])),
+                 ("list_packages", {}), ("get_package", {"package_id": package_id}),
+                 ("verify_package", {"package_id": package_id}), ("get_package", {"package_id": "0" * 8}),
+                 ("get_drawing", {"package_id": package_id, "drawing": "nesting"}),
+                 ("read_package_file", {"package_id": package_id, "path": "parts_manifest.csv"})]
+        results = [(name, self.box.call(name, arguments)) for name, arguments in calls]
+        results.append(("build_package", self.built))
+        for name, result in results:
+            with self.subTest(tool=name, error=result.is_error):
+                self.assertTrue(conforms(result.data, self.box.tools[name].output), result.data)
+
     def test_a_failed_build_names_the_failed_checks(self):
         # Passes the pre-check; the saved DXF then shows pockets running into each other (as in the web tests).
         result = self.box.call("build_package", dict(EXAMPLES["double_r3"], lattice_per_leaf=[12, 4]))
@@ -170,6 +240,7 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual(result.data["rule_id"], "geometry.validation")
         self.assertIn("distinct_machining_regions_separated", {c["rule_id"] for c in result.data["validation"]["failed"]})
         self.assertIn("reliefs", result.data["hint"])
+        self.assertTrue(conforms(result.data, self.box.tools["build_package"].output))
 
     def test_bad_calls_come_back_as_results(self):
         with self.assertRaises(KeyError):
@@ -195,7 +266,7 @@ class ToolboxTests(unittest.TestCase):
             self.assertEqual(Path(image["path"]).read_bytes()[:8], PNG)
 
     def test_llm_layer_stays_out_of_packages(self):
-        self.assertFalse([name for name, _ in source_files() if name.startswith("llm/")])
+        self.assertFalse([name for name, _ in source_files() if name.startswith(("llm/", "web/"))])
 
 
 class McpServerTests(unittest.TestCase):
@@ -205,8 +276,8 @@ class McpServerTests(unittest.TestCase):
         self.output = Path(temp.name) / "output"
 
     def session(self, *lines):
-        """Send the lines (dicts and lists as JSON), close stdin, and return every reply; each stdout line must
-        be a JSON-RPC message."""
+        """Send the lines (dicts and lists as JSON), close stdin, and return every message the server wrote;
+        each stdout line must be a JSON-RPC message."""
         text = "".join((line if isinstance(line, str) else json.dumps(line)) + "\n" for line in lines)
         done = subprocess.run([sys.executable, "-m", "hanok_generator.llm.mcp", "--output", str(self.output)],
                               input=text.encode("utf-8"), capture_output=True, timeout=240, cwd=ROOT)
@@ -223,13 +294,16 @@ class McpServerTests(unittest.TestCase):
             "{not json", rpc(8, "tools/call", {"name": "check_design", "arguments": [1]}),
             [rpc(9, "ping"), rpc(10, "ping")])
         self.assertEqual(len(replies), 10)  # no reply to the notification; one list for the batch
-        self.assertEqual([r["id"] for r in replies[-1]], [9, 10])
-        by_id = {r["id"]: r for r in replies[:-1]}
+        batch = next(r for r in replies if isinstance(r, list))
+        self.assertEqual([r["id"] for r in batch], [9, 10])
+        by_id = {r["id"]: r for r in replies if isinstance(r, dict)}
         init = by_id[1]["result"]
         self.assertEqual((init["protocolVersion"], init["serverInfo"]["name"]), ("2025-06-18", "hanok-window"))
         self.assertEqual(init["capabilities"], {"tools": {"listChanged": False}})
-        self.assertIn("check_design", init["instructions"])
-        self.assertEqual([t["name"] for t in by_id[2]["result"]["tools"]], NAMES)
+        self.assertIn("read_package_file", init["instructions"])
+        tools = by_id[2]["result"]["tools"]
+        self.assertEqual([t["name"] for t in tools], NAMES)
+        self.assertTrue(all(t["outputSchema"]["type"] == "object" for t in tools))
         described = by_id[3]["result"]
         self.assertFalse(described["isError"])
         self.assertEqual(json.loads(described["content"][0]["text"]), described["structuredContent"])
@@ -249,17 +323,43 @@ class McpServerTests(unittest.TestCase):
                 # structuredContent came with 2025-06-18; older clients read the text block.
                 self.assertEqual("structuredContent" in replies[1]["result"], expected >= "2025-06-18")
 
-    def test_build_and_look_at_a_drawing(self):
+    def test_ping_is_answered_while_a_build_runs(self):
+        replies = self.session(initialize("2025-11-25"), INITIALIZED,
+                               rpc(2, "tools/call", {"name": "build_package", "arguments": EXAMPLES["single_empty"],
+                                                     "_meta": {"progressToken": "build-1"}}),
+                               rpc(3, "ping"))
+        ids = [r.get("id") for r in replies]
+        built = ids.index(2)
+        self.assertLess(ids.index(3), built)  # the ping did not wait for the build
+        progress = [(i, r["params"]) for i, r in enumerate(replies) if r.get("method") == "notifications/progress"]
+        self.assertEqual([p["progress"] for _, p in progress], [0, 1, 2, 3])
+        self.assertEqual({p["progressToken"] for _, p in progress}, {"build-1"})
+        self.assertLess(progress[-1][0], built)
+        self.assertFalse(replies[built]["result"]["isError"], replies[built]["result"]["content"][0]["text"])
+
+    def test_a_cancelled_call_gets_no_reply(self):
+        replies = self.session(initialize("2025-11-25"), INITIALIZED,
+                               rpc(2, "tools/call", {"name": "build_package", "arguments": EXAMPLES["single_empty"]}),
+                               {"jsonrpc": "2.0", "method": "notifications/cancelled",
+                                "params": {"requestId": 2, "reason": "user stopped it"}},
+                               rpc(3, "ping"))
+        self.assertEqual([r.get("id") for r in replies], [1, 3])
+
+    def test_build_look_and_read_over_stdio(self):
         replies = self.session(initialize("2025-11-25"), INITIALIZED,
                                rpc(2, "tools/call", {"name": "build_package", "arguments": EXAMPLES["single_empty"]}))
         built = replies[1]["result"]
         self.assertFalse(built["isError"], built["content"][0]["text"])
         package_id = built["structuredContent"]["package_id"]
         replies = self.session(initialize("2025-11-25"), INITIALIZED, rpc(2, "tools/call", {
-            "name": "get_drawing", "arguments": {"package_id": package_id[:8], "drawing": "nesting"}}))
-        content = replies[1]["result"]["content"]
+            "name": "get_drawing", "arguments": {"package_id": package_id[:8], "drawing": "nesting"}}),
+            rpc(3, "tools/call", {"name": "read_package_file",
+                                  "arguments": {"package_id": package_id[:8], "path": "parts_manifest.csv"}}))
+        by_id = {r["id"]: r["result"] for r in replies}
+        content = by_id[2]["content"]
         self.assertEqual([c["type"] for c in content], ["text", "image"])
         self.assertEqual((content[1]["mimeType"], base64.b64decode(content[1]["data"])[:8]), ("image/png", PNG))
+        self.assertIn("part_id", by_id[3]["structuredContent"]["text"])
 
 
 class ProcessTests(unittest.TestCase):

@@ -80,56 +80,104 @@ const RULES = {
   "input.preset_type": () => ({ text: "R3 프리셋은 양문 전용입니다. 단문은 standard_v1을 쓰세요.", inputs: ["preset"] }),
   "input.picture": () => ({ text: "그림은 크기와 여유로 지정합니다." }),
   "input.stock_thickness": () => ({ text: "원판 두께는 5–60 mm입니다.", inputs: ["stock-t"] }),
-  "opening.positive_size": (d) => ({
-    text: `창이 작아 창짝 안쪽 개구부가 남지 않습니다(가로 ${fmt(d.width)} mm, 세로 ${fmt(d.height)} mm). 창을 키우세요.`,
+  "opening.positive_size": (d, ctx) => ({
+    text: `창이 작아 창짝 안쪽 개구부가 남지 않습니다(가로 ${fmt(d.width)} mm, 세로 ${fmt(d.height)} mm). `
+      + advise(sizeAdvice(ctx.suggestion), "창을 키우세요."),
     inputs: [d.width <= 0 && "size-w", d.height <= 0 && "size-h"],
   }),
   "lattice.positive_gap": (d, ctx) => {
     // details.horizontal is the gap between vertical bars; details.vertical between horizontal bars.
     const [nv, nh] = ctx.request?.lattice_per_leaf ?? [];
     const hint = ctx.suggestion ?? {};
+    const size = hint.outer_mm ?? hint.inner_mm ?? {};
+    const label = hint.inner_mm ? "내경" : "외경";
     const parts = [];
     const inputs = [];
     if (d.horizontal <= 0) {
       const fewer = hint.vertical_per_leaf != null ? `세로 창살을 ${hint.vertical_per_leaf}개 이하로 줄이거나` : "세로 창살을 줄이거나";
-      parts.push(`세로 창살 ${nv}개를 넣으면 창살 사이 가로 빈칸이 ${fmt(d.horizontal)} mm가 됩니다. ${fewer} 창 가로를 늘리세요.`);
+      const wider = size.width_at_least != null ? `${label} 가로를 ${fmt(size.width_at_least)} mm 이상으로 늘리세요.` : "창 가로를 늘리세요.";
+      parts.push(`세로 창살 ${nv}개를 넣으면 창살 사이 가로 빈칸이 ${fmt(d.horizontal)} mm가 됩니다. ${fewer} ${wider}`);
       inputs.push("lat-v");
     }
     if (d.vertical <= 0) {
       const fewer = hint.horizontal_per_leaf != null ? `가로 창살을 ${hint.horizontal_per_leaf}개 이하로 줄이거나` : "가로 창살을 줄이거나";
-      parts.push(`가로 창살 ${nh}개를 넣으면 창살 사이 세로 빈칸이 ${fmt(d.vertical)} mm가 됩니다. ${fewer} 창 세로를 늘리세요.`);
+      const taller = size.height_at_least != null ? `${label} 세로를 ${fmt(size.height_at_least)} mm 이상으로 늘리세요.` : "창 세로를 늘리세요.";
+      parts.push(`가로 창살 ${nh}개를 넣으면 창살 사이 세로 빈칸이 ${fmt(d.vertical)} mm가 됩니다. ${fewer} ${taller}`);
       inputs.push("lat-h");
     }
     return { text: parts.join(" "), inputs };
   },
-  "leaf.aspect_ratio": (d) => ({
-    text: `창짝 높이/폭이 ${fmt(d.measured)}로 ${fmt(d.minimum)}보다 작습니다. 창 가로를 줄이거나 세로를 늘리세요.`,
+  "leaf.aspect_ratio": (d, ctx) => ({
+    text: `창짝 높이/폭이 ${fmt(d.measured)}로 ${fmt(d.minimum)}보다 작습니다. `
+      + advise(sizeAdvice(ctx.suggestion), "창 가로를 줄이거나 세로를 늘리세요."),
     inputs: ["size-w", "size-h"],
   }),
-  "hardware.reference_spacing": (d) => ({
-    text: `창짝 높이 ${fmt(d.leaf_height)} mm에서는 경첩 두 개가 겹칩니다. 창짝 높이가 ${fmt(d.required_greater_than)} mm보다 커지도록 창 세로를 늘리세요.`,
+  "hardware.reference_spacing": (d, ctx) => ({
+    text: `창짝 높이 ${fmt(d.leaf_height)} mm에서는 경첩 두 개가 겹칩니다. `
+      + advise(sizeAdvice(ctx.suggestion), `창짝 높이가 ${fmt(d.required_greater_than)} mm보다 커지도록 창 세로를 늘리세요.`),
     inputs: ["size-h"],
   }),
-  "picture.fits_width": (d) => ({
-    text: `그림 가로와 양쪽 여유를 합친 ${fmt(d.required)} mm가 그림 기준영역 가로 ${fmt(d.available)} mm보다 큽니다. 그림이나 여유를 줄이거나 창을 키우세요.`,
+  "picture.fits_width": (d, ctx) => ({
+    text: `그림 가로와 양쪽 여유를 합친 ${fmt(d.required)} mm가 그림 기준영역 가로 ${fmt(d.available)} mm보다 큽니다. `
+      + advise([...pictureAdvice(ctx.suggestion), ...sizeAdvice(ctx.suggestion)], "그림이나 여유를 줄이거나 창을 키우세요."),
     inputs: ["pic-w", "pic-m"],
   }),
-  "picture.fits_height": (d) => ({
-    text: `그림 세로와 위아래 여유를 합친 ${fmt(d.required)} mm가 그림 기준영역 세로 ${fmt(d.available)} mm보다 큽니다. 그림이나 여유를 줄이거나 창을 키우세요.`,
+  "picture.fits_height": (d, ctx) => ({
+    text: `그림 세로와 위아래 여유를 합친 ${fmt(d.required)} mm가 그림 기준영역 세로 ${fmt(d.available)} mm보다 큽니다. `
+      + advise([...pictureAdvice(ctx.suggestion), ...sizeAdvice(ctx.suggestion)], "그림이나 여유를 줄이거나 창을 키우세요."),
     inputs: ["pic-h", "pic-m"],
   }),
-  "nesting.part_fits_stock": (d) => {
+  "nesting.part_fits_stock": (d, ctx) => {
     const kind = KIND[String(d.part_id).split("-")[0]] ?? "부품";
-    return d.part?.[0] > d.usable?.[0]
-      ? { text: `${kind} ${d.part_id}의 길이 ${fmt(d.part[0])} mm가 원판에서 쓸 수 있는 길이 ${fmt(d.usable[0])} mm보다 깁니다. 원판 길이를 늘리거나 창을 줄이세요.`, inputs: ["stock-l"] }
-      : { text: `${kind} ${d.part_id}의 폭 ${fmt(d.part?.[1])} mm가 원판에서 쓸 수 있는 폭 ${fmt(d.usable?.[1])} mm보다 넓습니다. 원판 폭을 늘리세요.`, inputs: ["stock-w"] };
+    const long = d.part?.[0] > d.usable?.[0];
+    const problem = long
+      ? `${kind} ${d.part_id}의 길이 ${fmt(d.part[0])} mm가 원판에서 쓸 수 있는 길이 ${fmt(d.usable[0])} mm보다 깁니다. `
+      : `${kind} ${d.part_id}의 폭 ${fmt(d.part?.[1])} mm가 원판에서 쓸 수 있는 폭 ${fmt(d.usable?.[1])} mm보다 넓습니다. `;
+    const options = [...stockAdvice(ctx.suggestion), ...sizeAdvice(ctx.suggestion)];
+    return { text: problem + advise(options, long ? "원판 길이를 늘리거나 창을 줄이세요." : "원판 폭을 늘리세요."),
+             inputs: [long ? "stock-l" : "stock-w"] };
   },
-  "nesting.board_width": (d) => ({
-    text: `부품을 원판 한 장에 모두 놓을 수 없습니다. 배치 높이 ${fmt(d.top)} mm가 한도 ${fmt(d.limit)} mm(원판 폭 − 가장자리 여유)를 넘습니다. 원판 폭을 늘리거나 창살을 줄이세요.`,
+  "nesting.board_width": (d, ctx) => ({
+    text: `부품을 원판 한 장에 모두 놓을 수 없습니다. 배치 높이 ${fmt(d.top)} mm가 한도 ${fmt(d.limit)} mm(원판 폭 − 가장자리 여유)를 넘습니다. `
+      + advise([...stockAdvice(ctx.suggestion), "창살을 줄이"], "원판 폭을 늘리거나 창살을 줄이세요."),
     inputs: ["stock-w"],
   }),
   "build.queue_full": () => ({ text: "생성 대기열이 가득 찼습니다. 진행 중인 생성이 끝난 뒤 다시 누르세요." }),
 };
+
+// The server's `suggestion` names the request field to change and a bound the engine accepts, e.g.
+// {"outer_mm": {"width_at_most": 473}}. Each option is a verb stem; advise() joins them as choices.
+const BOUNDS = [
+  ["width_at_least", "가로", "이상으로 늘리"], ["width_at_most", "가로", "이하로 줄이"],
+  ["height_at_least", "세로", "이상으로 늘리"], ["height_at_most", "세로", "이하로 줄이"],
+];
+
+function sizeAdvice(suggestion) {
+  const key = suggestion?.outer_mm ? "outer_mm" : suggestion?.inner_mm ? "inner_mm" : null;
+  if (!key) return [];
+  const label = BASIS[key === "outer_mm" ? "outer" : "inner"];
+  return BOUNDS.filter(([bound]) => suggestion[key][bound] != null)
+    .map(([bound, side, verb]) => `${label} ${side}를 ${fmt(suggestion[key][bound])} mm ${verb}`);
+}
+
+function pictureAdvice(suggestion) {
+  const picture = suggestion?.picture ?? {};
+  return [["width_at_most", "그림 가로를"], ["height_at_most", "그림 세로를"], ["margin_at_most", "그림 여유를"]]
+    .filter(([bound]) => picture[bound] != null)
+    .map(([bound, what]) => `${what} ${fmt(picture[bound])} mm 이하로 줄이`);
+}
+
+function stockAdvice(suggestion) {
+  const stock = suggestion?.stock_mm ?? {};
+  return [["length_at_least", "원판 길이를"], ["width_at_least", "원판 폭을"]]
+    .filter(([bound]) => stock[bound] != null)
+    .map(([bound, what]) => `${what} ${fmt(stock[bound])} mm 이상으로 늘리`);
+}
+
+// ["가로를 473 mm 이하로 줄이", "세로를 751 mm 이상으로 늘리"] -> "…줄이거나 …늘리세요."
+function advise(options, fallback) {
+  return options.length ? `${options.join("거나 ")}세요.` : fallback;
+}
 
 export function describeError(body, ctx = {}) {
   const rule = body?.rule_id ?? "unknown";

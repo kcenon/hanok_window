@@ -158,8 +158,8 @@
     },
     {
       "path": "02_cnc/requirements.txt",
-      "bytes": 405,
-      "sha256": "1294bacbb98c21908e4405e8ff2b2ce56a957b6cb52ea48472678da91214561d"
+      "bytes": 669,
+      "sha256": "ca6aebcbfef133393093b07e29cf674da65d78462e6c7f5cd56a6bd221033cc0"
     },
     {
       "path": "02_cnc/validation_report.json",

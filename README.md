@@ -41,7 +41,7 @@ LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하�
 hanok_window/
 ├── README.md                  이 문서
 ├── LICENSE                    MIT 라이선스
-├── generator/                 한옥 창호 생성기 0.4.1 (생성 엔진 0.2.0). 새 설계는 여기서
+├── generator/                 한옥 창호 생성기 0.4.2 (생성 엔진 0.2.0). 새 설계는 여기서
 │   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
 │   ├── web-start.command      Finder에서 두 번 누르면 켜기

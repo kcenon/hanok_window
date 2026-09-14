@@ -243,3 +243,30 @@ generator README에 LLM 연동 절(도구 표, MCP 등록, 함수 호출, 파이
 | 현재 파일 | main의 트리 해시가 다시 쓰기 전과 같다 |
 | 보존 | 커밋 18개의 작성자·날짜·메시지와 태그 8개의 메시지. `r3_reference/`(옛 `unified/`) 파일은 바뀌지 않았다 |
 | 비밀값 | 모든 커밋에서 키·토큰·비밀번호 패턴 0건, 본문의 이메일 주소 0건 |
+
+## 0.4.2 수정: package_id를 바꾸지 않는 Windows 호환
+
+2026-09-14. 한국어 로캘(cp949) Windows에서 저장소를 받고 시험을 돌릴 수 있게 했다([#3](https://github.com/kcenon/hanok_window/issues/3)). Windows 호환을 세 단계(#3~#5)로 나눈 계획의 첫 단계로, 패키지 `source/`에 들어가는 파일(최상위 모듈·`engine/`·`presets/`·스키마)은 고치지 않았다. 그래서 모든 package_id가 그대로다. 배포 버전은 `environment.json`에 들어가지 않으므로 0.4.2로 올려도 package_id는 바뀌지 않고, 엔진 `__version__`은 0.2.0 그대로다.
+
+| 파일 | 내용 |
+|---|---|
+| `.gitattributes` (새 파일) | 글 파일을 모든 OS에서 LF로 받는다. `r3_reference/`는 `-text`로 두어 CRLF로 커밋된 R3 CSV 4개까지 바이트 그대로 받는다. 이 파일이 없으면 Git for Windows 기본값(`core.autocrlf=true`)이 LF 파일을 CRLF로 받아, R3 원본 SHA-256 대조와 소스 해시 대조가 실패했다 |
+| `tests/test_web.py` | fcntl을 쓰는 `web.control`은 POSIX에서만 불러온다. 그전에는 Windows에서 웹 시험이 import 단계에서 멈춰 하나도 돌지 않았다. 하위 프로세스 출력 6곳을 UTF-8로 읽는다 |
+| `tests/test_llm.py` | 하위 프로세스 출력 3곳을 UTF-8로 읽는다 |
+| `tests/test_generator.py` | 하위 프로세스 출력 3곳, 파일 읽기 9곳, 파일 쓰기 2곳에 UTF-8을 지정한다. 스크립트로 실행할 때 쓰는 `results.json`은 UTF-8·LF 바이트로 쓴다 |
+| `llm/__main__.py` | `hanok-window-llm`의 표준 입력·출력·오류를 UTF-8로 바꾼다. 그전에는 파이프로 받은 JSON이 cp949로 나왔다 |
+| `llm/tools.py` | 모델에게 주는 문구 두 곳(`build_package` 설명, `describe_generator`의 workflow). package_id는 같은 실행 환경에서만 같고, 같은 설계인지는 `check_design`·`get_package`의 `revision`으로 비교하라고 적었다 |
+| `.github/workflows/tests.yml` (새 파일) | pull request와 main push에서 ubuntu·macOS로 세 시험을 돌리고, 시험 뒤 추적 파일이 바뀌지 않았는지 `git diff --exit-code`로 확인한다. 가상환경을 `generator/.venv`에 만들어 `web.sh` 시험도 돈다 |
+| `README.md`, 저장소 `README.md`, `docs/manual/README.md` | Windows 설치·웹 화면·MCP 등록·시험 안내, package_id가 같은 범위 |
+| `pyproject.toml` | 0.4.2 |
+
+엔진이 인코딩을 지정하지 않고 파일을 읽고 쓰는 곳(`model.py` 등)은 고치면 모든 package_id가 한 번 바뀌므로 [#4](https://github.com/kcenon/hanok_window/issues/4)(엔진 0.3.0)로 넘겼다. 그때까지 Windows에서는 `PYTHONUTF8=1`이 필요하고, 엔진이 README를 CRLF로 쓰므로 `test_llm.py`의 `test_read_package_file_in_pages` 1개가 실패한다. Windows CI도 #4에서 켠다.
+package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브러리 버전, 소스 해시)을 담으므로 실행 환경이 같을 때만 같다. OS와 무관하게 같은 설계인지는 `revision`으로 본다. 이 뜻으로 이슈 #3의 할 일 목록에 없던 곳도 고쳤다: `build_package` 설명의 “The same request always yields the same package_id”, 설명서 준비물 표의 컴퓨터 줄(macOS만 적혀 있었다), 설명서 패키지 생성 절의 “같은 입력은 언제나 같은 패키지 ID”.
+
+| 확인 | 결과 |
+|---|---|
+| package_id 경계 | main과 다른 파일에 `package.source_files()`가 모으는 파일이 없다 |
+| 줄 끝 | `.gitattributes`를 넣고 다시 받은 뒤 `git status`가 깨끗하고, `git add --renormalize .`가 아무것도 올리지 않으며, 작업 트리가 CRLF인 파일은 R3 CSV 4개뿐이다 |
+| Windows 시험 | Windows 11 한국어 로캘, CPython 3.11.15, `PYTHONUTF8=1`. 생성기 14개 PASS(199.4초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 16.7초), LLM 21개 중 20개 PASS·1개 실패(`test_read_package_file_in_pages`, 19.0초). 시험 뒤 추적 파일은 바뀌지 않았다 |
+| package_id 불변 | 같은 PC에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `669c09fb…`다. macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
+| macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고, 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로 바뀌지 않는다 |

@@ -56,7 +56,7 @@
    .venv/bin/hanok-window --help
    ```
 
-`requirements.lock`은 CPython 3.11.15, macOS arm64에서 검증한 버전 목록입니다. 저장소를 새 버전으로 받은 뒤에는 3번의 두 번째 줄(`pip install -e .`)을 다시 실행해야 화면에 새 버전이 표시됩니다.
+`requirements.lock`은 CPython 3.11.15, Windows 11(AMD64)에서 검증한 버전 목록입니다. 저장소를 새 버전으로 받은 뒤에는 3번의 두 번째 줄(`pip install -e .`)을 다시 실행해야 화면에 새 버전이 표시됩니다.
 
 ## 켜고 끄기
 

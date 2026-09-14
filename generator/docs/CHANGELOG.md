@@ -256,6 +256,7 @@ generator README에 LLM 연동 절(도구 표, MCP 등록, 함수 호출, 파이
 | `tests/test_generator.py` | 하위 프로세스 출력 3곳, 파일 읽기 9곳, 파일 쓰기 2곳에 UTF-8을 지정한다. 스크립트로 실행할 때 쓰는 `results.json`은 UTF-8·LF 바이트로 쓴다 |
 | `llm/__main__.py` | `hanok-window-llm`의 표준 입력·출력·오류를 UTF-8로 바꾼다. 그전에는 파이프로 받은 JSON이 cp949로 나왔다 |
 | `llm/tools.py` | 모델에게 주는 문구 두 곳(`build_package` 설명, `describe_generator`의 workflow). package_id는 같은 실행 환경에서만 같고, 같은 설계인지는 `check_design`·`get_package`의 `revision`으로 비교하라고 적었다 |
+| `web/server.py` | 서버를 열 때 `127.0.0.1`의 역방향 이름 조회(`socket.getfqdn`)를 하지 않는다. `http.server`가 `server_name`을 채우려고 하는 조회인데 이 저장소는 그 값을 쓰지 않는다. GitHub macOS 러너(macos-26)에서 setup-python이 설치한 Python 3.11은 이 조회에 프로세스마다 30초 넘게 걸려, 서버가 `web.sh start`의 20초 제한 안에 응답하지 못했다 |
 | `.github/workflows/tests.yml` (새 파일) | pull request와 main push에서 ubuntu·macOS로 세 시험을 돌리고, 시험 뒤 추적 파일이 바뀌지 않았는지 `git diff --exit-code`로 확인한다. 가상환경을 `generator/.venv`에 만들어 `web.sh` 시험도 돈다 |
 | `README.md`, 저장소 `README.md`, `docs/manual/README.md` | Windows 설치·웹 화면·MCP 등록·시험 안내, package_id가 같은 범위 |
 | `requirements.lock` | Pillow를 `pyproject.toml`과 같은 12.3.0으로 맞췄다. PR #2가 `pyproject.toml`만 올려 둘이 어긋났고, `uv pip install -r requirements.lock -e .`가 해를 찾지 못했다. 이 파일은 패키지에 들어가지 않으므로 package_id와 무관하다. Pillow 12.3.0은 아직 macOS에서 돌려 보지 않았으므로, 이 파일 첫 줄과 `README.md`·`docs/manual/README.md`에 적힌 검증 환경은 실제로 확인한 Windows로 고쳤다 |

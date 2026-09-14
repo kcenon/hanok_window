@@ -27,6 +27,10 @@ def save_images(outcome, name, folder):
 
 
 def main(argv=None):
+    # Pipes default to the locale encoding (cp949 on Korean Windows); callers read this JSON as UTF-8.
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(prog="hanok-window-llm",
                                      description="LLM에 넘길 도구 정의를 출력하거나, 모델이 요청한 도구 하나를 실행합니다.")
     commands = parser.add_subparsers(dest="command", required=True)

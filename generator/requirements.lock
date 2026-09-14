@@ -1,7 +1,7 @@
-# Verified on CPython 3.11.15, macOS arm64. Runtime dependencies.
+# Verified with CPython 3.11 on Windows 11 AMD64 and the ubuntu-24.04 and macos-26 arm64 CI runners. Runtime dependencies.
 ezdxf==1.4.2
 shapely==2.0.7
-Pillow==11.3.0
+Pillow==12.3.0
 numpy==2.4.6
 fonttools==4.65.0
 pyparsing==3.3.2

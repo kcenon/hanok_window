@@ -26,8 +26,10 @@ import zipfile
 from hanok_generator import __version__, cli, web
 from hanok_generator.jobs import run_job
 from hanok_generator.package import digest, source_files
-from hanok_generator.web.control import Record
 from hanok_generator.web.server import Handler, make_server
+
+if os.name == "posix":  # web.control imports fcntl; only BackgroundServerTests use it, and they skip elsewhere
+    from hanok_generator.web.control import Record
 
 HERE = Path(__file__).parent
 STATIC = Path(web.__file__).parent / "static"
@@ -265,7 +267,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
             Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
             Path(tmp, "run.js").write_text(runner, encoding="utf-8")
             p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(bodies), capture_output=True,
-                               text=True, timeout=60)
+                               text=True, encoding="utf-8", timeout=60)
         self.assertEqual(p.returncode, 0, p.stderr)
         aspect, hinge, board = json.loads(p.stdout)
         size = bodies[0]["suggestion"]["outer_mm"]
@@ -306,7 +308,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
     def test_server_process_never_imports_the_builder(self):
         env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
         p = subprocess.run([sys.executable, "-c", ISOLATION, json.dumps(R3)], cwd=HERE.parent, env=env,
-                           capture_output=True, text=True, timeout=300)
+                           capture_output=True, text=True, encoding="utf-8", timeout=300)
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertEqual(json.loads(p.stdout), dict(preview=200, build="passed", builder=False, ezdxf=False))
 
@@ -456,7 +458,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
             Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
             Path(tmp, "run.js").write_text(NODE_RUNNER, encoding="utf-8")
             p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(dict(meta=meta, requests=requests, forms=[typed])),
-                               capture_output=True, text=True, timeout=60)
+                               capture_output=True, text=True, encoding="utf-8", timeout=60)
         self.assertEqual(p.returncode, 0, p.stderr)
         out = json.loads(p.stdout)
         exact = lambda value: json.dumps(value, sort_keys=True)  # 463 and 463.0 differ here
@@ -505,7 +507,7 @@ class BackgroundServerTests(unittest.TestCase):
 
     def control(self, *args, env=None):
         return subprocess.run([sys.executable, "-m", "hanok_generator.web.control", *args, "--output", str(self.output)],
-                              cwd=HERE.parent, env=env, capture_output=True, text=True, timeout=240)
+                              cwd=HERE.parent, env=env, capture_output=True, text=True, encoding="utf-8", timeout=240)
 
     def recorded_pid(self):
         return json.loads(self.record.path.read_text(encoding="utf-8"))["pid"]
@@ -590,7 +592,7 @@ class BackgroundServerTests(unittest.TestCase):
 
         def run(name, *args):  # Finder runs a .command from the home folder, not from generator/
             return subprocess.run([str(root / name), *args, "--output", str(self.output)], cwd=self.output,
-                                  capture_output=True, text=True, timeout=240)
+                                  capture_output=True, text=True, encoding="utf-8", timeout=240)
 
         started = run("web-start.command", "--port", str(self.port), "--no-open")
         self.assertEqual(started.returncode, 0, started.stderr)
@@ -598,7 +600,7 @@ class BackgroundServerTests(unittest.TestCase):
         stopped = run("web-stop.command")
         self.assertEqual(stopped.returncode, 0, stopped.stderr)
         self.assertTrue(stopped.stdout.endswith("껐습니다.\n"), stopped.stdout)
-        usage = subprocess.run([str(root / "web.sh")], capture_output=True, text=True, timeout=60)
+        usage = subprocess.run([str(root / "web.sh")], capture_output=True, text=True, encoding="utf-8", timeout=60)
         self.assertEqual(usage.returncode, 0, usage.stderr)
         self.assertIn("start", usage.stdout)
 

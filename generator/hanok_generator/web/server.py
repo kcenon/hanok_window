@@ -6,6 +6,7 @@ from importlib.resources import files
 import json
 from pathlib import PurePosixPath
 import re
+import socketserver
 import traceback
 from urllib.parse import unquote, urlsplit
 
@@ -241,6 +242,12 @@ class WebServer(ThreadingHTTPServer):
         self.allowed_hosts = {f"{name}:{self.port}" for name in LOOPBACK_NAMES}
         if self.port == 80:
             self.allowed_hosts.update(LOOPBACK_NAMES)
+
+    def server_bind(self):
+        # HTTPServer.server_bind() also sets server_name from socket.getfqdn(host). On the GitHub macOS runner
+        # that reverse lookup of 127.0.0.1 takes over 30 s per process, and nothing here reads server_name.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
     def close(self):
         """Refuse new connections, then wait for running builds and cancel waiting ones."""

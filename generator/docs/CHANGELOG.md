@@ -243,3 +243,33 @@ generator README에 LLM 연동 절(도구 표, MCP 등록, 함수 호출, 파이
 | 현재 파일 | main의 트리 해시가 다시 쓰기 전과 같다 |
 | 보존 | 커밋 18개의 작성자·날짜·메시지와 태그 8개의 메시지. `r3_reference/`(옛 `unified/`) 파일은 바뀌지 않았다 |
 | 비밀값 | 모든 커밋에서 키·토큰·비밀번호 패턴 0건, 본문의 이메일 주소 0건 |
+
+## 0.4.2 수정: package_id를 바꾸지 않는 Windows 호환
+
+2026-09-14. 한국어 로캘(cp949) Windows에서 저장소를 받고 시험을 돌릴 수 있게 했다([#3](https://github.com/kcenon/hanok_window/issues/3)). Windows 호환을 세 단계(#3~#5)로 나눈 계획의 첫 단계로, 패키지 `source/`에 들어가는 파일(최상위 모듈·`engine/`·`presets/`·스키마)은 고치지 않았다. 그래서 이 버전의 코드 변경은 package_id를 바꾸지 않는다. 배포 버전은 `environment.json`에 들어가지 않으므로 0.4.2로 올려도 package_id는 바뀌지 않고, 엔진 `__version__`은 0.2.0 그대로다. 다만 0.4.1 뒤에 병합된 [PR #2](https://github.com/kcenon/hanok_window/pull/2)가 Pillow를 11.3.0에서 12.3.0으로 올렸다. Pillow 12.3.0은 도면 PNG를 다른 바이트로 그리고, 패키지는 설치된 라이브러리 버전을 `environment.json` 등에 적는다. 그래서 새로 설치한 환경의 package_id는 Pillow 11.3.0으로 만든 0.4.1 패키지와 다르다. 이 차이는 PR #2 병합 때 생겼고 이 버전의 코드 변경과는 무관하다.
+
+| 파일 | 내용 |
+|---|---|
+| `.gitattributes` (새 파일) | 글 파일을 모든 OS에서 LF로 받는다. `r3_reference/`는 `-text`로 두어 CRLF로 커밋된 R3 CSV 4개까지 바이트 그대로 받는다. 이 파일이 없으면 Git for Windows 기본값(`core.autocrlf=true`)이 LF 파일을 CRLF로 받아, R3 원본 SHA-256 대조와 소스 해시 대조가 실패했다 |
+| `tests/test_web.py` | fcntl을 쓰는 `web.control`은 POSIX에서만 불러온다. 그전에는 Windows에서 웹 시험이 import 단계에서 멈춰 하나도 돌지 않았다. 하위 프로세스 출력 6곳을 UTF-8로 읽는다 |
+| `tests/test_llm.py` | 하위 프로세스 출력 3곳을 UTF-8로 읽는다 |
+| `tests/test_generator.py` | 하위 프로세스 출력 3곳, 파일 읽기 9곳, 파일 쓰기 2곳에 UTF-8을 지정한다. 스크립트로 실행할 때 쓰는 `results.json`은 UTF-8·LF 바이트로 쓴다 |
+| `llm/__main__.py` | `hanok-window-llm`의 표준 입력·출력·오류를 UTF-8로 바꾼다. 그전에는 파이프로 받은 JSON이 cp949로 나왔다 |
+| `llm/tools.py` | 모델에게 주는 문구 두 곳(`build_package` 설명, `describe_generator`의 workflow). package_id는 같은 실행 환경에서만 같고, 같은 설계인지는 `check_design`·`get_package`의 `revision`으로 비교하라고 적었다 |
+| `web/server.py` | 서버를 열 때 `127.0.0.1`의 역방향 이름 조회(`socket.getfqdn`)를 하지 않는다. `http.server`가 `server_name`을 채우려고 하는 조회인데 이 저장소는 그 값을 쓰지 않는다. GitHub macOS 러너(macos-26)에서 setup-python이 설치한 Python 3.11은 이 조회에 프로세스마다 30초 넘게 걸려, 서버가 `web.sh start`의 20초 제한 안에 응답하지 못했다 |
+| `.github/workflows/tests.yml` (새 파일) | pull request와 main push에서 ubuntu·macOS로 세 시험을 돌리고, 시험 뒤 추적 파일이 바뀌지 않았는지 `git diff --exit-code`로 확인한다. 가상환경을 `generator/.venv`에 만들어 `web.sh` 시험도 돈다 |
+| `README.md`, 저장소 `README.md`, `docs/manual/README.md` | Windows 설치·웹 화면·MCP 등록·시험 안내, package_id가 같은 범위 |
+| `requirements.lock` | Pillow를 `pyproject.toml`과 같은 12.3.0으로 맞췄다. PR #2가 `pyproject.toml`만 올려 둘이 어긋났고, `uv pip install -r requirements.lock -e .`가 해를 찾지 못했다. 이 파일은 패키지에 들어가지 않으므로 package_id와 무관하다. 이 파일 첫 줄과 `README.md`·`docs/manual/README.md`에 적힌 검증 환경(macOS arm64만 적혀 있었다)은 Pillow 12.3.0으로 실제로 시험한 Windows 11과 CI의 ubuntu·macOS로 고쳤다 |
+| `pyproject.toml` | 0.4.2 |
+
+엔진이 인코딩을 지정하지 않고 파일을 읽고 쓰는 곳(`model.py` 등)은 고치면 모든 package_id가 한 번 바뀌므로 [#4](https://github.com/kcenon/hanok_window/issues/4)(엔진 0.3.0)로 넘겼다. 그때까지 Windows에서는 `PYTHONUTF8=1`이 필요하고, 엔진이 README를 CRLF로 쓰므로 `test_llm.py`의 `test_read_package_file_in_pages` 1개가 실패한다. Windows CI도 #4에서 켠다.
+package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브러리 버전, 소스 해시)을 담으므로 실행 환경이 같을 때만 같다. OS와 무관하게 같은 설계인지는 `revision`으로 본다. 이 뜻으로 이슈 #3의 할 일 목록에 없던 곳도 고쳤다: `build_package` 설명의 “The same request always yields the same package_id”, 설명서 준비물 표의 컴퓨터 줄(macOS만 적혀 있었다), 설명서 패키지 생성 절의 “같은 입력은 언제나 같은 패키지 ID”.
+
+| 확인 | 결과 |
+|---|---|
+| package_id 경계 | main과 다른 파일에 `package.source_files()`가 모으는 파일이 없다 |
+| 줄 끝 | `.gitattributes`를 넣고 다시 받은 뒤 `git status`가 깨끗하고, `git add --renormalize .`가 아무것도 올리지 않으며, 작업 트리가 CRLF인 파일은 R3 CSV 4개뿐이다 |
+| Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8=1`. 새로 받은 사본에 `README.md`의 Windows 절차대로 설치했다(`py -3.11`이 없어 가상환경만 `uv venv --python 3.11`로 만들었다). 생성기 14개 PASS(191.7초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.6초), LLM 21개 중 20개 PASS·1개 실패(`test_read_package_file_in_pages`, 14.3초). 시험 뒤 추적 파일은 바뀌지 않았다 |
+| ubuntu·macOS CI | PR #6의 GitHub Actions에서 ubuntu 24.04(CPython 3.11.16)와 macOS 26 arm64(CPython 3.11.9) 모두 생성기 14개, 웹 20개, LLM 21개가 건너뜀 없이 통과했고, 시험 뒤 추적 파일이 바뀌지 않았다. 첫 실행에서 macOS의 서버 시험 3개가 실패한 이유는 위 `web/server.py` 행에 적었다 |
+| package_id 불변 | 같은 PC, 같은 가상환경(Pillow 12.3.0)에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `48d2e12d…`다. 같은 PC에서 Pillow 11.3.0으로 만들면 `669c09fb…`였고, macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
+| macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로, 기록 당시와 같은 환경(Pillow 11.3.0)이면 이 버전의 수정으로는 바뀌지 않는다. Pillow 12.3.0으로 새로 설치한 환경에서는 PR #2 때문에 다르다 |

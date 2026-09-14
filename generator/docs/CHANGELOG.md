@@ -274,9 +274,9 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | package_id 불변 | 같은 PC, 같은 가상환경(Pillow 12.3.0)에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `48d2e12d…`다. 같은 PC에서 Pillow 11.3.0으로 만들면 `669c09fb…`였고, macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
 | macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로, 기록 당시와 같은 환경(Pillow 11.3.0)이면 이 버전의 수정으로는 바뀌지 않는다. Pillow 12.3.0으로 새로 설치한 환경에서는 PR #2 때문에 다르다 |
 
-## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리 (엔진 0.3.0)
+## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리, latest.json 교체 재시도 (엔진 0.3.0)
 
-2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
+2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). Windows에서 동시에 끝난 빌드가 `latest.json`을 바꾸지 못하던 결함([#9](https://github.com/kcenon/hanok_window/issues/9))도 고쳤다(절 끝의 「latest.json 교체 재시도 (#9)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
 패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
 0.4.1 패키지와 비교하면 package_id는 두 번 바뀐 셈이다. 이슈의 계획은 한 번이었지만, 0.4.2 절에 적은 대로 PR #2(Pillow 12.3.0)로 새로 설치한 환경의 package_id가 이미 한 번 바뀌었다.
 
@@ -345,3 +345,25 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사·부품·홈·도그본 수는 그대로다. R3는 `6692c318…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |
 | CI | PR #8의 커밋 `6e7a100`에서 세 OS 모두 네 시험이 통과했고, 시험 뒤 추적 파일이 바뀌지 않았다. ubuntu 24.04(CPython 3.11.16)는 생성기 14개(257.1초)·웹 20개(25.4초)·LLM 21개(17.2초), macOS 26 arm64(CPython 3.11.9)는 생성기 14개(253.2초)·웹 20개(24.7초)·LLM 21개(16.5초), Windows Server 2025(CPython 3.11.9)는 생성기 14개(284.8초)·웹 20개 중 15개와 5개 건너뜀(25.0초)·LLM 21개(19.4초)다 |
 | OS별 비교 | OS마다 이 PR의 R3 매니페스트(파일 34개)를 main run `34813027155`의 것과 비교했다. 세 OS 모두 `environment.json`, `source/hanok_generator/engine/builder.py`, `source/hanok_generator/worker.py`만 다르고, PNG 5장, `window.dxf`, CSV 4종, `validation_report.json`을 포함한 31개는 같다. `window.dxf`는 ubuntu `4ca19e06…`, macOS와 Windows `f13d4aef…`로 main과 같다. 같은 코드로 돈 두 run(PR #7과 main)은 세 OS 모두 34개가 같았으므로, 세 OS 모두에서 생성 결과가 바뀌지 않았다. 세 OS끼리는 위 OS 간 비교 행과 같이 34개 중 26개가 같다 |
+
+### latest.json 교체 재시도 (#9)
+
+2026-09-14. Windows에서 두 빌드가 거의 같이 끝나거나, 교체하는 순간 다른 쪽이 `latest.json`을 읽고 있으면 `run_job()`의 `latest.json` 교체가 `PermissionError [WinError 5]`로 실패해 그 빌드가 `job.failed`로 끝났다([#9](https://github.com/kcenon/hanok_window/issues/9)). 패키지는 교체 전에 `packages/`로 옮겨져 남았지만 `latest.json`은 바뀌지 않았다. Windows의 `os.replace`는 대상 파일을 다른 핸들이 열고 있으면 실패하고, 웹 화면의 빌드 대기열은 작업자 2개로 빌드를 동시에 돌린다. PR #8의 CI에서 Windows 웹 시험 하나가 이 오류로 실패해 찾았다. 교체가 이 오류로 막히면 짧게 기다렸다가 다시 시도하게 고쳤다.
+`jobs.py`는 패키지 `source/`에 들어가므로 모든 입력의 package_id가 builder 정리 뒤보다 한 번 더 바뀐다. 같은 PC에서 만든 패키지는 `environment.json`, `package_manifest.json`, `source/hanok_generator/jobs.py` 말고는 바이트까지 같다. 0.5.0 태그 전이라 버전은 올리지 않았다.
+
+| 파일 | 내용 |
+|---|---|
+| `jobs.py` | `replace_pointer()`가 `os.replace()`를 부르고, `PermissionError`가 나면 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1초를 차례로 기다렸다가 다시 시도한다(합계 1.88초). 그래도 실패하면 마지막 시도의 오류를 그대로 올린다. POSIX의 `rename`은 대상이 열려 있어도 실패하지 않으므로 macOS와 Linux에서는 첫 시도에 끝난다 |
+| `tests/test_generator.py` | `test_latest_pointer_waits_for_an_open_handle`: 대상 파일을 연 채로 교체를 시작하고 0.1초 뒤에 닫아, 교체가 새 내용으로 끝나는지 본다 |
+| `tests/results.json` | 시험 수(14개에서 15개), 소스 해시 1개(`jobs.py`), 경우별 package_id 17개 |
+| `examples/built_packages.json`, `examples/README.md`, `README.md` | 예제 5종의 새 package_id와 LLM 호출 예의 R3 ID |
+
+| 확인 | 결과 |
+|---|---|
+| 재현 | Windows 11에서 두 스레드가 같은 파일을 3초 동안 번갈아 교체했다. 고치기 전(`Path.replace`)에는 9,374번 중 926번, 파일을 읽는 스레드를 하나 더하면 6,795번 중 6,202번이 `WinError 5`로 실패했다. 고친 뒤에는 9,492번 중 0번, 97번 중 0번이다. 읽는 스레드가 쉬지 않고 파일을 여는 조건이라 기다리는 시간이 길어져 교체 횟수가 줄었다 |
+| 새 시험 | 같은 절차를 `Path.replace`로 하면 이 PC에서 `PermissionError [WinError 5]`가 나고, `replace_pointer()`로 하면 새 내용으로 바뀐다 |
+| 같은 PC 비교 | 요청 14개를 builder 정리 뒤(PR #8 헤드)와 이 수정 뒤에 만들어 파일별 SHA-256으로 비교했다. PASS 13개는 `environment.json`, `package_manifest.json`, `source/hanok_generator/jobs.py`만 다르고, 12x4는 실패 기록(검사 67개)이 같다 |
+| Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8`과 `PYTHONIOENCODING` 없음. 인코딩 1개 PASS(0.2초), 생성기 15개 PASS(새 시험 포함, 193.5초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.3초), LLM 21개 PASS(14.4초). 시험 뒤 바뀐 추적 파일은 고친 두 파일과 `tests/results.json`뿐이다 |
+| 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사·부품·홈·도그본 수는 그대로다. R3는 `01a8fcb5…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |
+| CI | PR #10의 CI(run `34834745553`)에서 세 OS 모두 네 시험이 통과했고, 시험 뒤 추적 파일이 바뀌지 않았다. ubuntu 24.04(CPython 3.11.16)는 생성기 15개(338.7초)·웹 20개(31.4초)·LLM 21개(22.7초), macOS 26 arm64(CPython 3.11.9)는 생성기 15개(230.3초)·웹 20개(25.3초)·LLM 21개(15.5초), Windows Server 2025(CPython 3.11.9)는 생성기 15개(411.1초)·웹 20개 중 15개와 5개 건너뜀(31.3초)·LLM 21개(27.7초)다 |
+| OS별 비교 | OS마다 R3 매니페스트(파일 34개)를 builder 정리의 CI(PR #8, run `34830043427`)와 비교했다. 세 OS 모두 `environment.json`과 `source/hanok_generator/jobs.py`만 다르고, PNG 5장, `window.dxf`, CSV 4종, `validation_report.json`을 포함한 32개는 같다 |

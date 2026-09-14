@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -23,7 +24,7 @@ from shapely.geometry import box
 
 from hanok_generator.engine.cad_helpers import entity_polygon, meta, tag
 from hanok_generator.engine.numeric_policy import geometry_matches
-from hanok_generator.jobs import JobError, run_job
+from hanok_generator.jobs import JobError, replace_pointer, run_job
 from hanok_generator.model import InputError, resolve
 from hanok_generator.package import PNG_FILES, PackageError, digest, source_files, verify
 
@@ -234,6 +235,19 @@ class GeneratorTests(unittest.TestCase):
                 self.assertEqual(a["package_id"],b["package_id"])
                 self.assertEqual(verify(a["package"])["status"],"PASS")
         LOG.append(dict(case="concurrent_mixed",jobs=10,successes=8,expected_failures=2,status="PASS"))
+
+    def test_latest_pointer_waits_for_an_open_handle(self):
+        # Windows refuses to replace a file that another handle has open, which two web builds that
+        # finish together ran into. An open handle may delay the pointer but must not fail the job.
+        with tempfile.TemporaryDirectory() as tmp:
+            target=Path(tmp)/"latest.json";source=Path(tmp)/"next.json"
+            target.write_bytes(b'{"package_id": "old"}\n');source.write_bytes(b'{"package_id": "new"}\n')
+            with target.open("rb") as held:
+                release=threading.Timer(0.1,held.close);release.start()
+                replace_pointer(source,target)
+                release.join()
+            self.assertEqual(target.read_bytes(),b'{"package_id": "new"}\n')
+            self.assertFalse(source.exists())
 
     def test_source_bundle_rebuild_and_optimized_cli(self):
         source=self.path("r3")

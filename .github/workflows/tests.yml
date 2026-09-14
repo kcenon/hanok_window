@@ -19,11 +19,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows joins in #4, once the engine reads and writes its files as UTF-8 with LF.
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     defaults:
       run:
+        shell: bash
         working-directory: generator
+    env:
+      # The venv lives in generator/ because the web.sh test runs generator/.venv/bin/python.
+      VENV_PYTHON: ${{ matrix.os == 'windows-latest' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -31,17 +34,23 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-      # The venv lives in generator/ because the web.sh test runs generator/.venv/bin/python.
       - name: Install
         run: |
           python -m venv .venv
-          .venv/bin/python -m pip install -r requirements.lock
-          .venv/bin/python -m pip install -e .
+          $VENV_PYTHON -m pip install -r requirements.lock
+          $VENV_PYTHON -m pip install -e .
+      - name: test_encoding.py
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_encoding.py'
       - name: test_generator.py
-        run: PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py'
       - name: test_web.py
-        run: PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py'
       - name: test_llm.py
-        run: PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_llm.py'
+      # The same request on every OS: only the PNGs, environment.json and validation_report.json may differ.
+      - name: R3 package manifest
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m hanok_generator build --input examples/double_r3.json --output output
+          cat output/packages/*/package_manifest.json
       - name: Tests left tracked files unchanged
         run: git diff --exit-code

@@ -9,7 +9,7 @@ name = "hanok-window-generator"
 version = "0.4.1"
 description = "Parametric single and double leaf hanok window CAD packages, with a local web interface and LLM tools"
 requires-python = ">=3.11"
-dependencies = ["ezdxf==1.4.2", "shapely==2.0.7", "Pillow==11.3.0"]
+dependencies = ["ezdxf==1.4.2", "shapely==2.0.7", "Pillow==12.3.0"]
 
 [project.scripts]
 hanok-window = "hanok_generator.cli:main"

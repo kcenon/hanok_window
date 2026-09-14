@@ -34,15 +34,15 @@ def run_job(request, output, *, timeout=120, _fault=None):
         write_json(stage/"payload.json",asdict(design))
         # Explicit PYTHONPATH also supports the included source bundle, without installation.
         source_root=str(Path(__file__).parent.parent)
-        env={**os.environ,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1","PYTHONPATH":source_root}
+        env={**os.environ,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1","PYTHONPATH":source_root,"PYTHONIOENCODING":"utf-8"}
         command=[sys.executable,"-m","hanok_generator.worker",str(stage/"payload.json"),str(package),str(stage/"result.json")]
         if _fault and _fault not in ("publish","pointer"):
             command.extend(["--fault",_fault])
-        process=subprocess.run(command,env=env,cwd=stage,capture_output=True,text=True,timeout=timeout)
+        process=subprocess.run(command,env=env,cwd=stage,capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=timeout)
         if not (stage/"result.json").is_file():
             raise JobError(dict(status="FAIL",rule_id="worker.stopped",message="작업 프로세스가 결과를 완성하지 못했습니다.",
                                 returncode=process.returncode,details=process.stderr[-4000:]))
-        result=json.loads((stage/"result.json").read_text())
+        result=json.loads((stage/"result.json").read_text(encoding="utf-8"))
         if process.returncode or result.get("status")!="PASS":
             raise JobError(result)
         checked=verify(package)

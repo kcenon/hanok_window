@@ -89,7 +89,7 @@ def resolve(data: dict) -> ResolvedDesign:
                        margin_mm=_number(picture.get("margin_mm", 10), "picture.margin_mm", 0, 500))
     stock = _vector(data.get("stock_mm", [1220, 900, 20]), "stock_mm", 3, 1, 3000)
     _require(5 <= stock[2] <= 60, "input.stock_thickness", "지원하는 원판 두께는 5~60 mm입니다.")
-    params = json.loads(files("hanok_generator").joinpath("presets/r3_parameters.json").read_text())
+    params = json.loads(files("hanok_generator").joinpath("presets/r3_parameters.json").read_text(encoding="utf-8"))
     # The inner size is the clear opening of the fixed frame, so the engine still
     # receives the outer size: one frame member is added on each side.
     member = params["frame"]["member_width"]

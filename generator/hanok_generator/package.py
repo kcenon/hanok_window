@@ -29,7 +29,7 @@ def digest(path):
 
 
 def write_json(path, value):
-    Path(path).write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)+"\n", encoding="utf-8")
+    Path(path).write_bytes((json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)+"\n").encode("utf-8"))
 
 
 def package_files(root):
@@ -70,7 +70,7 @@ def export_source(root, env):
         dest=root/"source/hanok_generator"/name
         dest.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(path,dest)
-    (root/"source/requirements.txt").write_text("\n".join(f"{k}=={v}" for k,v in sorted(env["libraries"].items()))+"\n")
+    (root/"source/requirements.txt").write_bytes(("\n".join(f"{k}=={v}" for k,v in sorted(env["libraries"].items()))+"\n").encode("utf-8"))
 
 
 def seal(root):
@@ -83,7 +83,7 @@ def seal(root):
     for name in PNG_FILES:
         with Image.open(root/name) as im:
             im.verify()
-    report=json.loads((root/"validation_report.json").read_text())
+    report=json.loads((root/"validation_report.json").read_text(encoding="utf-8"))
     if report.get("status")!="PASS_NOMINAL_DXF_GEOMETRY" or not report.get("saved_dxf_reread"):
         raise PackageError("A saved-DXF PASS is required before publication")
     if report.get("sha256")!=digest(root/"window.dxf"):
@@ -100,7 +100,7 @@ def seal(root):
 def verify(root):
     root=Path(root)
     try:
-        manifest=json.loads((root/"package_manifest.json").read_text())
+        manifest=json.loads((root/"package_manifest.json").read_text(encoding="utf-8"))
         rows=manifest["files"]
         names=[row["path"] for row in rows]
         if len(names)!=len(set(names)) or any(Path(n).is_absolute() or ".." in Path(n).parts for n in names):

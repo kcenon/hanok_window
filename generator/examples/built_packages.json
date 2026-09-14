@@ -3,55 +3,55 @@
     "checks": 67,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "fb3e99cd0b016dd39f3f637f8996bb4a238fcf416c9c75eb9e1ec4b10ea8acb4",
+    "package_id": "6692c3186639653dd7106773a620a72c38dcb746b6f6093682bffd150c95883c",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/fb3e99cd0b016dd39f3f637f8996bb4a238fcf416c9c75eb9e1ec4b10ea8acb4",
-    "manifest": "output/packages/fb3e99cd0b016dd39f3f637f8996bb4a238fcf416c9c75eb9e1ec4b10ea8acb4/package_manifest.json"
+    "package": "output/packages/6692c3186639653dd7106773a620a72c38dcb746b6f6093682bffd150c95883c",
+    "manifest": "output/packages/6692c3186639653dd7106773a620a72c38dcb746b6f6093682bffd150c95883c/package_manifest.json"
   },
   "double_inner_r3": {
     "checks": 67,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "9a561d87aaf8e4878c998e1f4e94179cb9086f5cf7be32da686ce736416cb112",
+    "package_id": "b3b889eab13b2aa6bc4828f91288e53e42591e8c3a2462bd4924f792ace18b4f",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/9a561d87aaf8e4878c998e1f4e94179cb9086f5cf7be32da686ce736416cb112",
-    "manifest": "output/packages/9a561d87aaf8e4878c998e1f4e94179cb9086f5cf7be32da686ce736416cb112/package_manifest.json"
+    "package": "output/packages/b3b889eab13b2aa6bc4828f91288e53e42591e8c3a2462bd4924f792ace18b4f",
+    "manifest": "output/packages/b3b889eab13b2aa6bc4828f91288e53e42591e8c3a2462bd4924f792ace18b4f/package_manifest.json"
   },
   "single_right": {
     "checks": 67,
     "dogbones": 32,
     "manufacturing_status": "PENDING",
-    "package_id": "08f61e5af3f81e25c59b4946a7702c2c6c0cb640f509baf5e3a9854f0b82fb38",
+    "package_id": "aed7f3677cb8376757ae56bf5e95f60e13876b041a34c8bf387e0eb1d4dcad0a",
     "parts": 16,
     "pockets": 72,
     "status": "PASS",
-    "package": "output/packages/08f61e5af3f81e25c59b4946a7702c2c6c0cb640f509baf5e3a9854f0b82fb38",
-    "manifest": "output/packages/08f61e5af3f81e25c59b4946a7702c2c6c0cb640f509baf5e3a9854f0b82fb38/package_manifest.json"
+    "package": "output/packages/aed7f3677cb8376757ae56bf5e95f60e13876b041a34c8bf387e0eb1d4dcad0a",
+    "manifest": "output/packages/aed7f3677cb8376757ae56bf5e95f60e13876b041a34c8bf387e0eb1d4dcad0a/package_manifest.json"
   },
   "single_empty": {
     "checks": 67,
     "dogbones": 0,
     "manufacturing_status": "PENDING",
-    "package_id": "c1684be062a1253c2a02e28ccecb6aa191ab671c2211560ed3cbf223f1de9ae2",
+    "package_id": "667d6cec69001347ab7bce9e1b3cfc8efb3621560bf28a47627474722ac4abb5",
     "parts": 8,
     "pockets": 16,
     "status": "PASS",
-    "package": "output/packages/c1684be062a1253c2a02e28ccecb6aa191ab671c2211560ed3cbf223f1de9ae2",
-    "manifest": "output/packages/c1684be062a1253c2a02e28ccecb6aa191ab671c2211560ed3cbf223f1de9ae2/package_manifest.json"
+    "package": "output/packages/667d6cec69001347ab7bce9e1b3cfc8efb3621560bf28a47627474722ac4abb5",
+    "manifest": "output/packages/667d6cec69001347ab7bce9e1b3cfc8efb3621560bf28a47627474722ac4abb5/package_manifest.json"
   },
   "double_600_800": {
     "checks": 67,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "86afdc9286007a18467401b00750c0a74dcd48baea05938ce4fc7182bd0c3746",
+    "package_id": "d05770db4dd9acc2b22e4e2f982c0ccf5a77f6027af4b0e4b2df2af06c7a480a",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/86afdc9286007a18467401b00750c0a74dcd48baea05938ce4fc7182bd0c3746",
-    "manifest": "output/packages/86afdc9286007a18467401b00750c0a74dcd48baea05938ce4fc7182bd0c3746/package_manifest.json"
+    "package": "output/packages/d05770db4dd9acc2b22e4e2f982c0ccf5a77f6027af4b0e4b2df2af06c7a480a",
+    "manifest": "output/packages/d05770db4dd9acc2b22e4e2f982c0ccf5a77f6027af4b0e4b2df2af06c7a480a/package_manifest.json"
   }
 }

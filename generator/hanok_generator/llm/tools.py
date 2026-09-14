@@ -105,8 +105,10 @@ CHECK = ("Pre-check a window design without writing any file. Validates the requ
          "build_package runs those checks.")
 BUILD = ("Build the complete CNC package for a design: DXF, five PNG drawings, four CSV manifests and a validation "
          "report. An isolated worker saves the DXF, re-reads it and runs 67 checks; this takes a few seconds and "
-         "reports progress to MCP clients that ask for it. The same request always yields the same package_id, and "
-         "existing packages are never overwritten. If a check fails, the result lists the failed checks. "
+         "reports progress to MCP clients that ask for it. The same request yields the same package_id only in the "
+         "same environment (OS, fonts, Python and library versions); to tell whether two packages hold the same "
+         "design, compare the revision from check_design or get_package. Existing packages are never overwritten. "
+         "If a check fails, the result lists the failed checks. "
          "Manufacturing stays PENDING: no package should go to a machine before trial cuts.")
 LIST = ("List the packages already built in the output folder, newest first, with window type, size, lattice, "
         "preset and check counts.")
@@ -373,8 +375,9 @@ class Toolbox:
                    "(67 checks)."),
             workflow=["check_design: validate a request without writing files. If it names a rule, apply one value "
                       "from suggestion (or follow hint) and check again; another rule may come next.",
-                      "build_package: build the same request (a few seconds). The same request always gives the same "
-                      "package_id.",
+                      "build_package: build the same request (a few seconds). The same request gives the same "
+                      "package_id only in the same environment (OS, fonts, Python and library versions); compare "
+                      "the revision from check_design or get_package to tell whether two designs are the same.",
                       "get_drawing, get_package, read_package_file, verify_package: look at the drawings, the checks, "
                       "the README and the CSV manifests of the result."],
             units=("Millimetres. Sizes are [width, height]; lattice_per_leaf is [vertical, horizontal] bars per leaf; "

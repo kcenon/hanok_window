@@ -47,7 +47,7 @@ jobs:
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py'
       - name: test_llm.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_llm.py'
-      # The same request on every OS: only the PNGs, environment.json and validation_report.json may differ.
+      # The same request on every OS, so the file hashes can be compared. The 0.5.0 CHANGELOG entry lists what differs.
       - name: R3 package manifest
         run: |
           PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m hanok_generator build --input examples/double_r3.json --output output

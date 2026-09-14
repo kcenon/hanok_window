@@ -24,23 +24,23 @@ def generate(payload, output, injection=None):
     write_json(output/"design_parameters.json",params)
     write_json(output/"resolved_parameters.json",payload)
     env=environment()
-    builder.configure(params,output)
+    cfg=builder.configure(params,output)
     # CSV failures occur after successful CAD validation and file replacement.
     if injection=="csv":
         original=builder.write_manifests
-        def write_then_fail(doc):
-            original(doc)
+        def write_then_fail(cfg,doc):
+            original(cfg,doc)
             fault_at(injection,"csv")
         builder.write_manifests=write_then_fail
     fault_at(injection,"cad")
-    doc,report,positions=builder.build()
+    doc,report,positions=builder.build(cfg)
     fault_at(injection,"render")
-    builder.render_nesting(doc,report)
-    builder.render_details(doc,positions)
-    builder.render_assembly(doc)
-    builder.render_opening(doc)
-    builder.render_closeup(doc,report)
-    builder.write_readme(report)
+    builder.render_nesting(cfg,doc,report)
+    builder.render_details(cfg,doc,positions)
+    builder.render_assembly(cfg,doc)
+    builder.render_opening(cfg,doc)
+    builder.render_closeup(cfg,doc,report)
+    builder.write_readme(cfg,report)
     report["window"]=params["window"]
     report["render_environment"]={k:env[k] for k in ("fonts","libraries")}
     report["visual_inspection_status"]="AUTOMATED_CONTENT_CHECKS_ONLY"

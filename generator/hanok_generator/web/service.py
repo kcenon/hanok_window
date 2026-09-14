@@ -93,7 +93,7 @@ def assembly(params, derived):
         x0, y0 = derived["picture_x0"], derived["picture_y0"]
         rw, rh = derived["picture_region_w"], derived["picture_region_h"]
         # Centred in the region exactly as builder.configure places PICX, PICY. The
-        # builder keeps module state, so it only ever runs in a job's worker process.
+        # builder only ever runs in a job's worker process (hash seed 0, time limit).
         sx, sy = x0 + (rw - w) / 2, y0 + (rh - h) / 2
         picture = dict(size_mm=[w, h], margin_mm=pic["region_margin"],
                        region=[x0, y0, x0 + rw, y0 + rh], sheet=[sx, sy, sx + w, sy + h])

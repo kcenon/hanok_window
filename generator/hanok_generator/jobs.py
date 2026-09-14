@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 
 from .model import InputError, resolve
@@ -19,6 +20,21 @@ class JobError(RuntimeError):
     def __init__(self,result):
         self.result=result
         super().__init__(result["message"])
+
+
+# On Windows os.replace() fails with PermissionError while another handle has the
+# target open: two builds that finish together, or a reader of latest.json. Such
+# handles are short-lived, so wait a little and try again, under two seconds in all.
+POINTER_RETRY_DELAYS=(0.01,0.02,0.05,0.1,0.2,0.5,1.0)
+
+
+def replace_pointer(source,target):
+    for delay in POINTER_RETRY_DELAYS:
+        try:
+            return os.replace(source,target)
+        except PermissionError:
+            time.sleep(delay)
+    return os.replace(source,target)
 
 
 def run_job(request, output, *, timeout=120, _fault=None):
@@ -62,7 +78,7 @@ def run_job(request, output, *, timeout=120, _fault=None):
         latest=dict(package_id=checked["package_id"],path=f"packages/{checked['package_id']}")
         pointer=stage/"latest.json"
         write_json(pointer,latest)
-        pointer.replace(root/"latest.json")
+        replace_pointer(pointer,root/"latest.json")
         return dict(**result,package=str(final),manifest=str(final/"package_manifest.json"))
     except Exception as exc:
         if isinstance(exc,JobError):

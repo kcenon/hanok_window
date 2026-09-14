@@ -1,8 +1,8 @@
 # 한옥 창호 생성기
 
 창의 외경(완성 외곽) 또는 내경(고정틀 안목) 가로·세로, 창짝당 창살 수, 단문(왼쪽·오른쪽 경첩)·양문을 입력하면 CNC용 한옥 창호 패키지를 만듭니다. 패키지에는 DXF, PNG 5장, CSV 4종과 저장한 DXF를 다시 읽어 확인한 검증 기록이 들어 있습니다.
-배포 버전은 0.4.2이고 생성 엔진은 0.2.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를, 0.4에서 LLM이 도구 호출로 생성기를 쓰는 [LLM 연동](#llm-연동)을, 0.4.1에서 규칙을 통과하는 값을 알려 주는 고침 제안과 LLM 도구 보강을, 0.4.2에서 [Windows](#windows) 설치 안내와 Windows에서 시험이 도는 줄 끝·인코딩 수정을 추가했습니다.
-생성 엔진이 그대로이므로 같은 입력의 revision과 패키지 ID는 바뀌지 않습니다.
+배포 버전은 0.5.0이고 생성 엔진은 0.3.0입니다. 입력·프리셋, 형식 일반화, 고정 검사 ID, 작업별 패키지 생성 CLI에 더해 0.2에서 외경/내경 기준 입력을, 0.3에서 이 컴퓨터의 브라우저로 쓰는 [웹 화면](#웹-화면)을, 0.3.1에서 그 서버를 켜고 끄는 `web.sh`를, 0.4에서 LLM이 도구 호출로 생성기를 쓰는 [LLM 연동](#llm-연동)을, 0.4.1에서 규칙을 통과하는 값을 알려 주는 고침 제안과 LLM 도구 보강을, 0.4.2에서 [Windows](#windows) 설치 안내와 Windows에서 시험이 도는 줄 끝·인코딩 수정을 추가했습니다. 0.5.0에서 엔진이 파일을 UTF-8과 LF로 읽고 쓰게 고쳐 Windows에서도 `PYTHONUTF8` 없이 동작합니다.
+엔진 0.3.0에서 패키지에 들어가는 소스가 바뀌어 모든 패키지 ID가 바뀌었습니다. 같은 입력의 revision과 DXF는 그대로입니다(Windows에서 만든 DXF만 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌습니다).
 
 함께 볼 문서: [그림으로 보는 사용 설명서](docs/manual/README.md) · [생성 예제 5종](examples/README.md) · [버전별 구현·검증 기록](docs/CHANGELOG.md) · [저장소 안내](../README.md) · [R3 원본 안내](../r3_reference/00_START_HERE.txt)
 
@@ -47,28 +47,27 @@ py -3.11 -m venv .venv
 .venv\Scripts\python -m pip install -e .
 ```
 
-다음 단계([#4](https://github.com/kcenon/hanok_window/issues/4))가 나오기 전까지는 명령을 실행하기 전에 `$env:PYTHONUTF8 = "1"`을 둡니다. 없으면 엔진이 `presets/r3_parameters.json`을 cp949로 읽다가 멈춥니다.
 저장소는 `.gitattributes`에 따라 글 파일을 LF 줄 끝으로 받습니다. 이 파일이 들어오기 전에 받아 둔 사본은 저장소 폴더에서 `git rm -rq --cached .` 다음 `git reset --hard`로 한 번 다시 받습니다.
 
 웹 화면은 `.venv\Scripts\hanok-window-web --output output --open`으로 켜고 Ctrl+C로 끕니다. `web.sh`, `web-start.command`, `web-stop.command`, `mcp.sh`는 macOS와 Linux용입니다.
 
-MCP 클라이언트에는 `.venv\Scripts\hanok-window-mcp.exe`의 절대 경로를 등록합니다. 클라이언트가 어느 폴더에서 서버를 켤지 모르므로 `--output`은 절대 경로로 주고, 환경 변수 `PYTHONUTF8=1`도 함께 줍니다. 설정 파일의 형식은 [MCP 클라이언트에 등록](#mcp-클라이언트에-등록)과 같고 `args`와 `env`를 더합니다.
+MCP 클라이언트에는 `.venv\Scripts\hanok-window-mcp.exe`의 절대 경로를 등록합니다. 클라이언트가 어느 폴더에서 서버를 켤지 모르므로 `--output`은 절대 경로로 줍니다. 설정 파일의 형식은 [MCP 클라이언트에 등록](#mcp-클라이언트에-등록)과 같고 `args`를 더합니다.
 
 ```powershell
-claude mcp add hanok-window -e PYTHONUTF8=1 -- C:\절대\경로\generator\.venv\Scripts\hanok-window-mcp.exe --output C:\절대\경로\generator\output
+claude mcp add hanok-window -- C:\절대\경로\generator\.venv\Scripts\hanok-window-mcp.exe --output C:\절대\경로\generator\output
 ```
 
 ```json
 {"mcpServers": {"hanok-window": {
   "command": "C:\\절대\\경로\\generator\\.venv\\Scripts\\hanok-window-mcp.exe",
-  "args": ["--output", "C:\\절대\\경로\\generator\\output"],
-  "env": {"PYTHONUTF8": "1"}}}}
+  "args": ["--output", "C:\\절대\\경로\\generator\\output"]}}}
 ```
 
-시험은 `$env:PYTHONUTF8 = "1"`을 둔 채 [검증](#검증)의 세 명령을 `.venv\Scripts\python`으로 돌립니다. `web.sh` 시험 5개는 건너뛰고, 다음 단계 전까지는 `test_llm.py`의 README 줄바꿈 시험(`test_read_package_file_in_pages`) 1개가 실패합니다.
+시험은 [검증](#검증)의 네 명령을 `.venv\Scripts\python`으로 돌리고 `web.sh` 시험 5개는 건너뜁니다.
 
 ```powershell
-$env:PYTHONUTF8 = "1"; $env:PYTHONDONTWRITEBYTECODE = "1"
+$env:PYTHONDONTWRITEBYTECODE = "1"
+.venv\Scripts\python -m unittest discover -s tests -p test_encoding.py
 .venv\Scripts\python -m unittest discover -s tests -p test_generator.py
 .venv\Scripts\python -m unittest discover -s tests -p test_web.py
 .venv\Scripts\python -m unittest discover -s tests -p test_llm.py
@@ -192,7 +191,7 @@ MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내�
 .venv/bin/hanok-window-llm tools --format anthropic       # Messages API
 .venv/bin/hanok-window-llm tools --format mcp
 .venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
-.venv/bin/hanok-window-llm call get_drawing '{"package_id": "3d8e6187", "drawing": "assembly"}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "fb3e99cd", "drawing": "assembly"}'
 ```
 
 `call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.
@@ -319,18 +318,20 @@ DXF와 PNG의 재현 조건은 `environment.json`에 기록하며 폰트 파일 
 ## 검증
 
 ```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 10초
 ```
 
-세 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
-실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다.
+네 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
+실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다. 웹 시험이 이 해시와 현재 소스를 비교하므로, 엔진 소스를 고친 뒤에는 웹 시험 전에 이 명령으로 소스 해시를 다시 적습니다.
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/results.json을 다시 씁니다
 ```
 
+- **인코딩 시험:** `hanok_generator/`와 `tests/`의 파이썬 파일을 구문 트리로 읽어, 인코딩을 적지 않은 `read_text()`·`write_text()`, 텍스트 모드 `open()`, `text=True` 하위 프로세스를 찾습니다. 이런 곳은 한국어 Windows에서 cp949로 읽고 씁니다. GitHub의 Windows 러너는 한국어 로캘이 아니어서 CI만으로는 이 문제가 드러나지 않으므로 코드 모양으로 검사합니다.
 - **생성기 시험:** 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향, R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부, 동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사를 확인합니다.
 - **R3 보존:** R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다. 저장소의 `r3_reference/` 폴더에서 파일 28개도 SHA-256으로 대조합니다.
 - **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다. 규칙 8종마다 고침 제안의 값을 하나씩 적용해 그 규칙이 풀리는지 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지와 오류 문구(`messages.js`)가 제안 값을 적는지는 `node`가 있을 때만 확인합니다.
@@ -378,7 +379,7 @@ generator/
 │   ├── web/                 웹 서버와 화면, 고침 제안, web.sh의 제어 코드
 │   └── llm/                 LLM 도구, 함수 호출 정의, MCP 서버
 ├── examples/                입력 예제 5종과 생성 결과
-├── tests/                   test_generator.py, test_web.py, test_llm.py, interop_mcp_sdk.py, fixtures/, results.json
+├── tests/                   test_generator.py, test_web.py, test_llm.py, test_encoding.py, interop_mcp_sdk.py, fixtures/, results.json
 ├── docs/CHANGELOG.md        버전별 구현·검증 기록
 ├── docs/manual/             그림으로 보는 사용 설명서와 그림 만드는 스크립트
 └── output/                  생성한 패키지 (git에 넣지 않음)

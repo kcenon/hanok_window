@@ -64,7 +64,7 @@ def main():
     try:
         if os.environ.get("PYTHONHASHSEED")!="0":
             raise RuntimeError("Worker must start with PYTHONHASHSEED=0")
-        result=generate(json.loads(args.payload.read_text()),args.output,args.fault)
+        result=generate(json.loads(args.payload.read_text(encoding="utf-8")),args.output,args.fault)
         write_json(args.result,result)
         return 0
     except Exception as exc:

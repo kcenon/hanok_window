@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -279,8 +280,10 @@ class GeneratorTests(unittest.TestCase):
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}
             processes.append(subprocess.Popen([sys.executable,"-c",code],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding="utf-8"))
+        # Both sweeps run at once; CI runners take about twice as long as a desktop (Windows went past 300 s).
+        deadline=time.monotonic()+900
         for p in processes:
-            stdout,stderr=p.communicate(timeout=300)
+            stdout,stderr=p.communicate(timeout=max(0,deadline-time.monotonic()))
             self.assertEqual(p.returncode,0,stderr)
             self.assertEqual(json.loads(stdout)["decimals"],200)
         LOG.append(dict(case="decimal_sweeps",normal=200,optimized=200,input_guards=4,status="PASS"))

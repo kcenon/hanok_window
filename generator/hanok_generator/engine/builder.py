@@ -381,10 +381,10 @@ def build():
     # pass, so a rejected build leaves the previous spec and DXF as they were
     # instead of pairing a new spec with an old drawing.
     tmp=OUT/'_validated_candidate.dxf';tmpspec=OUT/'_validated_candidate_spec.json'
-    tmpspec.write_text(json.dumps(spec,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    tmpspec.write_bytes((json.dumps(spec,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
     try:
         pre=validate(doc,'IN_MEMORY_BEFORE_SAVE',tmpspec)
-        doc.saveas(tmp)
+        with open(tmp,'wt',encoding=doc.output_encoding,errors='dxfreplace',newline='\n') as fp:doc.write(fp)
         checkdoc=ezdxf.readfile(tmp)
         report=validate(checkdoc,'READ_BACK_FROM_SAVED_DXF',tmpspec)
     except BaseException:
@@ -393,7 +393,7 @@ def build():
     tmpspec.replace(SPEC);tmp.replace(DXF)
     report.update(file=DXF.name,sha256=hashlib.sha256(DXF.read_bytes()).hexdigest(),
                   pre_save_status=pre['status'],ezdxf_version=ezdxf.__version__)
-    (OUT/'validation_report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    (OUT/'validation_report.json').write_bytes((json.dumps(report,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
     write_manifests(checkdoc)
     return checkdoc,report,positions
 
@@ -1019,4 +1019,4 @@ def write_readme(report):
            '검증: PYTHONPATH=source python -m hanok_generator verify .',
            'DXF는 고정 해시 시드와 메타데이터를 사용합니다. PNG 재현에는 environment.json의 폰트와 라이브러리도 같아야 합니다.',
            '파일을 수정한 뒤 기존 매니페스트를 덮어쓰지 마십시오. 새 입력으로 새 패키지를 생성하십시오.']
-    (OUT/'README.txt').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+    (OUT/'README.txt').write_bytes(('\n'.join(lines)+'\n').encode('utf-8'))

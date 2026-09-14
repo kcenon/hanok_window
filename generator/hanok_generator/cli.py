@@ -67,6 +67,9 @@ def parser():
 
 
 def main(argv=None):
+    # Pipes default to the locale encoding (cp949 on Korean Windows); callers read this JSON as UTF-8.
+    for stream in (sys.stdout,sys.stderr):
+        if hasattr(stream,"reconfigure"):stream.reconfigure(encoding="utf-8")
     args=parser().parse_args(argv)
     try:
         if args.command=="build":result=run_job(read_request(args),args.output)
@@ -75,7 +78,7 @@ def main(argv=None):
             design=resolve(read_request(args));spec=build(design.parameters)
             result=dict(status="RESOLVED_NOT_DXF_VALIDATED",**asdict(design),derived=spec["derived"])
         elif args.command=="verify":result=verify(args.package)
-        elif args.command=="schema":result=json.loads(files("hanok_generator").joinpath("request.schema.json").read_text())
+        elif args.command=="schema":result=json.loads(files("hanok_generator").joinpath("request.schema.json").read_text(encoding="utf-8"))
         else:result=dict(presets=list(PRESETS),default="standard_v1")
         print(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False))
         return 0

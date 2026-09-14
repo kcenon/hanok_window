@@ -41,7 +41,7 @@ LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하�
 hanok_window/
 ├── README.md                  이 문서
 ├── LICENSE                    MIT 라이선스
-├── generator/                 한옥 창호 생성기 0.4.2 (생성 엔진 0.2.0). 새 설계는 여기서
+├── generator/                 한옥 창호 생성기 0.5.0 (생성 엔진 0.3.0). 새 설계는 여기서
 │   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
 │   ├── web-start.command      Finder에서 두 번 누르면 켜기
@@ -49,7 +49,7 @@ hanok_window/
 │   ├── mcp.sh                 LLM 클라이언트에 등록하는 MCP 서버
 │   ├── hanok_generator/       파이썬 패키지: 엔진, 명령줄, 웹 화면, LLM 도구
 │   ├── examples/              입력 예제 5종과 생성 결과
-│   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, MCP SDK 확인, R3 기준값
+│   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, 인코딩 시험, MCP SDK 확인, R3 기준값
 │   ├── docs/CHANGELOG.md      버전별 구현·검증 기록
 │   ├── docs/manual/           그림으로 보는 사용 설명서
 │   └── output/                생성한 패키지 (git에 넣지 않음)
@@ -112,12 +112,13 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 
 ```bash
 cd generator
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 5초
 ```
 
-세 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+네 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
 
 ## 라이선스
 

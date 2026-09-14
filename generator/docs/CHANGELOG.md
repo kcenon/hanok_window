@@ -293,9 +293,10 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | `tests/results.json` | 소스 해시 7개와 경우별 package_id 17개. 시험이 예제를 병렬로 만들고 끝난 순서대로 적으므로 경우의 순서도 바뀌었다 |
 | `examples/built_packages.json`, `examples/README.md` | 예제 5종의 새 package_id. 이 PC(Windows 11 AMD64, CPython 3.11.15, Pillow 12.3.0)에서 만든 값이다 |
 | `.github/workflows/tests.yml` | Windows를 매트릭스에 넣어 세 OS에서 돌린다. Windows 러너의 기본 셸이 PowerShell이라 bash로 두고, 가상환경 Python 경로를 `VENV_PYTHON`으로 나눴다. 인코딩 시험 단계와, R3를 만들어 매니페스트를 출력하는 `R3 package manifest` 단계를 더했다 |
+| `tests/test_generator.py` | 소수 외곽 시험은 일반·최적화 하위 프로세스 두 개를 동시에 돌린다. 이제 두 프로세스가 마감 시각 하나(시작 뒤 900초)를 함께 쓴다. 그전에는 프로세스마다 300초였고, 첫 Windows CI에서 이 한도를 넘겨 실패했다. 이 시험은 이 PC에서 157초가 걸려 생성기 시험 시간의 약 83%를 차지하므로, 같은 비율이면 ubuntu CI(전체 356초)에서도 약 300초로 한도에 가까웠다 |
 | `README.md`, 저장소 `README.md` | Windows 절에서 `PYTHONUTF8` 안내(명령 전 설정, MCP 등록, 시험)를 지웠다. 검증·시험 절과 폴더 구성에 인코딩 시험을 더하고, 버전 표기와 예시 package_id를 고쳤다 |
 
-이슈 #4의 할 일 목록에 없던 변경은 README의 Windows·검증 절, 저장소 README의 버전·시험 절, CI의 `test_encoding.py` 단계와 `R3 package manifest` 단계다. CI는 시험 파일 이름 셋을 하나씩 돌리므로 새 시험은 단계를 더해야 돈다. 매니페스트 단계는 이슈의 완료 기준 「같은 요청이면 OS가 달라도 DXF, CSV, JSON, README가 바이트까지 같다」를 보려고 더했다. 엔진 0.2.0으로 만든 macOS 예제와 비교하면 엔진 버전, Pillow, 고친 소스도 함께 달라서 OS 차이만 따로 볼 수 없다.
+이슈 #4의 할 일 목록에 없던 변경은 README의 Windows·검증 절, 저장소 README의 버전·시험 절, CI의 `test_encoding.py` 단계와 `R3 package manifest` 단계, 소수 외곽 시험의 시간 한도다. CI는 시험 파일 이름 셋을 하나씩 돌리므로 새 시험은 단계를 더해야 돈다. 매니페스트 단계는 이슈의 완료 기준 「같은 요청이면 OS가 달라도 DXF, CSV, JSON, README가 바이트까지 같다」를 보려고 더했다. 엔진 0.2.0으로 만든 macOS 예제와 비교하면 엔진 버전, Pillow, 고친 소스도 함께 달라서 OS 차이만 따로 볼 수 없다.
 0.4.2 절의 `PYTHONUTF8` 안내는 그때의 기록이므로 고치지 않았다.
 
 | 확인 | 결과 |

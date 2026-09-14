@@ -34,7 +34,7 @@ python3.11 -m venv .venv
 .venv/bin/hanok-window-mcp --help
 ```
 
-`requirements.lock`은 CPython 3.11.15, Windows 11(AMD64)에서 검증한 실행 의존 버전 전체입니다. `pyproject.toml`은 직접 쓰는 ezdxf·shapely·Pillow만 고정합니다.
+`requirements.lock`은 실행 의존 버전 전체입니다. CPython 3.11로 Windows 11(AMD64, 3.11.15)과 GitHub Actions의 ubuntu 24.04(3.11.16)·macOS 26(arm64, 3.11.9)에서 검증했습니다. `pyproject.toml`은 직접 쓰는 ezdxf·shapely·Pillow만 고정합니다.
 이 문서의 명령은 모두 이 폴더에서 실행합니다.
 
 ### Windows

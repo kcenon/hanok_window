@@ -258,7 +258,7 @@ class ToolboxTests(unittest.TestCase):
             done = subprocess.run([sys.executable, "-m", "hanok_generator.llm", "call", "get_drawing",
                                    json.dumps({"package_id": self.built.data["package_id"][:8], "drawing": "opening"}),
                                    "--output", str(self.output), "--image-dir", images],
-                                  capture_output=True, text=True, timeout=120, cwd=ROOT)
+                                  capture_output=True, text=True, encoding="utf-8", timeout=120, cwd=ROOT)
             self.assertEqual(done.returncode, 0, done.stderr)
             reply = json.loads(done.stdout)
             (image,) = reply["images"]
@@ -365,11 +365,11 @@ class McpServerTests(unittest.TestCase):
 class ProcessTests(unittest.TestCase):
     def run_cli(self, *args, stdin=None):
         return subprocess.run([sys.executable, "-m", "hanok_generator.llm", *args], input=stdin,
-                              capture_output=True, text=True, timeout=120, cwd=ROOT)
+                              capture_output=True, text=True, encoding="utf-8", timeout=120, cwd=ROOT)
 
     def test_tools_never_load_the_builder(self):
         done = subprocess.run([sys.executable, "-c", ISOLATION, json.dumps(EXAMPLES["single_empty"])],
-                              capture_output=True, text=True, timeout=240, cwd=ROOT)
+                              capture_output=True, text=True, encoding="utf-8", timeout=240, cwd=ROOT)
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(json.loads(done.stdout), dict(errors=[False, False], builder=False, ezdxf=False))
 

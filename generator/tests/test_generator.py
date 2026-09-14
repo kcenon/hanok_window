@@ -66,9 +66,9 @@ class GeneratorTests(unittest.TestCase):
     def path(self,key):return Path(self.results[key]["package"])
 
     def test_r3_production_geometry_and_originals(self):
-        reference=json.loads((HERE/"fixtures/r3_reference.json").read_text())
+        reference=json.loads((HERE/"fixtures/r3_reference.json").read_text(encoding="utf-8"))
         p=self.path("r3")
-        spec=json.loads((p/"design_spec.json").read_text());spec["revision"]=reference["spec"]["revision"]
+        spec=json.loads((p/"design_spec.json").read_text(encoding="utf-8"));spec["revision"]=reference["spec"]["revision"]
         self.assertEqual(spec,reference["spec"])
         contours=[]
         for e in ezdxf.readfile(p/"window.dxf").modelspace():
@@ -82,7 +82,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_inner_size_basis_reproduces_outer_geometry(self):
         inner,outer=self.path("inner_r3"),self.path("r3")
-        a,b=(json.loads((p/"design_spec.json").read_text()) for p in (inner,outer))
+        a,b=(json.loads((p/"design_spec.json").read_text(encoding="utf-8")) for p in (inner,outer))
         self.assertNotEqual(a.pop("revision"),b.pop("revision"))
         self.assertEqual(a,b)
         self.assertEqual(a["derived"]["frame_inner"],[383,506])
@@ -91,10 +91,10 @@ class GeneratorTests(unittest.TestCase):
                     if e.dxf.layer in ("CUT_THROUGH","DOGBONE") or e.dxf.layer.startswith("POCKET_")]
         self.assertEqual(contours(inner),contours(outer))
         for p,basis,want in [(inner,"inner",[383,506]),(outer,"outer",[463,586])]:
-            check={c["rule_id"]:c for c in json.loads((p/"validation_report.json").read_text())["checks"]}["requested_size_matches_measured_frame"]
+            check={c["rule_id"]:c for c in json.loads((p/"validation_report.json").read_text(encoding="utf-8"))["checks"]}["requested_size_matches_measured_frame"]
             self.assertEqual((check["status"],check["expected"],check["targets"]),("PASS",want,[basis+"_mm"]))
-        self.assertEqual(json.loads((inner/"design_request.json").read_text())["inner_mm"],[383,506])
-        self.assertEqual(json.loads((inner/"resolved_parameters.json").read_text())["provenance"]["size_basis"],"fixed-frame inner opening")
+        self.assertEqual(json.loads((inner/"design_request.json").read_text(encoding="utf-8"))["inner_mm"],[383,506])
+        self.assertEqual(json.loads((inner/"resolved_parameters.json").read_text(encoding="utf-8"))["provenance"]["size_basis"],"fixed-frame inner opening")
         self.assertIn("내경(고정틀 안목) 383 x 506 mm 입력",(inner/"README.txt").read_text(encoding="utf-8"))
         labels={e.dxf.text for e in ezdxf.readfile(inner/"window.dxf").modelspace() if e.dxftype()=="TEXT" and meta(e).get("view")=="assembly"}
         self.assertTrue({"383 FRAME INNER (INPUT)","506 FRAME INNER (INPUT)","463 OVERALL","586 OVERALL"}<=labels)
@@ -114,7 +114,7 @@ class GeneratorTests(unittest.TestCase):
             with self.subTest(rule=rule,value=str(value)),self.assertRaises(InputError) as caught:resolve(value)
             self.assertEqual(caught.exception.rule_id,rule)
         result=run_job(dict(type="single",hinge_side="left",inner_mm=[340.3,820.7],lattice_per_leaf=[2,6]),self.output)
-        report=json.loads((Path(result["package"])/"validation_report.json").read_text())
+        report=json.loads((Path(result["package"])/"validation_report.json").read_text(encoding="utf-8"))
         check={c["rule_id"]:c for c in report["checks"]}["requested_size_matches_measured_frame"]
         self.assertEqual(check["status"],"PASS")
         self.assertTrue(all(abs(a-b)<=1e-7 for a,b in zip(check["actual"],[340.3,820.7])))
@@ -130,7 +130,7 @@ class GeneratorTests(unittest.TestCase):
                                  (4+4*n+n*(v+h),8+8*n+2*n*v*h+4*n*(v+h),4*n*(v+h)))
                 self.assertEqual(verify(p)["status"],"PASS")
                 self.assertTrue(all((p/f).is_file() for f in PNG_FILES))
-                report=json.loads((p/"validation_report.json").read_text())
+                report=json.loads((p/"validation_report.json").read_text(encoding="utf-8"))
                 current={c["rule_id"] for c in report["checks"]}
                 if ids is None:ids=current
                 self.assertEqual(current,ids)
@@ -174,7 +174,7 @@ class GeneratorTests(unittest.TestCase):
     def test_saved_geometry_rejects_phantom_detail_and_wrong_hinge(self):
         from hanok_generator.engine import builder
         p=self.path("single_right_0_0")
-        builder.configure(json.loads((p/"design_parameters.json").read_text()),p)
+        builder.configure(json.loads((p/"design_parameters.json").read_text(encoding="utf-8")),p)
         doc=ezdxf.readfile(p/"window.dxf")
         e=doc.modelspace().add_text("PHANTOM J3")
         tag(e,view="detail",detail="J3")
@@ -238,20 +238,20 @@ class GeneratorTests(unittest.TestCase):
         source=self.path("r3")
         env={**os.environ,"PYTHONPATH":str(source/"source"),"PYTHONDONTWRITEBYTECODE":"1","PYTHONOPTIMIZE":"1"}
         p=subprocess.run([sys.executable,"-m","hanok_generator","build","--input",str(source/"design_request.json"),"--output",str(self.root/"optimized")],
-                         cwd=self.root,env=env,capture_output=True,text=True,timeout=120)
+                         cwd=self.root,env=env,capture_output=True,text=True,encoding="utf-8",timeout=120)
         self.assertEqual(p.returncode,0,p.stderr)
         result=json.loads(p.stdout)
         self.assertEqual(digest(Path(result["package"])/"window.dxf"),digest(source/"window.dxf"))
         self.assertEqual(result["package_id"],self.results["r3"]["package_id"])
         p=subprocess.run([sys.executable,"-m","hanok_generator","build","--type","double","--size","463x586","--lattice","12x4","--output",str(self.root/"optimized")],
-                         cwd=self.root,env=env,capture_output=True,text=True,timeout=120)
+                         cwd=self.root,env=env,capture_output=True,text=True,encoding="utf-8",timeout=120)
         self.assertEqual(p.returncode,1,p.stderr);self.assertEqual(json.loads(p.stderr)["rule_id"],"geometry.validation")
         LOG.append(dict(case="optimized_source_bundle",status="PASS",entire_package_identical=True,overlap_rejected=True))
 
     def test_manifest_tampering_is_read_only(self):
         copydir=self.root/"tampered";shutil.copytree(self.path("r3"),copydir)
         manifest=(copydir/"package_manifest.json").read_bytes()
-        with (copydir/"README.txt").open("a") as f:f.write("changed")
+        with (copydir/"README.txt").open("a",encoding="utf-8") as f:f.write("changed")
         with self.assertRaises(PackageError):verify(copydir)
         self.assertEqual((copydir/"package_manifest.json").read_bytes(),manifest)
 
@@ -259,7 +259,7 @@ class GeneratorTests(unittest.TestCase):
         from hanok_generator import package
         root=self.root/'fake_source'
         for name in ['module.py','engine/math.py','presets/default.json','request.schema.json','output/packages/id/source/hanok_generator/old.py','output/packages/id/design_spec.json']:
-            p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('{}')
+            p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text('{}',encoding='utf-8')
         with patch.object(package,'__file__',str(root/'package.py')):
             names={name for name,_ in package.source_files()}
         self.assertEqual(names,{'module.py','engine/math.py','presets/default.json','request.schema.json'})
@@ -278,7 +278,7 @@ class GeneratorTests(unittest.TestCase):
         processes=[]
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}
-            processes.append(subprocess.Popen([sys.executable,"-c",code],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True))
+            processes.append(subprocess.Popen([sys.executable,"-c",code],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding="utf-8"))
         for p in processes:
             stdout,stderr=p.communicate(timeout=300)
             self.assertEqual(p.returncode,0,stderr)
@@ -291,5 +291,5 @@ if __name__=="__main__":
     record=dict(status="PASS" if result.wasSuccessful() else "FAIL",tests=result.testsRun,
                 failures=[str(f) for f in result.failures],errors=[str(f) for f in result.errors],cases=LOG,
                 source_sha256={name:digest(p) for name,p in source_files()})
-    (HERE/"results.json").write_text(json.dumps(record,ensure_ascii=False,indent=2)+"\n")
+    (HERE/"results.json").write_bytes((json.dumps(record,ensure_ascii=False,indent=2)+"\n").encode("utf-8"))
     raise SystemExit(0 if result.wasSuccessful() else 1)

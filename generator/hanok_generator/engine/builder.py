@@ -444,7 +444,40 @@ def validate(cfg,doc,phase,spec_path=None):
     shows up as a disagreement rather than as a shared assumption.
     """
     checks=[];errors=[];ents=list(doc.modelspace())
-    expectations={
+    check=check_recorder(check_expectations(cfg),checks,errors)
+    # The report lists checks in call order, so the sections run in this order
+    # and each check stays in its place even where it would fit another section.
+    (rawparts,pockets,dogs,partents,count,mach,geom,partgeo,
+     pairs,gap,margin)=check_parts_and_board(cfg,check,ents)
+    byjoint,by_pair,machining=check_pockets_and_dogbones(cfg,check,rawparts,pockets,dogs,partents,geom,partgeo)
+    check_layers_units_and_labels(cfg,check,doc,ents,mach,partents)
+    ap,assembled=check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,partgeo,pairs,by_pair)
+    check_assembly_dimensions(cfg,check,partents,ap)
+    check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled)
+    check_metadata(cfg,check,doc,spec_path)
+    if errors:raise ValidationError(phase,checks)
+    return dict(status='PASS_NOMINAL_DXF_GEOMETRY',phase=phase,saved_dxf_reread=phase=='READ_BACK_FROM_SAVED_DXF',
+                revision=cfg.PARAMS['revision'],checks_passed=len(checks),checks=checks,
+                numeric_policy=policy_record(),manufacturing_assessment=machining['manufacturing_assessment'],
+                parts_total=cfg.NPART,part_counts=dict(count),
+                nominal_pockets_total=len(pockets),pocket_counts=dict(byjoint),dogbone_reliefs_total=len(dogs),
+                machining_profiles_total=len(mach),mated_joints_total=len(by_pair),
+                minimum_part_gap_mm=gap,minimum_board_margin_mm=margin,
+                nesting_bounds_mm=list(unary_union(list(partgeo.values())).bounds),
+                lattice_per_leaf=dict(vertical=cfg.NV,horizontal=cfg.NH,crossings=cfg.D['crossings_total']//cfg.NLEAF),
+                overall_width_height_mm=[cfg.W,cfg.H],leaf_width_height_mm=[cfg.LW,cfg.LH],board_mm=[cfg.BL,cfg.BWD,cfg.BT],
+                physical_fabrication_validated=False,visual_inspection_status='PENDING',
+                pending=['Actual hinges, screws, load capacity and swing interference',
+                         'Rear backing, mounting, picture protection and fastener clearance',
+                         'Stock species, grain integrity, thickness, moisture and movement',
+                         'Fit coupons and nominal zero-clearance joint tolerances',
+                         'CAM pocket union, open-edge overrun and cutter compensation',
+                         'Workholding, tabs/onion skin, feeds/speeds and final manufacturing approval'])
+
+
+def check_expectations(cfg):
+    """Expected value of each check that reports a measured value, by check name."""
+    return {
         'unique_part_ids_and_total':cfg.NPART, 'board_boundary':dict(count=1,bounds=[0,0,cfg.BL,cfg.BWD]),
         'minimum_nesting_gap':cfg.PGAP, 'minimum_board_edge_margin':cfg.MARGIN,
         'total_base_pockets':cfg.NPOCKT, 'S01_J4_seats_each':cfg.NH,'S02_J4_seats_each':cfg.NV,
@@ -461,6 +494,10 @@ def validate(cfg,doc,phase,spec_path=None):
         'opening_illustration_matches_leaves':cfg.NLEAF,
         **{f'{joint}_pocket_count':quantity for joint,quantity in cfg.NPOCK.items()},
     }
+
+
+def check_recorder(expectations,checks,errors):
+    """Return the check() that appends one record per call to checks and each failed name to errors."""
     def check(name,ok,detail=None,target=None):
         expected=expectations.get(name,True)
         # Predicate checks report the observed truth value; contextual measurements
@@ -475,6 +512,11 @@ def validate(cfg,doc,phase,spec_path=None):
                            status='PASS' if ok else 'FAIL',expected=expected,actual=actual,
                            measured=detail,tolerance=tolerance,targets=[target]))
         if not ok:errors.append(name)
+    return check
+
+
+def check_parts_and_board(cfg,check,ents):
+    """Part identity and counts, closed machining contours and the nesting on the board."""
     rawparts=[e for e in ents if e.dxf.layer=='CUT_THROUGH']
     pockets=[e for e in ents if e.dxf.layer==cfg.POCKET_LAYER]
     dogs=[e for e in ents if e.dxf.layer=='DOGBONE']
@@ -507,6 +549,11 @@ def validate(cfg,doc,phase,spec_path=None):
     check('minimum_nesting_gap',gap>=cfg.PGAP-TOL,gap)
     check('minimum_board_edge_margin',margin>=cfg.MARGIN-TOL,margin)
     check('all_lengths_parallel_X_grain',all(g.bounds[2]-g.bounds[0]>g.bounds[3]-g.bounds[1] for g in partgeo.values()))
+    return rawparts,pockets,dogs,partents,count,mach,geom,partgeo,pairs,gap,margin
+
+
+def check_pockets_and_dogbones(cfg,check,rawparts,pockets,dogs,partents,geom,partgeo):
+    """Pocket counts and coordinates, dogbone reliefs and the machining they leave."""
     bypart=defaultdict(list);byjoint=Counter();by_pair=defaultdict(list)
     for e in pockets:
         d=meta(e);bypart[d['part_id']].append(e);byjoint[d['joint']]+=1;by_pair[d['joint_id']].append(e)
@@ -578,9 +625,18 @@ def validate(cfg,doc,phase,spec_path=None):
     check('machining_preserves_non_open_edges',machining['non_open_edges_preserved'],machining['edges'])
     check('all_pockets_reliefs_inside_own_part',all(partgeo[meta(e)['part_id']].buffer(TOL).covers(geom[e.dxf.handle]) for e in pockets+dogs))
     check('layer_depth_and_face_separation',all(close(meta(e).get('depth_mm',-1),cfg.THK) for e in rawparts) and all(close(meta(e).get('depth_mm',-1),cfg.DEPTH) and meta(e).get('machining_face')=='A' for e in pockets+dogs))
+    return byjoint,by_pair,machining
+
+
+def check_layers_units_and_labels(cfg,check,doc,ents,mach,partents):
+    """Required layers, flat millimetre model space and one label per part."""
     check('all_required_layers_exist',all(name in doc.layers for name in cfg.LAYERS))
     check('mm_modelspace_flat_geometry',doc.units==4 and len(doc.paperspace())==0 and all(e.dxf.elevation==0 for e in mach))
     check('part_annotations_separate_and_unique',Counter(meta(e).get('part_id') for e in ents if e.dxf.layer=='PART_ID')==Counter({p:1 for p in partents}))
+
+
+def check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,partgeo,pairs,by_pair):
+    """Joint pairs on opposite faces and assembled solids that must not interpenetrate."""
     def assembled(pid,g):
         d=meta(partents[pid]);x,y=d['nesting_origin']
         return affine_transform(translate(g,-x,-y),d['assembly_map'])
@@ -631,6 +687,11 @@ def validate(cfg,doc,phase,spec_path=None):
                     f'actual circular bulges sampled with chord error <= {ARC_CHORD_TOL_MM:g} mm'})
     check('half_lap_depth',abs(2*cfg.DEPTH-cfg.THK)<TOL,
           {'retained_front':cfg.THK-cfg.DEPTH,'retained_back':cfg.THK-cfg.DEPTH,'stock':cfg.THK})
+    return ap,assembled
+
+
+def check_assembly_dimensions(cfg,check,partents,ap):
+    """Frame, requested size, leaves, clearances and lattice spacing measured on the assembly."""
     fixed=unary_union([g for pid,g in ap.items() if pid.startswith('F')])
     leaves=[unary_union([g for pid,g in ap.items() if meta(partents[pid])['assembly_group']==group_name(cfg.D,i)]) for i in range(cfg.NLEAF)]
     check('frame_geometry',geometry_matches(fixed,box(0,0,cfg.W,cfg.H).difference(box(cfg.FW,cfg.FW,cfg.W-cfg.FW,cfg.H-cfg.FW))),
@@ -688,6 +749,10 @@ def validate(cfg,doc,phase,spec_path=None):
     leafbox={group_name(cfg.D,i):box(*cfg.LEAVES[i]) for i in range(cfg.NLEAF)}
     check('no_member_bridges_leaves',all(leafbox[meta(e)['assembly_group']].buffer(TOL).covers(ap[pid])
           for pid,e in partents.items() if meta(e)['assembly_group']!='FIXED'))
+
+
+def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
+    """Assembly, picture, opening, hardware and detail references against the cut parts."""
     ox,oy=ASSEMBLY_ORIGIN
     assemblies=[e for e in ents if meta(e).get('view')=='assembly']
     abodies=[e for e in assemblies if meta(e).get('role')=='body']
@@ -736,7 +801,12 @@ def validate(cfg,doc,phase,spec_path=None):
     check('references_never_on_machining_layers',not any(meta(e).get('view') in ['assembly','detail','opening'] for e in mach))
     opened=[e for e in ents if meta(e).get('kind')=='opened_leaf_illustration']
     check('opening_illustration_matches_leaves',len(opened)==cfg.NLEAF and {meta(e).get('leaf') for e in opened}=={f.side.upper() for f in cfg.FORMAT} and all(meta(e).get('reference_only') for e in opened),len(opened))
+    # A pocket check, kept last here because the report lists checks in call order.
     check('pockets_open_edge_intent',all(bool(meta(e).get('open_edges')) for e in pockets))
+
+
+def check_metadata(cfg,check,doc,spec_path):
+    """Recorded revision and numeric policy, design_spec.json on disk and the DXF audit."""
     md=doc.ezdxf_metadata()
     check('revision_recorded_matches_parameters',
           md.get('HANOK_REVISION')==cfg.PARAMS['revision'] and md.get('HANOK_BUILD_DATE')==cfg.PARAMS['build_date'],
@@ -748,24 +818,6 @@ def validate(cfg,doc,phase,spec_path=None):
         check('design_spec_on_disk_matches_parameters',fresh==json.dumps(json.loads(spec_path.read_text(encoding='utf-8')),sort_keys=True))
     audit=doc.audit()
     check('DXF_audit_no_errors_no_fixes',not audit.has_errors and not audit.has_fixes,{'errors':len(audit.errors),'fixes':len(audit.fixes)})
-    if errors:raise ValidationError(phase,checks)
-    return dict(status='PASS_NOMINAL_DXF_GEOMETRY',phase=phase,saved_dxf_reread=phase=='READ_BACK_FROM_SAVED_DXF',
-                revision=cfg.PARAMS['revision'],checks_passed=len(checks),checks=checks,
-                numeric_policy=policy_record(),manufacturing_assessment=machining['manufacturing_assessment'],
-                parts_total=cfg.NPART,part_counts=dict(count),
-                nominal_pockets_total=len(pockets),pocket_counts=dict(byjoint),dogbone_reliefs_total=len(dogs),
-                machining_profiles_total=len(mach),mated_joints_total=len(by_pair),
-                minimum_part_gap_mm=gap,minimum_board_margin_mm=margin,
-                nesting_bounds_mm=list(unary_union(list(partgeo.values())).bounds),
-                lattice_per_leaf=dict(vertical=cfg.NV,horizontal=cfg.NH,crossings=cfg.D['crossings_total']//cfg.NLEAF),
-                overall_width_height_mm=[cfg.W,cfg.H],leaf_width_height_mm=[cfg.LW,cfg.LH],board_mm=[cfg.BL,cfg.BWD,cfg.BT],
-                physical_fabrication_validated=False,visual_inspection_status='PENDING',
-                pending=['Actual hinges, screws, load capacity and swing interference',
-                         'Rear backing, mounting, picture protection and fastener clearance',
-                         'Stock species, grain integrity, thickness, moisture and movement',
-                         'Fit coupons and nominal zero-clearance joint tolerances',
-                         'CAM pocket union, open-edge overrun and cutter compensation',
-                         'Workholding, tabs/onion skin, feeds/speeds and final manufacturing approval'])
 
 
 def write_manifests(cfg,doc):

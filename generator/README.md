@@ -192,7 +192,7 @@ MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내�
 .venv/bin/hanok-window-llm tools --format anthropic       # Messages API
 .venv/bin/hanok-window-llm tools --format mcp
 .venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
-.venv/bin/hanok-window-llm call get_drawing '{"package_id": "3d8e6187", "drawing": "assembly"}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "fb3e99cd", "drawing": "assembly"}'
 ```
 
 `call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.

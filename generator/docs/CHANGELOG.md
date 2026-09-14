@@ -274,9 +274,9 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | package_id 불변 | 같은 PC, 같은 가상환경(Pillow 12.3.0)에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `48d2e12d…`다. 같은 PC에서 Pillow 11.3.0으로 만들면 `669c09fb…`였고, macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
 | macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로, 기록 당시와 같은 환경(Pillow 11.3.0)이면 이 버전의 수정으로는 바뀌지 않는다. Pillow 12.3.0으로 새로 설치한 환경에서는 PR #2 때문에 다르다 |
 
-## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정 (엔진 0.3.0)
+## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리 (엔진 0.3.0)
 
-2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계다. 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
+2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
 패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
 0.4.1 패키지와 비교하면 package_id는 두 번 바뀐 셈이다. 이슈의 계획은 한 번이었지만, 0.4.2 절에 적은 대로 PR #2(Pillow 12.3.0)로 새로 설치한 환경의 package_id가 이미 한 번 바뀌었다.
 
@@ -308,3 +308,38 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사·부품·홈·도그본 수는 그대로다 |
 | CI | PR #7의 커밋 `08892eb`에서 세 OS 모두 네 시험이 통과했고, 시험 뒤 추적 파일이 바뀌지 않았다. ubuntu 24.04(CPython 3.11.16)는 생성기 14개(202.4초)·웹 20개(21.8초)·LLM 21개(14.1초), macOS 26 arm64(CPython 3.11.9)는 생성기 14개(162.3초)·웹 20개(19.6초)·LLM 21개(11.6초), Windows Server 2025(CPython 3.11.9)는 생성기 14개(415.4초)·웹 20개 중 15개와 5개 건너뜀(31.5초)·LLM 21개(26.1초)다. 첫 실행에서는 Windows의 소수 외곽 시험이 300초 한도를 넘겨 실패했다(위 `tests/test_generator.py` 행) |
 | OS 간 비교 | 세 job이 같은 코드로 만든 R3에서 매니페스트에 적힌 파일 34개 중 26개가 세 OS에서 같다. PNG 5장, `environment.json`, `validation_report.json`은 OS마다 다르다. `window.dxf`는 macOS, Windows CI, 이 PC가 `f13d4aef…`로 같고 ubuntu만 `4ca19e06…`이다. Linux 컨테이너(Debian glibc 2.41, CPython 3.11.15)에서 만든 DXF도 `4ca19e06…`이었고, 이 PC의 DXF와 값별로 비교하면 28,085줄 가운데 두 값만 다르다. 둘 다 `ASSEMBLY_REFERENCE` 층 열림 방향 호(`engine/builder.py:317`)의 같은 점의 y좌표이고, 차이는 2.8e-14 mm(마지막 한 비트)다. `math.sin`의 결과가 45°와 120°에서 glibc와 Windows 사이에 마지막 비트가 달라서 생긴다. 참고 그림이라 가공 윤곽, CSV, `design_spec.json`은 세 OS가 같다. 계산을 바꾸지 않았고 POSIX에서는 쓰는 바이트도 같으므로 이 버전의 변경과 무관하며, 고치려면 엔진 계산을 바꿔야 해서 이 버전에서는 고치지 않았다. 그래서 이슈의 완료 기준 「OS가 달라도 DXF가 바이트까지 같다」는 macOS와 Windows에서만 맞는다 |
+
+### builder 정리 (#5)
+
+2026-09-14. `engine/builder.py`가 모듈 전역 변수에 두던 설계 값을 설정 객체 하나로 옮기고, 331줄이던 `validate()`를 검사 구역 일곱 개로 나눴다([#5](https://github.com/kcenon/hanok_window/issues/5)). 기하 계산, 검사 ID, 검사 수(67개), 검사 순서는 바꾸지 않았다.
+패키지 `source/`에 들어가는 `engine/builder.py`와 `worker.py`가 바뀌므로, 모든 입력의 package_id가 main `1548662`의 0.5.0보다 한 번 더 바뀐다. 같은 PC에서 만든 패키지는 `environment.json`, `package_manifest.json`, 이 두 소스 파일 말고는 바이트까지 같다. `v0.5.0` 태그와 릴리스가 아직 없어 버전은 올리지 않았다. 이슈 #5가 「다른 엔진 변경이 생길 때 같은 릴리스에 넣는다」고 정했고, 그 엔진 변경(#4)의 릴리스가 0.5.0이다.
+
+| 파일 | 내용 |
+|---|---|
+| `engine/builder.py` | `configure()`가 `global` 문 하나로 정하던 이름 가운데 입력과 무관한 셋(`TOL`, `ASSEMBLY_ORIGIN`, `OPENING_ORIGIN`)은 모듈 상수가 되고, 나머지 56개는 같은 이름으로 frozen dataclass `Design`의 필드가 된다. `configure()`는 같은 식을 같은 순서로 계산해 `Design`을 돌려주고, 다른 함수 24개는 이를 첫 인자 `cfg`로 받는다. 식은 이름 앞에 `cfg.`를 붙인 것 말고는 그대로다. `build()`가 전역 `MSP`에 두던 모델 공간은 `add_details(cfg,msp)`에 인자로 넘긴다. `global` 문에 있던 `i`는 어느 함수도 읽지 않아 버렸다 |
+| `engine/builder.py`의 `validate()` | 검사 기록 함수(`check_recorder`)와 기대값(`check_expectations`)을 따로 두고, 구역 함수 일곱 개를 차례로 부른다. 구역 함수의 몸은 원래 줄을 바이트까지 그대로 옮겼고, 구역 사이에 넘기는 값만 인자와 반환값으로 새로 적었다. `validate()`는 38줄이 되었다 |
+| `worker.py` | `configure()`가 돌려준 `cfg`를 `build`, `render_*`, `write_readme`에 넘긴다. CSV 단계 장애 주입은 `builder.write_manifests`를 바꿔 끼우는 방식 그대로이고, `build()`가 이 함수를 모듈 이름으로 부르므로 계속 동작한다 |
+| `tests/test_generator.py` | 저장 DXF에 없는 상세와 틀린 경첩을 넣는 시험, 소수 외곽 시험의 하위 프로세스 코드가 `configure()`의 반환값을 `validate()`와 `build()`에 넘긴다 |
+| `web/service.py`, `tests/test_web.py` | 「builder가 모듈 상태를 가진다」던 주석을 고쳤다. builder는 여전히 작업 프로세스(해시 시드 0, 시간 제한)에서만 돈다. 두 파일은 package_id 경계 밖이다 |
+| `tests/results.json` | 소스 해시 2개(`engine/builder.py`, `worker.py`)와 경우별 package_id 17개. 경우의 순서도 몇 곳 바뀌었다 |
+| `examples/built_packages.json`, `examples/README.md`, `README.md` | 예제 5종의 새 package_id와 LLM 호출 예의 R3 ID |
+
+| 구역 | 함수 | 검사 번호 |
+|---|---|---|
+| 부품과 원판 배치 | `check_parts_and_board` | 1~17 |
+| 홈과 도그본 | `check_pockets_and_dogbones` | 18~35 |
+| 도면 층·단위·부품 표기 | `check_layers_units_and_labels` | 36~38 |
+| 결합 쌍과 3차원 겹침 | `check_joint_pairs_and_solids` | 39~43 |
+| 조립 치수와 간격 | `check_assembly_dimensions` | 44~51 |
+| 참고 도면(조립·그림·열림·하드웨어·상세) | `check_references` | 52~63 |
+| 메타데이터 | `check_metadata` | 64~67 |
+
+검증 기록은 검사를 부른 순서대로 적으므로, 순서가 이어지는 곳에서만 끊었다. 그래서 이슈가 예로 든 여섯 구역 사이에 도면 층·단위·부품 표기(36~38번)가 따로 생겼고, 홈 검사인 63번 `pockets_open_edge_intent`는 참고 구역 끝에 남았다. 조립 참고도가 부품과 맞는지 보는 52번은 참고 구역 첫머리에 두어, 조립 치수 구역에서 다음 구역으로 넘길 값이 없게 했다.
+이슈 #5의 할 일 목록에 없던 변경은 주석 두 곳(`web/service.py`, `tests/test_web.py`)과 시험의 호출 모양이다.
+
+| 확인 | 결과 |
+|---|---|
+| 전역 변수 | builder.py의 함수가 읽는데 import만으로는 정의되지 않는 전역을 `symtable`로 셌다. 바꾸기 전에는 `global` 문 61개, 그런 이름 60개(`configure()`가 정하는 59개와 `MSP`)였고, 바꾼 뒤에는 둘 다 0개다 |
+| 같은 PC 비교 | 요청 14개(예제 5종, 단문 왼쪽 경첩 2x4, 창살 2x0·0x4·3x5, 그림 297x420, 소수 외곽 463.7x586.3, 원판 두께 24 mm, 소수 내경 단문 340.3x820.7, 검증에서 떨어지는 12x4)를 main `1548662`와 두 코드 커밋 뒤에 각각 만들어 파일별 SHA-256으로 비교했다. 두 커밋 뒤 모두 PASS 13개는 파일 35개 중 `environment.json`, `package_manifest.json`, `source/hanok_generator/engine/builder.py`, `source/hanok_generator/worker.py`만 다르고, 12x4는 실패 기록(검사 67개)이 같다. `validation_report.json`이 바이트까지 같으므로 검사 ID·수·순서가 같다. 이슈의 완료 기준(예제 5종의 `window.dxf`, CSV 4종, `design_spec.json`, `checks` 목록)도 이 비교에 들어 있다. 비교 방법은 main 사본의 두 소스 끝에 주석 한 줄씩만 더해 만든 결과로 먼저 확인했고, 그때도 같은 네 파일만 달랐다 |
+| Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8`과 `PYTHONIOENCODING` 없음. 인코딩 1개 PASS(0.2초), 생성기 14개 PASS(184.4초, 바꾸기 전 main에서는 187.4초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.4초), LLM 21개 PASS(14.2초). 생성기 시험을 스크립트로 먼저 돌려 `tests/results.json`의 소스 해시를 다시 적었고, 시험 뒤 바뀐 추적 파일은 그 파일뿐이다 |
+| 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사·부품·홈·도그본 수는 그대로다. R3는 `6692c318…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |

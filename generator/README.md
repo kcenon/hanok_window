@@ -37,6 +37,43 @@ python3.11 -m venv .venv
 `requirements.lock`은 CPython 3.11.15, macOS arm64에서 검증한 실행 의존 버전 전체입니다. `pyproject.toml`은 직접 쓰는 ezdxf·shapely·Pillow만 고정합니다.
 이 문서의 명령은 모두 이 폴더에서 실행합니다.
 
+### Windows
+
+위 명령은 macOS와 Linux용입니다. Windows에서는 PowerShell에서 이 폴더로 옮겨 다음과 같이 설치합니다.
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.lock
+.venv\Scripts\python -m pip install -e .
+```
+
+다음 단계([#4](https://github.com/kcenon/hanok_window/issues/4))가 나오기 전까지는 명령을 실행하기 전에 `$env:PYTHONUTF8 = "1"`을 둡니다. 없으면 엔진이 `presets/r3_parameters.json`을 cp949로 읽다가 멈춥니다.
+저장소는 `.gitattributes`에 따라 글 파일을 LF 줄 끝으로 받습니다. 이 파일이 들어오기 전에 받아 둔 사본은 저장소 폴더에서 `git rm -rq --cached .` 다음 `git reset --hard`로 한 번 다시 받습니다.
+
+웹 화면은 `.venv\Scripts\hanok-window-web --output output --open`으로 켜고 Ctrl+C로 끕니다. `web.sh`, `web-start.command`, `web-stop.command`, `mcp.sh`는 macOS와 Linux용입니다.
+
+MCP 클라이언트에는 `.venv\Scripts\hanok-window-mcp.exe`의 절대 경로를 등록합니다. 클라이언트가 어느 폴더에서 서버를 켤지 모르므로 `--output`은 절대 경로로 주고, 환경 변수 `PYTHONUTF8=1`도 함께 줍니다. 설정 파일의 형식은 [MCP 클라이언트에 등록](#mcp-클라이언트에-등록)과 같고 `args`와 `env`를 더합니다.
+
+```powershell
+claude mcp add hanok-window -e PYTHONUTF8=1 -- C:\절대\경로\generator\.venv\Scripts\hanok-window-mcp.exe --output C:\절대\경로\generator\output
+```
+
+```json
+{"mcpServers": {"hanok-window": {
+  "command": "C:\\절대\\경로\\generator\\.venv\\Scripts\\hanok-window-mcp.exe",
+  "args": ["--output", "C:\\절대\\경로\\generator\\output"],
+  "env": {"PYTHONUTF8": "1"}}}}
+```
+
+시험은 `$env:PYTHONUTF8 = "1"`을 둔 채 [검증](#검증)의 세 명령을 `.venv\Scripts\python`으로 돌립니다. `web.sh` 시험 5개는 건너뛰고, 다음 단계 전까지는 `test_llm.py`의 README 줄바꿈 시험(`test_read_package_file_in_pages`) 1개가 실패합니다.
+
+```powershell
+$env:PYTHONUTF8 = "1"; $env:PYTHONDONTWRITEBYTECODE = "1"
+.venv\Scripts\python -m unittest discover -s tests -p test_generator.py
+.venv\Scripts\python -m unittest discover -s tests -p test_web.py
+.venv\Scripts\python -m unittest discover -s tests -p test_llm.py
+```
+
 ## 웹 화면
 
 명령어 대신 브라우저에서 입력하고, 입력하는 동안 정면도·원판 배치·핵심 치수를 확인한 뒤 CLI와 똑같이 검증한 패키지를 받습니다. 화면별 그림과 사용 순서는 [사용 설명서](docs/manual/README.md)에 있습니다.
@@ -76,7 +113,7 @@ Finder에서는 `web-start.command`를 두 번 누르면 켜지고 `web-stop.com
 
 - 사전 확인 통과는 “도면 검사 전”입니다. 홈끼리 붙는지 같은 판정은 DXF를 저장해 다시 읽어야 알 수 있으므로, 생성 단계에서 실패하면 실패한 검사와 이유를 결과 카드에 따로 보여 줍니다.
 - 생성은 CLI와 같은 `jobs.run_job`으로 합니다. 동시 2개(`--workers`로 변경), 대기 8개까지 받습니다.
-- 폼은 예제 JSON과 같은 모양의 요청을 만들므로 같은 입력이면 웹과 `--input` CLI의 패키지 ID가 같습니다. CLI `--size 463x586`은 크기를 실수 `463.0`으로 기록하므로 revision은 같아도 패키지 ID가 다릅니다.
+- 폼은 예제 JSON과 같은 모양의 요청을 만들므로 같은 입력이면 웹과 `--input` CLI의 패키지 ID가 같습니다. 패키지 ID는 같은 실행 환경(OS, 글꼴, Python과 라이브러리 버전)에서만 같으므로, 다른 컴퓨터에서 만든 패키지와 같은 설계인지는 revision으로 봅니다. CLI `--size 463x586`은 크기를 실수 `463.0`으로 기록하므로 revision은 같아도 패키지 ID가 다릅니다.
 - 서버는 `127.0.0.1`에만 열리고 로그인이 없습니다. 다른 Host(421), 다른 출처(403), JSON이 아닌 본문(415), 64 KiB 초과(413)를 거절합니다. 패키지 파일은 매니페스트에 적힌 것만 해시를 대조한 뒤 보내며, 서버는 출력 폴더에 쓰지 않습니다(쓰기는 `run_job`만 합니다).
 - 웹 코드는 `hanok_generator/web/`에 있습니다. 패키지 `source/`에 들어가는 파일(최상위 모듈·엔진·프리셋·스키마)을 건드리지 않아 기존 패키지 ID가 그대로입니다. 같은 이유로 `hanok-window` CLI에 명령을 붙이지 않고 별도 명령 `hanok-window-web`을 둡니다.
 - 진행 중인 생성 상태는 서버 메모리에만 있습니다. 서버를 다시 켜면 진행 기록은 사라지고 완료 패키지와 `failures/` 기록은 남습니다. Ctrl+C와 `./web.sh stop`은 진행 중인 생성을 끝까지 기다리고 대기 중인 생성은 취소합니다. `stop`은 150초 안에 끝나지 않으면 강제로 끕니다.
@@ -111,7 +148,7 @@ Finder에서는 `web-start.command`를 두 번 누르면 켜지고 `web-stop.com
 ## LLM 연동
 
 Claude, GPT, Gemini, 로컬 모델(Ollama 등) 같은 LLM이 도구 호출로 이 생성기를 다룰 수 있도록 도구 8개를 제공합니다.
-도구는 웹 화면·명령줄과 같은 코드를 쓰므로 같은 설계면 어느 통로로 만들어도 패키지 ID가 같고, 외부 네트워크는 쓰지 않습니다.
+도구는 웹 화면·명령줄과 같은 코드를 쓰므로 같은 실행 환경에서는 같은 설계를 어느 통로로 만들어도 패키지 ID가 같고, 외부 네트워크는 쓰지 않습니다. 실행 환경이 다르면 패키지 ID도 다르므로, 모델에게는 같은 설계인지 `revision`으로 보라고 안내합니다.
 모델이 읽는 도구 설명과 오류 안내(`hint`)는 어떤 모델이든 잘 따르도록 영어로 씁니다.
 
 | 도구 | 하는 일 | 파일 쓰기 |

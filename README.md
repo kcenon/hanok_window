@@ -8,6 +8,7 @@
 ## 바로 시작
 
 처음 한 번 `generator/` 폴더에서 설치합니다. Python 3.11 이상이 필요합니다.
+아래 명령은 macOS와 Linux용입니다. Windows는 [생성기 README의 Windows 절](generator/README.md#windows)을 따릅니다.
 
 ```bash
 cd generator

@@ -46,8 +46,8 @@ process.stdout.write(JSON.stringify({
 EXAMPLE_FILES = {p.stem: p for p in sorted((HERE.parent / "examples").glob("*.json")) if p.name != "built_packages.json"}
 EXAMPLES = {name: json.loads(p.read_text(encoding="utf-8")) for name, p in EXAMPLE_FILES.items()}
 R3 = EXAMPLES["double_r3"]
-# Runs in a fresh interpreter: builder keeps module-level state, so only a job's
-# worker process may import it, never the server process.
+# Runs in a fresh interpreter: only a job's worker process (hash seed 0, time
+# limit) may import the builder, never the server process.
 ISOLATION = """
 import http.client, json, sys, tempfile, threading, time
 from hanok_generator.web.server import make_server

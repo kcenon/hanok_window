@@ -175,18 +175,18 @@ class GeneratorTests(unittest.TestCase):
     def test_saved_geometry_rejects_phantom_detail_and_wrong_hinge(self):
         from hanok_generator.engine import builder
         p=self.path("single_right_0_0")
-        builder.configure(json.loads((p/"design_parameters.json").read_text(encoding="utf-8")),p)
+        cfg=builder.configure(json.loads((p/"design_parameters.json").read_text(encoding="utf-8")),p)
         doc=ezdxf.readfile(p/"window.dxf")
         e=doc.modelspace().add_text("PHANTOM J3")
         tag(e,view="detail",detail="J3")
-        with self.assertRaises(builder.ValidationError) as caught:builder.validate(doc,"INJECTED")
+        with self.assertRaises(builder.ValidationError) as caught:builder.validate(cfg,doc,"INJECTED")
         self.assertIn("reference_details_match_existing_joints",caught.exception.report["failed_checks"])
         doc=ezdxf.readfile(p/"window.dxf")
         for e in doc.modelspace():
             d=meta(e)
             if d.get("kind")=="hardware_ref" and d["hardware_type"]=="HINGE" and d["part_id"]=="S01-2":
                 tag(e,**dict(d,part_id="S01-1"))
-        with self.assertRaises(builder.ValidationError) as caught:builder.validate(doc,"INJECTED")
+        with self.assertRaises(builder.ValidationError) as caught:builder.validate(cfg,doc,"INJECTED")
         self.assertIn("hardware_attachment_geometry",caught.exception.report["failed_checks"])
 
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
@@ -275,7 +275,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_decimal_geometry_and_input_guards_under_optimization(self):
         # 200 original outer-size cases, now using outer-driven picture-free requests.
-        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   builder.configure(p,tmp);_,r,_=builder.build()\n   if r["checks_passed"]!=67 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
+        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=67 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
         processes=[]
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}

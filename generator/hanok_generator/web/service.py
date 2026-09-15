@@ -187,8 +187,11 @@ class Service:
                 except InputError:
                     pass
             design = accepted[0][1]
+            stock = design.parameters["stock"]
             presets.append(dict(id=name, types=[kind for kind, _ in accepted], picture=design.request["picture"],
-                                min_leaf_ratio=design.parameters["leaf"]["min_height_to_width_ratio"]))
+                                min_leaf_ratio=design.parameters["leaf"]["min_height_to_width_ratio"],
+                                stock_mm=design.request["stock_mm"], edge_margin_mm=stock["edge_margin"],
+                                part_gap_mm=stock["part_gap"]))
         defaults = resolve(dict(type="double", outer_mm=[463, 586], lattice_per_leaf=[0, 0],
                                 picture=dict(size_mm=PICTURE_SIZES["A3"]))).request
         props = schema["properties"]

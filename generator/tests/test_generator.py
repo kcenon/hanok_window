@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import copy
 import csv
 import hashlib
@@ -19,6 +19,7 @@ import unittest
 from unittest.mock import patch
 
 import ezdxf
+from ezdxf import bbox
 from shapely.affinity import rotate, translate
 from shapely.geometry import box
 
@@ -54,6 +55,8 @@ class GeneratorTests(unittest.TestCase):
         cls.requests["picture"]=request(outer_mm=[600,800],picture=dict(size_mm=[297,420],margin_mm=10))
         inner=request(preset="hanok_A3_portrait_R3");inner.pop("outer_mm");inner["inner_mm"]=[383,506]
         cls.requests["inner_r3"]=inner
+        cls.requests["r3_stock_2400"]=request(preset="hanok_A3_portrait_R3",stock_mm=[2400,1200,20])
+        cls.requests["stock_2400_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),stock_mm=[2400,1200,20])
         def build(item):
             name,data=item;result=run_job(data,cls.output)
             LOG.append(dict(case=name,status="PASS",**{k:result[k] for k in ("checks","parts","pockets","dogbones","package_id")}))
@@ -190,6 +193,34 @@ class GeneratorTests(unittest.TestCase):
         with self.assertRaises(builder.ValidationError) as caught:builder.validate(cfg,doc,"INJECTED")
         self.assertIn("hardware_attachment_geometry",caught.exception.report["failed_checks"])
 
+    def test_reference_views_stay_off_a_longer_board(self):
+        # The reference views used to start at a fixed X of 1350, on the parts of a 2400 mm board,
+        # while every check passed. Measure with ezdxf's own extents, not the engine's helper.
+        board=box(0,0,2400,1200)
+        for name in ("r3_stock_2400","stock_2400_900x1200"):
+            with self.subTest(name=name):
+                p=self.path(name)
+                refs=[e for e in ezdxf.readfile(p/"window.dxf").modelspace()
+                      if meta(e).get("view") in ("assembly","detail","opening") or meta(e).get("detail")]
+                extents=[bbox.extents([e],fast=True) for e in refs]
+                on_board=sum(board.intersects(box(b.extmin.x,b.extmin.y,b.extmax.x,b.extmax.y)) for b in extents)
+                check={c["rule_id"]:c for c in json.loads((p/"validation_report.json").read_text(encoding="utf-8"))["checks"]}["references_outside_board"]
+                self.assertEqual((on_board,check["status"],check["measured"]),
+                                 (0,"PASS",dict(reference_entities=len(refs),on_board=0)))
+        # Putting the views back at X 1350 fails the new check and nothing else, before the DXF is saved.
+        from hanok_generator.engine import builder
+        for name in ("r3_stock_2400","stock_2400_900x1200"):
+            params=json.loads((self.path(name)/"design_parameters.json").read_text(encoding="utf-8"))
+            with self.subTest(name=name),tempfile.TemporaryDirectory() as tmp:
+                cfg=builder.configure(params,tmp)
+                with self.assertRaises(builder.ValidationError) as caught:
+                    builder.build(replace(cfg,ASSEMBLY_ORIGIN=(1350.,100.),OPENING_ORIGIN=(1350.,-370.)))
+                self.assertEqual((caught.exception.report["phase"],caught.exception.report["failed_checks"]),
+                                 ("IN_MEMORY_BEFORE_SAVE",["references_outside_board"]))
+                self.assertEqual(list(Path(tmp).iterdir()),[])
+        LOG.append(dict(case="reference_views_off_2400_board",status="PASS",designs=2,on_board=0,
+                        origin_1350_fails=["references_outside_board"]))
+
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
         latest=(self.output/"latest.json").read_bytes()
         cases=[("scope_free_single",None),
@@ -289,7 +320,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_decimal_geometry_and_input_guards_under_optimization(self):
         # 200 original outer-size cases, now using outer-driven picture-free requests.
-        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=67 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
+        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=68 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
         processes=[]
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}

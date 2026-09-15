@@ -1,57 +1,57 @@
 {
   "double_r3": {
-    "checks": 67,
+    "checks": 68,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "01a8fcb5ab070c5d4bd12d186996837583fcfe1f4a6b6af9a21b76acfd246ff8",
+    "package_id": "b9a13d66c7ed81c9531edbbd066c9e703de2de0ceb4ceeea0a7bc0d25d7f05eb",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/01a8fcb5ab070c5d4bd12d186996837583fcfe1f4a6b6af9a21b76acfd246ff8",
-    "manifest": "output/packages/01a8fcb5ab070c5d4bd12d186996837583fcfe1f4a6b6af9a21b76acfd246ff8/package_manifest.json"
+    "package": "output/packages/b9a13d66c7ed81c9531edbbd066c9e703de2de0ceb4ceeea0a7bc0d25d7f05eb",
+    "manifest": "output/packages/b9a13d66c7ed81c9531edbbd066c9e703de2de0ceb4ceeea0a7bc0d25d7f05eb/package_manifest.json"
   },
   "double_inner_r3": {
-    "checks": 67,
+    "checks": 68,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "e1fd53e63c5ce7e771f1c7c24c028727d61c50e2a4041b0b1e88623076b01220",
+    "package_id": "3895c1a36dbf8be491bf2310eefaf8b26d60193a4ead0a9920b8c34f5876ac5a",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/e1fd53e63c5ce7e771f1c7c24c028727d61c50e2a4041b0b1e88623076b01220",
-    "manifest": "output/packages/e1fd53e63c5ce7e771f1c7c24c028727d61c50e2a4041b0b1e88623076b01220/package_manifest.json"
+    "package": "output/packages/3895c1a36dbf8be491bf2310eefaf8b26d60193a4ead0a9920b8c34f5876ac5a",
+    "manifest": "output/packages/3895c1a36dbf8be491bf2310eefaf8b26d60193a4ead0a9920b8c34f5876ac5a/package_manifest.json"
   },
   "single_right": {
-    "checks": 67,
+    "checks": 68,
     "dogbones": 32,
     "manufacturing_status": "PENDING",
-    "package_id": "3fa3263a72fe29d9b8d5df9ac5e32b4891784056c8004dbc70b7dbc46e0bfe2d",
+    "package_id": "9e6609cb2f6f2ccd2f1a6a9d7ff9a3d56078fd1315045ed3e71461b6c533339e",
     "parts": 16,
     "pockets": 72,
     "status": "PASS",
-    "package": "output/packages/3fa3263a72fe29d9b8d5df9ac5e32b4891784056c8004dbc70b7dbc46e0bfe2d",
-    "manifest": "output/packages/3fa3263a72fe29d9b8d5df9ac5e32b4891784056c8004dbc70b7dbc46e0bfe2d/package_manifest.json"
+    "package": "output/packages/9e6609cb2f6f2ccd2f1a6a9d7ff9a3d56078fd1315045ed3e71461b6c533339e",
+    "manifest": "output/packages/9e6609cb2f6f2ccd2f1a6a9d7ff9a3d56078fd1315045ed3e71461b6c533339e/package_manifest.json"
   },
   "single_empty": {
-    "checks": 67,
+    "checks": 68,
     "dogbones": 0,
     "manufacturing_status": "PENDING",
-    "package_id": "2407ab9e33a7a7b6767a55edbcce55e07488625ba15f1a7a9335daadd94e3e9f",
+    "package_id": "34db94a1d494a84622a3dec3473ce837235d4727d43d0ea96437b65b1c103627",
     "parts": 8,
     "pockets": 16,
     "status": "PASS",
-    "package": "output/packages/2407ab9e33a7a7b6767a55edbcce55e07488625ba15f1a7a9335daadd94e3e9f",
-    "manifest": "output/packages/2407ab9e33a7a7b6767a55edbcce55e07488625ba15f1a7a9335daadd94e3e9f/package_manifest.json"
+    "package": "output/packages/34db94a1d494a84622a3dec3473ce837235d4727d43d0ea96437b65b1c103627",
+    "manifest": "output/packages/34db94a1d494a84622a3dec3473ce837235d4727d43d0ea96437b65b1c103627/package_manifest.json"
   },
   "double_600_800": {
-    "checks": 67,
+    "checks": 68,
     "dogbones": 48,
     "manufacturing_status": "PENDING",
-    "package_id": "9aa6a8632e0a356d4b9b938c177553bf31821d2c8a10ef41362075a47f4b3c05",
+    "package_id": "6456176c083f33af07789b5db52b8185f1c3cfef9c4eee6e3a712b57d8196944",
     "parts": 24,
     "pockets": 104,
     "status": "PASS",
-    "package": "output/packages/9aa6a8632e0a356d4b9b938c177553bf31821d2c8a10ef41362075a47f4b3c05",
-    "manifest": "output/packages/9aa6a8632e0a356d4b9b938c177553bf31821d2c8a10ef41362075a47f4b3c05/package_manifest.json"
+    "package": "output/packages/6456176c083f33af07789b5db52b8185f1c3cfef9c4eee6e3a712b57d8196944",
+    "manifest": "output/packages/6456176c083f33af07789b5db52b8185f1c3cfef9c4eee6e3a712b57d8196944/package_manifest.json"
   }
 }

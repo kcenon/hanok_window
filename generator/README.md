@@ -154,7 +154,7 @@ Claude, GPT, Gemini, 로컬 모델(Ollama 등) 같은 LLM이 도구 호출로 �
 |---|---|---|
 | `describe_generator` | 창 형식, 외경/내경, 프리셋 규칙, 입력 범위, 기본값, 예제 요청, 상태의 뜻을 알려 줍니다 | 없음 |
 | `check_design` | 사전 확인입니다. 치수·창짝·창살 칸·원판 사용량을 돌려주거나, 어긴 규칙의 `rule_id`와 수치, 고치는 방법(`hint`), 그 규칙을 통과하는 값(`suggestion`)을 돌려줍니다 | 없음 |
-| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 67개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
+| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 68개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
 | `list_packages` | 만든 패키지 목록(최신순) | 없음 |
 | `get_package` | 패키지 하나의 요청·치수·검사·PENDING 항목·파일 | 없음 |
 | `verify_package` | 패키지 파일 해시 대조(읽기 전용) | 없음 |
@@ -191,7 +191,7 @@ MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내�
 .venv/bin/hanok-window-llm tools --format anthropic       # Messages API
 .venv/bin/hanok-window-llm tools --format mcp
 .venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
-.venv/bin/hanok-window-llm call get_drawing '{"package_id": "01a8fcb5", "drawing": "assembly"}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "b9a13d66", "drawing": "assembly"}'
 ```
 
 `call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.

@@ -1,161 +1,179 @@
 {
   "status": "PASS",
-  "tests": 15,
+  "tests": 16,
   "failures": [],
   "errors": [],
   "cases": [
     {
       "case": "double_None_0_0",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 12,
       "pockets": 24,
       "dogbones": 0,
-      "package_id": "3aaac78c53d54402cc3cf9dbf87e7d84a4d0392db471a380d7300637fca2cf86"
+      "package_id": "b7d518dc0662a7ed0f9dd346fc419aa740e2f0f5dd5c57b84fe49ae65eeedce7"
     },
     {
       "case": "double_None_2_0",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 16,
       "pockets": 40,
       "dogbones": 16,
-      "package_id": "7d40a9e8de55236cf67576de13c93119af6daf9eac644a6e1162d0714e2272e9"
+      "package_id": "a4023c7fd9cf24c564e71f147822d56dcefd813124b353af03696b14abb22b93"
     },
     {
       "case": "double_None_0_4",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 20,
       "pockets": 56,
       "dogbones": 32,
-      "package_id": "e7aebbd21164d44ea8afc284f7524955bca798ce54fa241f901b22f9fbdb1b99"
+      "package_id": "842851b2aebd723a6e720935606b9f981fcf1f09728699dc301cea2d851f2060"
     },
     {
       "case": "double_None_2_4",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "5015c49e21c2ebd1da3ce28218fd591b6686e9228cf2ca3e11fb9c19947d06c7"
-    },
-    {
-      "case": "single_left_2_4",
-      "status": "PASS",
-      "checks": 67,
-      "parts": 14,
-      "pockets": 56,
-      "dogbones": 24,
-      "package_id": "09402543844e465155065ea4138f09b9a8447f40b4170f3e9a16d5a2aa1b286d"
+      "package_id": "97f341b447b158485b9091e43f1ec341b661a5bdb5a87d8218357598d991d3b5"
     },
     {
       "case": "single_left_0_4",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 12,
       "pockets": 32,
       "dogbones": 16,
-      "package_id": "25699f2bbb3a7d2ce397e487f67de212754dcf48cab8728cbfdadbf99cb932ef"
+      "package_id": "0e1f75b60af2843711ec216ba35bb7305311169a2ff0f727657fd16b2784f31c"
+    },
+    {
+      "case": "single_left_2_4",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 14,
+      "pockets": 56,
+      "dogbones": 24,
+      "package_id": "1f22d39bbb758e9da1edf8545666f3a5ab4e5aed0f9a28911006d66a35f51bd9"
     },
     {
       "case": "single_left_2_0",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 10,
       "pockets": 24,
       "dogbones": 8,
-      "package_id": "652ca8a87590e0d83d52ff1f4bd7ff3ad9be8113efd25df9629f4c4e0f7a8075"
+      "package_id": "0de45c899cbebb0fe7f200022c6b47488eeabb341573c352dc565ff495089ecf"
     },
     {
       "case": "single_left_0_0",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "4f9335f2375a0ea76c6d62ca6f30429cc3f5c3121152487ef5fc133a3fb19316"
-    },
-    {
-      "case": "single_right_2_0",
-      "status": "PASS",
-      "checks": 67,
-      "parts": 10,
-      "pockets": 24,
-      "dogbones": 8,
-      "package_id": "7ec1d33d032845df52357b88c4555273bd49764eb0caae2c23676c85daf04b52"
-    },
-    {
-      "case": "single_right_0_4",
-      "status": "PASS",
-      "checks": 67,
-      "parts": 12,
-      "pockets": 32,
-      "dogbones": 16,
-      "package_id": "06f8756990067008d1074ce13ed86f4598f79fbe72b7620f4306240adbf78e22"
+      "package_id": "20b37a39adf5527b59b11dcb7cffc90f47028604e56f122bafbce886c0187024"
     },
     {
       "case": "single_right_0_0",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "1874887b37e325266b8eb8b4eb6dda788a4d2c8a81782d54e155a8f7c83e0894"
+      "package_id": "c435f46577a796ce73e3b6153c9f6a440af9e9ce1d08030f4055807ceaa49bfb"
+    },
+    {
+      "case": "single_right_2_0",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 10,
+      "pockets": 24,
+      "dogbones": 8,
+      "package_id": "3a2723bae6e366bfa889a3250b08ba02b442fc8ab21675022c89d2734519daf7"
+    },
+    {
+      "case": "single_right_0_4",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 12,
+      "pockets": 32,
+      "dogbones": 16,
+      "package_id": "ee61fc31cd0e74d08092b338b2fb9f7f8af8f14a15dc3455d4e4492987aef2b8"
     },
     {
       "case": "single_right_2_4",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 14,
       "pockets": 56,
       "dogbones": 24,
-      "package_id": "1229625ffff134703d421724ea299e61a032723a2d868641134d659c53b1f650"
+      "package_id": "adf667ef38cb0f3a481db5dd430ed6a56390a3c0c10b4260433b30628c0a3e8d"
     },
     {
       "case": "r3",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "01a8fcb5ab070c5d4bd12d186996837583fcfe1f4a6b6af9a21b76acfd246ff8"
+      "package_id": "b9a13d66c7ed81c9531edbbd066c9e703de2de0ceb4ceeea0a7bc0d25d7f05eb"
     },
     {
       "case": "resize",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "9aa6a8632e0a356d4b9b938c177553bf31821d2c8a10ef41362075a47f4b3c05"
+      "package_id": "6456176c083f33af07789b5db52b8185f1c3cfef9c4eee6e3a712b57d8196944"
     },
     {
       "case": "picture",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "2217eb80d24cb07e388a168bc6bd71e4ed538adf1e71b1899aa99102aa1f1bbc"
+      "package_id": "a3cf61a32c7a084edc5cd77854171afbd02fd689106e4cd0cf0b1543ef63334f"
     },
     {
       "case": "lattice_3_5",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 28,
       "pockets": 148,
       "dogbones": 64,
-      "package_id": "478e568cf54c1fc7cf804445a0469435326a74dd5e42e0cb9deeda8ee9eb325e"
+      "package_id": "347ba4eb79183663dc27c014051b5681e5eaf3ae8696a5f2baeba0237c18b005"
     },
     {
       "case": "inner_r3",
       "status": "PASS",
-      "checks": 67,
+      "checks": 68,
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "e1fd53e63c5ce7e771f1c7c24c028727d61c50e2a4041b0b1e88623076b01220"
+      "package_id": "3895c1a36dbf8be491bf2310eefaf8b26d60193a4ead0a9920b8c34f5876ac5a"
+    },
+    {
+      "case": "r3_stock_2400",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "e85af5c26f47f137311e8945175554957a2b8057f60621c6e9d7f2ecc78ea081"
+    },
+    {
+      "case": "stock_2400_900x1200",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 28,
+      "pockets": 136,
+      "dogbones": 64,
+      "package_id": "d79204cdabfdb4ba2dbb21b5cca3262266385d30cf87883c611f9b72469de311"
     },
     {
       "case": "failure_cad",
@@ -253,6 +271,15 @@
       "rejections": 4
     },
     {
+      "case": "reference_views_off_2400_board",
+      "status": "PASS",
+      "designs": 2,
+      "on_board": 0,
+      "origin_1350_fails": [
+        "references_outside_board"
+      ]
+    },
+    {
       "case": "optimized_source_bundle",
       "status": "PASS",
       "entire_package_identical": true,
@@ -264,7 +291,7 @@
     "__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
     "cli.py": "e7b5fbbf68427e03c2836bc2bd9f4abea4a165d1e795e1074cea6e404ef30de6",
     "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
-    "engine/builder.py": "5c48f56e97bbe962a57c22066cc43484fbc7d1605a511d9d83f4bb55f917c016",
+    "engine/builder.py": "b74c93faaa4e661b6c1560f72606b378d74f2d3caecbcc719bf85adcb6f4d004",
     "engine/cad_helpers.py": "fad3c229dedc1ef69b6a1ed76c2ad8616aac3ff0b4fda8849d8e7b00b94368b3",
     "engine/generate_spec.py": "d9de869d27fca60dd9fd57d6d9961c89819d19ee5dca5e15ec80f738aa29a171",
     "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",

@@ -10,7 +10,13 @@ import math
 
 from . import __version__ as ENGINE_VERSION
 
-PRESETS = ("standard_v1", "hanok_A3_portrait_R3")
+PRESETS = ("standard_v1", "hanok_A3_portrait_R3", "standard_4x8_v1")
+# Stock board [length, width, thickness] of a request that gives none.
+DEFAULT_STOCK_MM = [1220, 900, 20]
+# Presets that lay parts out on a 4 x 8 ft board: its default size, the margin left
+# at the board edge and the gap between parts. Other presets keep DEFAULT_STOCK_MM
+# and the edge_margin and part_gap of presets/r3_parameters.json.
+PRESET_STOCK = {"standard_4x8_v1": dict(stock_mm=[2400, 1200, 20], edge_margin=10, part_gap=12)}
 # A size is given either as the finished outer frame (외경) or as the clear opening
 # inside the fixed frame (내경): request key -> (basis, provenance wording).
 SIZE_BASES = {"outer_mm": ("outer", "finished outer frame"),
@@ -87,7 +93,8 @@ def resolve(data: dict) -> ResolvedDesign:
                  "input.picture", "그림은 size_mm과 margin_mm으로 지정합니다.")
         picture = dict(size_mm=_vector(picture.get("size_mm"), "picture.size_mm", 2, 0.1, 3000),
                        margin_mm=_number(picture.get("margin_mm", 10), "picture.margin_mm", 0, 500))
-    stock = _vector(data.get("stock_mm", [1220, 900, 20]), "stock_mm", 3, 1, 3000)
+    layout = PRESET_STOCK.get(preset, {})
+    stock = _vector(data.get("stock_mm", layout.get("stock_mm", DEFAULT_STOCK_MM)), "stock_mm", 3, 1, 3000)
     _require(5 <= stock[2] <= 60, "input.stock_thickness", "지원하는 원판 두께는 5~60 mm입니다.")
     params = json.loads(files("hanok_generator").joinpath("presets/r3_parameters.json").read_text(encoding="utf-8"))
     # The inner size is the clear opening of the fixed frame, so the engine still
@@ -108,6 +115,7 @@ def resolve(data: dict) -> ResolvedDesign:
                           min_height_to_width_ratio=2.6 if preset == "hanok_A3_portrait_R3" else 0)
     params["lattice"].update(vertical_per_leaf=lattice[0], horizontal_per_leaf=lattice[1])
     params["stock"].update(length=stock[0], width=stock[1], thickness=stock[2])
+    params["stock"].update({k: v for k, v in layout.items() if k != "stock_mm"})
     params["machining"]["pocket_depth"] = stock[2] / 2
     params["picture"].update(enabled=picture is not None,
         sheet_width=picture["size_mm"][0] if picture else 0,

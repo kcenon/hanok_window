@@ -274,10 +274,10 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | package_id 불변 | 같은 PC, 같은 가상환경(Pillow 12.3.0)에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `48d2e12d…`다. 같은 PC에서 Pillow 11.3.0으로 만들면 `669c09fb…`였고, macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
 | macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로, 기록 당시와 같은 환경(Pillow 11.3.0)이면 이 버전의 수정으로는 바뀌지 않는다. Pillow 12.3.0으로 새로 설치한 환경에서는 PR #2 때문에 다르다 |
 
-## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리, latest.json 교체 재시도, 참고 도면 위치 (엔진 0.3.0)
+## 0.5.0 수정·추가: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리, latest.json 교체 재시도, 참고 도면 위치, 4×8 원판 프리셋 (엔진 0.3.0)
 
-2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). Windows에서 동시에 끝난 빌드가 `latest.json`을 바꾸지 못하던 결함([#9](https://github.com/kcenon/hanok_window/issues/9))도 고쳤다(절 끝의 「latest.json 교체 재시도 (#9)」). 원판이 1220 mm보다 길면 참고 도면이 원판 위에 그려지던 결함([#11](https://github.com/kcenon/hanok_window/issues/11))도 고쳤다(절 끝의 「참고 도면 위치 (#11)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
-패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). 다만 원판 길이가 1220 mm가 아닌 입력은 #11 수정으로 참고 도면이 옮겨져 DXF가 다르다. Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
+2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). Windows에서 동시에 끝난 빌드가 `latest.json`을 바꾸지 못하던 결함([#9](https://github.com/kcenon/hanok_window/issues/9))도 고쳤다(절 끝의 「latest.json 교체 재시도 (#9)」). 원판이 1220 mm보다 길면 참고 도면이 원판 위에 그려지던 결함([#11](https://github.com/kcenon/hanok_window/issues/11))도 고쳤다(절 끝의 「참고 도면 위치 (#11)」). 4×8 원판을 기본으로 쓰는 프리셋 `standard_4x8_v1`을 더하고, 원판 안에 그리던 가공 메모와 결 방향 화살표를 원판 아래로 옮겼다([#13](https://github.com/kcenon/hanok_window/issues/13), 절 끝의 「4×8 원판 프리셋 (#13)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
+패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). 다만 원판 길이가 1220 mm가 아닌 입력은 #11 수정으로 참고 도면이 옮겨져 DXF가 다르다. 또 #13 수정으로 가공 메모와 결 방향 화살표가 원판 아래로 옮겨져, 모든 입력의 DXF와 01 원판 배치 PNG가 0.4.2와 다르다. Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
 0.4.1 패키지와 비교하면 package_id는 두 번 바뀐 셈이다. 이슈의 계획은 한 번이었지만, 0.4.2 절에 적은 대로 PR #2(Pillow 12.3.0)로 새로 설치한 환경의 package_id가 이미 한 번 바뀌었다.
 
 | 파일 | 내용 |
@@ -400,3 +400,38 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | 옛 원점 | 원점을 x 1350으로 되돌린 설정으로 두 2400 원판 설계를 빌드하면 저장 전 검사(`IN_MEMORY_BEFORE_SAVE`)에서 `references_outside_board` 하나만 실패하고, 빌드 폴더에 파일이 남지 않는다(새 시험) |
 | Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8`과 `PYTHONIOENCODING` 없음. 인코딩 1개 PASS(0.2초), 생성기 16개 PASS(새 시험 포함, 201초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.8초), LLM 21개 PASS(14.2초). 생성기 시험을 스크립트로 먼저 돌려 `tests/results.json`을 다시 적었고, 시험 뒤 바뀐 추적 파일은 고친 파일과 그 파일뿐이다 |
 | 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사는 68개, 부품·홈·도그본 수는 그대로다. R3는 `b9a13d66…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |
+
+### 4×8 원판 프리셋 (#13)
+
+2026-09-15. 4×8 원판(2400 × 1200 mm)으로 가공하도록 원판 기본값, 원판 가장자리 여유, 부재 간격을 프리셋이 정하게 했다([#13](https://github.com/kcenon/hanok_window/issues/13)). 그전에는 원판 기본값 1220 × 900 × 20 mm, 여유 20 mm, 간격 12 mm가 모든 입력에 하나였고 여유와 간격을 바꿀 길이 없었다. 새 프리셋 `standard_4x8_v1`은 `standard_v1`과 규칙이 같고 기본 원판 2400 × 1200 × 20 mm, 여유 10 mm, 간격 12 mm를 쓴다. 원판 크기, 간격 고정, 새 프리셋으로 둘지는 사용자가 이슈의 권장안대로 골랐다. 여유와 간격은 요청 항목으로 열지 않았다. 부재 간격이 공구 지름보다 작으면 한 부재를 도는 공구가 옆 부재를 깎으므로, 이를 거부하는 규칙 `nesting.part_gap_tool`을 더했다.
+원판 안에 그리던 가공 메모 다섯 줄, 결 방향 화살표와 글자, 남는 판 문구, 부품 길이 줄은 배치 위쪽의 빈 띠에 놓였다. 배치가 원판 위쪽까지 차면 이 글자가 부품과 겹쳤는데도 검사 68개가 모두 통과했다(아래 확인 표의 원판 안 도형 행). 그래서 모든 프리셋에서 이 주석 11개를 원판 아래로 옮기고, 원판 안에는 부재 윤곽, 홈, 도그본, 부품 번호, 하드웨어 참고 표시만 둔다.
+`model.py`, `request.schema.json`, `engine/builder.py`, `engine/generate_spec.py`는 패키지 `source/`에 들어가므로 모든 입력의 package_id가 #11 수정 뒤보다 한 번 더 바뀐다. 기존 두 프리셋은 정규화 요청과 revision이 그대로이고 `window.dxf`와 01 원판 배치 PNG가 달라진다. PNG 02~05, CSV 4종, `design_spec.json`, `design_parameters.json`, `resolved_parameters.json`, `README.txt`는 바이트까지 같다. 0.5.0 태그 전이라 버전은 올리지 않았다.
+
+| 파일 | 내용 |
+|---|---|
+| `model.py` | 프리셋 `standard_4x8_v1`, 요청이 원판을 주지 않을 때의 `DEFAULT_STOCK_MM`(1220, 900, 20), 프리셋별 기본 원판·`edge_margin`·`part_gap`을 적은 `PRESET_STOCK`. `stock_mm`을 생략하면 프리셋의 기본 원판을 채우고, 여유와 간격은 `presets/r3_parameters.json`의 값을 프리셋 값으로 덮는다. 정규화 요청의 모양은 그대로여서, 새 프리셋에서 원판을 생략한 요청과 `[2400, 1200, 20]`을 적은 요청은 revision이 같다(package_id는 `design_request.json`이 달라 다르다) |
+| `request.schema.json` | `preset` 목록과 단문이 받는 프리셋에 새 프리셋, `stock_mm`에 프리셋별 기본값 설명 |
+| `engine/generate_spec.py` | `derive()`의 규칙 `nesting.part_gap_tool`(부재 간격 ≥ 공구 지름). 프리셋 값(간격 12 mm, 공구 6 mm)으로는 어떤 요청도 이 규칙에 걸리지 않으므로 웹 오류 문구와 LLM 안내는 더하지 않았다. 저장 DXF에서 잰 간격은 이미 `minimum_nesting_gap`이 프리셋 간격과 비교하므로 검사는 68개 그대로다 |
+| `engine/builder.py` | `add_board()`가 메모 여섯 줄을 y −60부터 20 mm 간격으로, 결 방향 글자·화살표·부품 길이 줄을 그 아래(y −195, −235, −275)에 그리고 `kind='sheet_note'`를 단다. 원판 가운데에 높이 13으로 쓰던 「UNUSED OFFCUT / NOT ADDITIONAL PARTS」는 원판 밖에서는 가리키는 곳이 없어 메모 여섯째 줄 「BOARD AREA WITHOUT PARTS: UNUSED OFFCUT / NOT ADDITIONAL PARTS」로 바꿨다. 「No G-code…」 줄은 제자리(y −35)다. DXF를 열 때의 기본 보기는 원판 아래 300 mm부터 위 85 mm까지로 넓혔다. `nest_entities()`는 `sheet_note`를 01 원판 배치 PNG에서 뺀다. 렌더러가 그림 범위 밖을 자르지 않아 그대로 두면 아래쪽 확대 영역 위에 그려지고, 같은 내용이 PNG의 제목 줄과 오른쪽 설명에 이미 있다 |
+| `web/service.py` | meta의 프리셋마다 `stock_mm`, `edge_margin_mm`, `part_gap_mm`. 값은 모델에 물어 얻는다 |
+| `web/static/app.js` | 요청을 폼에 불러올 때와 폼에서 요청을 만들 때 고른 프리셋의 기본 원판을 쓴다. 원판을 고치지 않은 채 프리셋을 바꾸면 원판이 새 프리셋의 기본값으로 바뀌고, 고친 원판은 그대로 둔다(`stockAfterPresetChange`) |
+| `web/static/messages.js` | 프리셋 안내에 규칙 이름과 기본 원판·여유·간격 |
+| `llm/tools.py` | `preset`과 `stock_mm` 설명에 새 프리셋과 프리셋별 기본 원판, `describe_generator`의 프리셋에 `default_stock_mm`·`edge_margin_mm`·`part_gap_mm`. 모델이 보낸 요청은 그 요청 프리셋의 기본 원판과 같을 때만 `stock_mm`을 뺀다. 웹 폼과 같은 요청이 되어 package_id가 같다 |
+| `tests/test_generator.py` | 생성 요청에 새 프리셋의 463×586 양문 2+4와 900×1200 양문 2+6을 더했다(경우 19개에서 21개). 새 시험 `test_standard_4x8_preset_lays_out_a_4x8_board`는 두 패키지의 요청·원판·여유·간격과 검사 기대값, revision, 간격 규칙(5 mm 거부, 6 mm 통과), 원판 한 장의 한계(부재 길이 2380 mm 통과, 2381 mm는 `nesting.part_fits_stock`)를 본다. 잰 간격은 좌표 뺄셈 때문에 11.999999999999998처럼 나오므로 허용 오차 1e-7 mm로 비교한다. 새 시험 `test_board_holds_only_machining_and_labels`는 모든 패키지에서 원판 안과 만나는 도형이 허용 목록뿐인지, `sheet_note` 11개가 원판 아래와 참고 도면 왼쪽에 있는지 본다. 글자는 ezdxf 외곽 상자로 재어 폭까지 넣는다 |
+| `tests/test_web.py` | meta의 프리셋별 원판·여유·간격, 새 프리셋 미리보기, 2381 mm 부재의 규칙 오류와 고침 제안(원판 길이 2401 mm 이상, 외경 세로 2380 mm 이하). 고침 제안 시험은 원판이 없는 요청의 원판을 요청 프리셋의 기본값으로 채운다. 폼 요청 구성(node)에 새 프리셋 요청 두 개와 프리셋을 바꿀 때 원판이 따라가는지를 더했다 |
+| `tests/test_llm.py` | 새 프리셋의 기본 원판을 적은 요청에서 `stock_mm`이 빠지고 다른 조합은 남는지, `describe_generator`의 프리셋별 기본 원판 |
+| `tests/results.json` | 시험 수(16개에서 18개), 소스 해시 4개, 경우별 package_id 21개 |
+| `examples/built_packages.json`, `examples/README.md`, `README.md` | 예제 5종의 새 package_id와 LLM 호출 예의 R3 ID. README는 입력 표, 프리셋 절, 형식과 상세도 절 |
+| `docs/manual/README.md` | 입력 표의 프리셋·원판 행, 01 원판 배치 설명 |
+
+이슈 #13의 할 일 목록에 없던 변경은 DXF 기본 보기, 01 원판 배치 PNG에서 뺀 주석, 남는 판 문구를 메모 줄로 바꾼 것, 0.5.0 절 머리의 두 문장(#13 소개, 모든 입력의 DXF와 01 원판 배치 PNG가 다르다는 단서)이다.
+설명서 그림 `images/drawing-nesting.png`는 다시 만들지 않아 메모와 결 방향 화살표가 원판 안에 있는 옛 모습이다. 참고 도면끼리 겹치는 곳(#11 절 끝)은 이 수정과 무관해 그대로다.
+
+| 확인 | 결과 |
+|---|---|
+| 같은 PC 비교 | 요청 8개(예제 5종, R3 + 원판 2400×1200×20, 900×1200 양문 2+6 + 같은 원판, 1100×800 양문 7+8)를 main `a399e4a`와 이 수정 뒤에 각각 CLI(작업 프로세스 해시 시드 0)로 만들어 파일별 SHA-256으로 비교했다. main은 `git archive`로 푼 사본을 `PYTHONPATH`로 불렀고, 그 사본으로 만든 예제 5종의 package_id는 `examples/built_packages.json`의 옛 값과 같았다. 8개 모두 파일 35개 중 `window.dxf`, `01_one_board_nesting.png`, `validation_report.json`(DXF 해시), `environment.json`, `package_manifest.json`, 고친 소스 4개가 다르고, PNG 02~05, CSV 4종, `design_spec.json`, `design_parameters.json`, `resolved_parameters.json`, `design_request.json`, `README.txt`를 포함한 26개는 같다. revision이 같고, 검사는 양쪽 모두 68개가 통과했다 |
+| 원판 안 도형 | 원판을 1e-7 mm 줄인 사각형과 만나는 도형 가운데 허용 목록(원판 경계, 부재 윤곽, 홈, 도그본, 부품 번호, 원판 배치의 하드웨어 참고 표시) 밖의 것을 셌다. 글자는 ezdxf 외곽 상자로 쟀다. main은 8개 설계 모두 11개(`GRAIN_DIRECTION` 4개, `NOTES` 7개)이고, 배치 윗변이 798 mm인 1100×800 양문 7+8은 메모 두 줄(「HINGE_REF / LATCH_REF ARE POSITION REFERENCES ONLY. DO NOT MACHINE.」, 「NOMINAL FIT: …」)이 부품과 만나는데도 검사 68개를 모두 통과했다. 이 수정 뒤에는 새 프리셋 설계를 포함한 모든 설계가 0개다. 옮긴 주석 11개는 x 0~1079.7(1220 원판) 또는 0~2124(2400 원판), y −281.2~−56.7에 있어, 원판 끝에서 70 mm 떨어져 시작하는 참고 도면과 만나지 않는다 |
+| 새 프리셋 | 463×586 양문 2+4(원판 생략, `[2400, 1200, 20]` 명시), 900×1200 양문 2+6, 단문 왼쪽 경첩 420×900 2+6, 2000×2380 양문 4+10, 463×586 + 원판 1220×900×20을 만들었다. 모두 검사 68개가 통과했고, 잰 여유는 10.0 mm, 간격은 12.0 mm 또는 11.999999999999998 mm다. 원판을 생략한 요청과 적은 요청은 revision `HANOK_GEN_V1_2aa6c8f0a9d6`과 `window.dxf`(`49d94c8b…`)가 같고 package_id만 다르다. 같은 원판을 `standard_v1`로 주면 revision이 다르다(`HANOK_GEN_V1_d22029d3ff61`). 2000×2380 4+10은 부품 40개가 x 10~2390, y 10~854에 놓이고, 2000×2381은 `nesting.part_fits_stock`(쓸 수 있는 원판 2380 × 1180)으로 거부된다. 1220 원판에 쓰면 배치는 x 10~1194, y 10~294다 |
+| 간격 규칙 | 새 프리셋의 매개변수에서 부재 간격만 5 mm, 5.999 mm로 바꾸면 `derive()`가 `nesting.part_gap_tool`로 거부하고, 6 mm와 12 mm는 통과한다 |
+| Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8`과 `PYTHONIOENCODING` 없음. 인코딩 1개 PASS(0.2초), 생성기 18개 PASS(새 시험 포함, 203.3초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.9초), LLM 21개 PASS(14.3초). 생성기 시험을 스크립트로 먼저 돌려 `tests/results.json`을 다시 적었고, 시험 뒤 바뀐 추적 파일은 고친 파일과 그 파일뿐이다 |
+| 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사는 68개, 부품·홈·도그본 수는 그대로다. R3는 `ab5a7bcd…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`은 그대로이며 `window.dxf` SHA-256은 `f13d4aef…`에서 `25ccf2f3…`로 바뀌었다 |

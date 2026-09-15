@@ -319,6 +319,36 @@ class GeneratorTests(unittest.TestCase):
                 self.assertEqual({name:pixels(p,name) for name in names},want)
         LOG.append(dict(case="pocket_colour_any_thickness",status="PASS",thickness_mm=[18,24],same_pocket_pixels_as_20_mm=True))
 
+    def test_members_on_another_layer_may_overlap_in_the_front_view(self):
+        # A back frame lies behind the fixed frame and overlaps it in the front view. The solid check
+        # used to put every member in one slab from 0 to the stock thickness, so such an overlap always
+        # interpenetrated. Each member now has an assembly Z: overlapping members pass on different
+        # layers and fail on one layer, and the two members of a half lap must share a layer.
+        from hanok_generator.engine import builder
+        from hanok_generator.engine.generate_spec import build_joints,build_parts,derive
+        p=self.path("double_None_2_4")
+        params=json.loads((p/"design_parameters.json").read_text(encoding="utf-8"))
+        cfg=builder.configure(params,p)
+        self.assertEqual(set(cfg.PART_Z.values()),{0.})
+        def failed(doc,z):
+            with self.assertRaises(builder.ValidationError) as caught:
+                builder.validate(replace(cfg,PART_Z=dict(cfg.PART_Z,**{"F01-2":z})),doc,"INJECTED")
+            return caught.exception.report["failed_checks"]
+        # One layer back, F01-2 leaves its laps with F02-1 and F02-2 and cuts into nothing.
+        self.assertEqual(failed(ezdxf.readfile(p/"window.dxf"),-cfg.THK),["joint_pairs_XY_match_opposite_faces"])
+        # Laid over F01-1 in the front view, it may lie one layer back but not on the same layer.
+        doc=ezdxf.readfile(p/"window.dxf")
+        stiles={meta(e)["part_id"]:e for e in doc.modelspace() if e.dxf.layer=="CUT_THROUGH"}
+        tag(stiles["F01-2"],**dict(meta(stiles["F01-2"]),assembly_map=meta(stiles["F01-1"])["assembly_map"]))
+        self.assertNotIn("no_nominal_assembled_solid_interpenetration",failed(doc,-cfg.THK))
+        self.assertIn("no_nominal_assembled_solid_interpenetration",failed(doc,0.))
+        # Members on different layers never become a half lap.
+        d=derive(params);parts=build_parts(d)
+        next(q for q in parts if q.part_id=="F02-1").assembly_z=-d["thickness"]
+        self.assertEqual(len(build_joints(d,build_parts(d)))-len(build_joints(d,parts)),2)
+        LOG.append(dict(case="members_on_layers",status="PASS",back_layer_z_mm=-cfg.THK,overlap_one_layer_back="PASS",
+                        overlap_same_layer="FAIL",half_lap_across_layers="FAIL"))
+
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
         latest=(self.output/"latest.json").read_bytes()
         cases=[("scope_free_single",None),

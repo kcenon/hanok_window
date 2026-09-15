@@ -15,7 +15,7 @@ from .numeric_policy import (POLICY_VERSION, LENGTH_TOL_MM, RATIO_TOL, AREA_TOL_
                             geometry_matches, polyline_arcs, policy_record)
 from .machining_checks import measure_machining
 from .. import formats
-from .generate_spec import (build as build_spec, derive, bar_offsets, leaf_bounds,
+from .generate_spec import (build as build_spec, build_parts, derive, bar_offsets, leaf_bounds,
                            opening_bounds, group_name)
 
 # Reproducible output. Without this, ezdxf stamps the save time into $TDCREATE
@@ -53,7 +53,7 @@ class Design:
     LEAVES: list; OPENINGS: list; SIZES: dict; NPART: int
     NPOCK: dict; NPOCKT: int; NSEAT: int; NDOG: int; POCKET_LAYER: str; LAYERS: dict
     FORMAT: list; TITLE: str; PICTURE: bool; PICX: float; PICY: float
-    ASSEMBLY_ORIGIN: tuple; OPENING_ORIGIN: tuple
+    ASSEMBLY_ORIGIN: tuple; OPENING_ORIGIN: tuple; PART_Z: dict
 
 
 def configure(parameters, output):
@@ -107,6 +107,8 @@ def configure(parameters, output):
     # The reference views start right of the board, so a longer board moves them.
     ASSEMBLY_ORIGIN=(BL+REFERENCE_GAP_X,ASSEMBLY_Y)
     OPENING_ORIGIN=(BL+REFERENCE_GAP_X,OPENING_Y)
+    # Each member's assembly Z, the back face of its layer, for the joint and solid checks.
+    PART_Z={q.part_id:q.assembly_z for q in build_parts(D)}
     return Design(OUT=OUT,DXF=DXF,SPEC=SPEC,PARAMS=PARAMS,D=D,W=W,H=H,IW=IW,IH=IH,SIZE=SIZE,
                   FW=FW,SM=SM,BW=BW,LAP=LAP,LW=LW,LH=LH,MINR=MINR,
                   LY0=LY0,LY1=LY1,OW=OW,OH=OH,PX=PX,PY=PY,PRW=PRW,PRH=PRH,
@@ -116,7 +118,7 @@ def configure(parameters, output):
                   LEAVES=LEAVES,OPENINGS=OPENINGS,SIZES=SIZES,NPART=NPART,
                   NPOCK=NPOCK,NPOCKT=NPOCKT,NSEAT=NSEAT,NDOG=NDOG,POCKET_LAYER=POCKET_LAYER,LAYERS=LAYERS,
                   FORMAT=FORMAT,TITLE=TITLE,PICTURE=PICTURE,PICX=PICX,PICY=PICY,
-                  ASSEMBLY_ORIGIN=ASSEMBLY_ORIGIN,OPENING_ORIGIN=OPENING_ORIGIN)
+                  ASSEMBLY_ORIGIN=ASSEMBLY_ORIGIN,OPENING_ORIGIN=OPENING_ORIGIN,PART_Z=PART_Z)
 
 
 def load_spec(cfg):
@@ -665,6 +667,8 @@ def check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,p
         mismatch=ga.symmetric_difference(gb).area;maxmismatch=max(mismatch,maxmismatch)
         pairgood &= geometry_matches(ga,gb) and da['joint']==db['joint']
         pairgood &= {meta(partents[d['part_id']])['assembly_face_A'] for d in [da,db]}=={'FRONT','BACK'}
+        # The two halves of a lap interlock only when both members lie on one layer.
+        pairgood &= cfg.PART_Z.get(da['part_id'],0.)==cfg.PART_Z.get(db['part_id'],0.)
         pairgood &= geometry_matches(ap[da['part_id']].intersection(ap[db['part_id']]),ga)
         mateok &= da['mate_feature_id']==db['feature_id'] and db['mate_feature_id']==da['feature_id']
     check('joint_pairs_XY_match_opposite_faces',bool(pairgood),{'pairs':len(by_pair),'max_mismatch_area_mm2':maxmismatch})
@@ -673,7 +677,9 @@ def check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,p
     # untouched material keeps the full thickness, while a pocket cut from face A
     # leaves 0..THK-DEPTH on a FRONT part and DEPTH..THK on a flipped one. Deriving
     # the range from the actual depth is what makes a wrong depth measurable here;
-    # assuming two complementary half-slabs would quietly accept any value.
+    # assuming two complementary half-slabs would quietly accept any value. Each
+    # range is then shifted by the part's assembly Z, so members on different
+    # layers may overlap in the front view.
     solids={}
     for pid,g in ap.items():
         cut=[e for e in pockets+dogs if meta(e)['part_id']==pid]
@@ -684,7 +690,8 @@ def check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,p
             pieces.append((removal.intersection(g),
                            0.,float(cfg.THK-cfg.DEPTH)) if front else
                           (removal.intersection(g),float(cfg.DEPTH),float(cfg.THK)))
-        solids[pid]=[(r,z0,z1) for r,z0,z1 in pieces if not r.is_empty and r.area>AREA_TOL_MM2 and z1>z0]
+        z=float(cfg.PART_Z.get(pid,0.))
+        solids[pid]=[(r,z+z0,z+z1) for r,z0,z1 in pieces if not r.is_empty and r.area>AREA_TOL_MM2 and z1>z0]
     v_max=0.;worst=None
     for a,b in pairs:
         for ra,za0,za1 in solids[a]:

@@ -39,6 +39,10 @@ class Part:
     thickness: float
     nest_x: float = 0.0
     nest_y: float = 0.0
+    # Z of the member's back face in the assembly, +Z toward the viewer. Every member of
+    # these windows lies on one layer from 0 to the stock thickness; a member behind
+    # them would lie one thickness lower.
+    assembly_z: float = 0.0
 
     @property
     def length(self) -> float:
@@ -307,17 +311,18 @@ def build_parts(d: Derived) -> list:
 def build_joints(d: Derived, parts: list) -> list:
     """Every half lap is a vertical member crossing a horizontal member.
 
-    Two members of the same assembly group that overlap in the front view must
-    share that volume, so each overlap becomes one pocket per member: the
-    front-facing member loses its front half, the flipped one loses its back
-    half, and the retained 10 mm halves interlock.
+    Two members of the same assembly group and layer that overlap in the front
+    view must share that volume, so each overlap becomes one pocket per member:
+    the front-facing member loses its front half, the flipped one loses its back
+    half, and the retained 10 mm halves interlock. Members on different layers
+    only meet in Z and never form a joint.
     """
     verticals = [q for q in parts if q.axis == 'V']
     horizontals = [q for q in parts if q.axis == 'H']
     joints = []
     for a in verticals:
         for b in horizontals:
-            if a.group != b.group:
+            if a.group != b.group or a.assembly_z != b.assembly_z:
                 continue
             x0, y0 = max(a.x0, b.x0), max(a.y0, b.y0)
             x1, y1 = min(a.x1, b.x1), min(a.y1, b.y1)
@@ -489,7 +494,10 @@ def build(params: dict) -> dict:
         parts=[dict(part_id=q.part_id, kind=q.kind, length=float(q.length),
                     width=float(q.width), thickness=q.thickness,
                     nest_x=q.nest_x, nest_y=q.nest_y, assembly_group=q.group,
-                    face_a=q.face_a, assembly_transform=q.transform) for q in parts],
+                    face_a=q.face_a, assembly_transform=q.transform,
+                    # Only a member off the base layer records its Z, so every spec written
+                    # so far, the recorded R3 spec among them, keeps its bytes.
+                    **({'assembly_z': q.assembly_z} if q.assembly_z else {})) for q in parts],
         pockets=pockets,
         dogbones=dogbones,
     )

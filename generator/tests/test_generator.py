@@ -21,10 +21,10 @@ from unittest.mock import patch
 import ezdxf
 from ezdxf import bbox
 from shapely.affinity import rotate, translate
-from shapely.geometry import box
+from shapely.geometry import LineString, box
 
 from hanok_generator.engine.cad_helpers import entity_polygon, meta, tag
-from hanok_generator.engine.numeric_policy import geometry_matches
+from hanok_generator.engine.numeric_policy import LENGTH_TOL_MM, geometry_matches
 from hanok_generator.jobs import JobError, replace_pointer, run_job
 from hanok_generator.model import InputError, resolve
 from hanok_generator.package import PNG_FILES, PackageError, digest, source_files, verify
@@ -57,6 +57,8 @@ class GeneratorTests(unittest.TestCase):
         cls.requests["inner_r3"]=inner
         cls.requests["r3_stock_2400"]=request(preset="hanok_A3_portrait_R3",stock_mm=[2400,1200,20])
         cls.requests["stock_2400_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),stock_mm=[2400,1200,20])
+        cls.requests["standard_4x8"]=request(preset="standard_4x8_v1")
+        cls.requests["standard_4x8_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),preset="standard_4x8_v1")
         def build(item):
             name,data=item;result=run_job(data,cls.output)
             LOG.append(dict(case=name,status="PASS",**{k:result[k] for k in ("checks","parts","pockets","dogbones","package_id")}))
@@ -220,6 +222,79 @@ class GeneratorTests(unittest.TestCase):
                 self.assertEqual(list(Path(tmp).iterdir()),[])
         LOG.append(dict(case="reference_views_off_2400_board",status="PASS",designs=2,on_board=0,
                         origin_1350_fails=["references_outside_board"]))
+
+    def test_standard_4x8_preset_lays_out_a_4x8_board(self):
+        from hanok_generator.engine.generate_spec import ParameterError,build,derive
+        for name in ("standard_4x8","standard_4x8_900x1200"):
+            with self.subTest(name=name):
+                p=self.path(name)
+                self.assertNotIn("stock_mm",json.loads((p/"design_request.json").read_text(encoding="utf-8")))
+                stock=json.loads((p/"design_parameters.json").read_text(encoding="utf-8"))["stock"]
+                self.assertEqual([stock[k] for k in ("length","width","thickness","edge_margin","part_gap")],[2400,1200,20,10,12])
+                report=json.loads((p/"validation_report.json").read_text(encoding="utf-8"))
+                self.assertEqual((report["board_mm"],report["nesting_bounds_mm"][:2]),([2400,1200,20],[10,10]))
+                # Measured from the saved coordinates, so a 12 mm gap can read 11.999999999999998.
+                self.assertGreaterEqual(report["minimum_board_margin_mm"],10-LENGTH_TOL_MM)
+                self.assertGreaterEqual(report["minimum_part_gap_mm"],12-LENGTH_TOL_MM)
+                checks={c["rule_id"]:c for c in report["checks"]}
+                self.assertEqual([(checks[r]["expected"],checks[r]["status"]) for r in ("minimum_board_edge_margin","minimum_nesting_gap")],
+                                 [(10,"PASS"),(12,"PASS")])
+        # Leaving the board out or writing the preset's own board is one design; the same board under
+        # standard_v1 is another. The other two presets keep their board, margin and gap.
+        revision=lambda **changes:resolve(request(**changes)).parameters["revision"]
+        self.assertEqual(revision(preset="standard_4x8_v1"),revision(preset="standard_4x8_v1",stock_mm=[2400,1200,20]))
+        self.assertNotEqual(revision(preset="standard_4x8_v1"),revision(stock_mm=[2400,1200,20]))
+        for preset in ("standard_v1","hanok_A3_portrait_R3"):
+            stock=resolve(request(preset=preset)).parameters["stock"]
+            self.assertEqual([stock[k] for k in ("length","width","thickness","edge_margin","part_gap")],[1220,900,20,20,12])
+        # Parts closer than one tool diameter are refused before any layout.
+        params=resolve(request(preset="standard_4x8_v1")).parameters
+        for gap in (5,6):
+            changed=copy.deepcopy(params);changed["stock"]["part_gap"]=gap
+            if gap==6:
+                derive(changed)
+                continue
+            with self.assertRaises(ParameterError) as caught:derive(changed)
+            self.assertEqual((caught.exception.rule_id,caught.exception.details),
+                             ("nesting.part_gap_tool",dict(part_gap=5,tool_diameter=6)))
+        # One board holds parts up to 2380 mm long: 2400 less the two 10 mm margins.
+        spec=build(resolve(request(outer_mm=[2000,2380],bars=(4,10),preset="standard_4x8_v1")).parameters)
+        self.assertEqual(spec["derived"]["nesting_bounds"],[10,10,2390,854])
+        with self.assertRaises(ParameterError) as caught:
+            build(resolve(request(outer_mm=[2000,2381],bars=(4,10),preset="standard_4x8_v1")).parameters)
+        self.assertEqual((caught.exception.rule_id,caught.exception.details["usable"]),("nesting.part_fits_stock",[2380,1180]))
+        LOG.append(dict(case="standard_4x8_preset",status="PASS",designs=2,board=[2400,1200,20],edge_margin=10,part_gap=12,
+                        gap_rule="nesting.part_gap_tool",longest_part_mm=2380))
+
+    def test_board_holds_only_machining_and_labels(self):
+        # Notes and the grain arrow used to sit in the band above the parts, and a full layout ran
+        # them into the parts while every check passed. Only the cutting layout, part labels and
+        # hardware marks may lie on the board. Text is measured by ezdxf's extents, width included.
+        def shape(e):
+            if e.dxftype()=="LINE":
+                return LineString([(e.dxf.start.x,e.dxf.start.y),(e.dxf.end.x,e.dxf.end.y)])
+            if e.dxftype()=="LWPOLYLINE":
+                return entity_polygon(e) if e.closed else LineString(list(e.get_points("xy")))
+            b=bbox.extents([e],fast=True)
+            return box(b.extmin.x,b.extmin.y,b.extmax.x,b.extmax.y)
+        def allowed(e):
+            layer=e.dxf.layer
+            return layer in ("BOARD_BOUNDARY","CUT_THROUGH","DOGBONE","PART_ID") or layer.startswith("POCKET_") or (
+                layer in ("HINGE_REF","LATCH_REF") and meta(e).get("view")=="nest")
+        for name in self.requests:
+            with self.subTest(name=name):
+                p=self.path(name)
+                stock=json.loads((p/"design_parameters.json").read_text(encoding="utf-8"))["stock"]
+                inside=box(0,0,stock["length"],stock["width"]).buffer(-LENGTH_TOL_MM)
+                ents=list(ezdxf.readfile(p/"window.dxf").modelspace())
+                self.assertEqual([(e.dxf.layer,e.dxftype()) for e in ents if not allowed(e) and inside.intersects(shape(e))],[])
+                # The notes lie below the board and left of the reference views, 70 mm past its end.
+                notes=[shape(e).bounds for e in ents if meta(e).get("kind")=="sheet_note"]
+                self.assertEqual(len(notes),11)
+                self.assertLess(max(b[3] for b in notes),0)
+                self.assertLess(max(b[2] for b in notes),stock["length"]+70)
+        LOG.append(dict(case="board_holds_only_machining",status="PASS",designs=len(self.requests),sheet_notes=11,
+                        other_entities_on_board=0))
 
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
         latest=(self.output/"latest.json").read_bytes()

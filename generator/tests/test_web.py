@@ -34,13 +34,14 @@ if os.name == "posix":  # web.control imports fcntl; only BackgroundServerTests 
 HERE = Path(__file__).parent
 STATIC = Path(web.__file__).parent / "static"
 NODE_RUNNER = """
-import { compose, formFromRequest } from "./app.js";
+import { compose, formFromRequest, stockAfterPresetChange } from "./app.js";
 let input = "";
 for await (const chunk of process.stdin) input += chunk;
-const { meta, requests, forms } = JSON.parse(input);
+const { meta, requests, forms, switches } = JSON.parse(input);
 process.stdout.write(JSON.stringify({
   requests: requests.map((r) => compose(formFromRequest(r, meta), meta)),
   forms: forms.map((f) => compose(f, meta)),
+  switches: switches.map(([form, preset]) => stockAfterPresetChange(form, preset, meta)),
 }));
 """
 EXAMPLE_FILES = {p.stem: p for p in sorted((HERE.parent / "examples").glob("*.json")) if p.name != "built_packages.json"}
@@ -148,6 +149,13 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(presets["hanok_A3_portrait_R3"]["picture"], {"size_mm": [297, 420], "margin_mm": 10})
         self.assertIsNone(presets["standard_v1"]["picture"])
         self.assertEqual(presets["hanok_A3_portrait_R3"]["min_leaf_ratio"], 2.6)
+        # Each preset carries its default board, edge margin and part gap; only the 4 x 8 one differs.
+        self.assertEqual(presets["standard_4x8_v1"], dict(id="standard_4x8_v1", types=["double", "single"], picture=None,
+                                                          min_leaf_ratio=0, stock_mm=[2400, 1200, 20],
+                                                          edge_margin_mm=10, part_gap_mm=12))
+        for name in ("standard_v1", "hanok_A3_portrait_R3"):
+            self.assertEqual([presets[name][k] for k in ("stock_mm", "edge_margin_mm", "part_gap_mm")],
+                             [[1220, 900, 20], 20, 12])
         self.assertEqual((meta["default_preset"], meta["stock_mm"], meta["frame_member_mm"]), ("standard_v1", [1220, 900, 20], 40))
         self.assertEqual(meta["example"], R3)
         self.assertEqual((meta["limits"]["size_mm"], meta["limits"]["lattice"]), ([1, 3000], [0, 32]))
@@ -175,6 +183,11 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(body["assembly"]["picture"]["sheet"], [83, 83, 380, 503])
         self.assertEqual([leaf["hinge_stile"] for leaf in body["assembly"]["leaves"]], ["S01-1", "S01-4"])
         self.assertEqual((body["nesting"]["used_mm"], body["nesting"]["usable_mm"]), ([1091, 284], [1180, 860]))
+        # The 4 x 8 preset lays the same parts out on its own board, 10 mm from the edge.
+        status, _, body = self.call("POST", "/api/preview", request(preset="standard_4x8_v1"))
+        n = body["nesting"]
+        self.assertEqual((status, n["stock_mm"], n["margin_mm"], n["usable_mm"], n["used_mm"], n["parts"][0]["rect"]),
+                         (200, [2400, 1200, 20], 10, [2380, 1180], [2353, 168], [10, 10, 596, 50]))
 
     def test_rule_errors_name_the_input_to_fix(self):
         cases = [
@@ -190,6 +203,7 @@ class WebApiTests(unittest.TestCase):
             ("picture.fits_width", "picture", request(picture=dict(size_mm=[500, 500])), None),
             ("nesting.part_fits_stock", "stock", request(outer_mm=[900, 1500]), None),
             ("nesting.board_width", "stock", request(stock_mm=[1220, 150, 20]), None),
+            ("nesting.part_fits_stock", "stock", request(outer_mm=[2000, 2381], bars=(4, 10), preset="standard_4x8_v1"), None),
         ]
         for rule, group, data, field in cases:
             with self.subTest(rule=rule, data=str(data)):
@@ -206,8 +220,15 @@ class WebApiTests(unittest.TestCase):
         # A layout failure keeps the front view so the page can still draw it.
         status, _, body = self.call("POST", "/api/preview", request(stock_mm=[1220, 150, 20]))
         self.assertEqual((body["stage"], len(body["assembly"]["parts"])), ("nesting", 24))
+        # On the 4 x 8 board a part may be 2380 mm long: 2400 less the two 10 mm margins.
+        body = self.call("POST", "/api/preview", request(outer_mm=[2000, 2381], bars=(4, 10), preset="standard_4x8_v1"))[2]
+        self.assertEqual((body["details"]["usable"], body["suggestion"]),
+                         ([2380, 1180], {"stock_mm": {"length_at_least": 2401}, "outer_mm": {"height_at_most": 2380}}))
 
     def test_suggestions_clear_the_rule_they_answer(self):
+        meta = self.call("GET", "/api/meta")[2]
+        boards = {p["id"]: p["stock_mm"] for p in meta["presets"]}  # a request without stock_mm has its preset's board
+
         def each_change(data, suggestion):
             """(what changed, request) for every suggested value, each applied to its own copy."""
             for key, value in suggestion.items():
@@ -225,7 +246,8 @@ class WebApiTests(unittest.TestCase):
                     elif key == "picture":
                         changed["picture"]["size_mm"][bound.startswith("height")] = amount
                     else:
-                        changed.setdefault("stock_mm", [1220, 900, 20])[bound.startswith("width")] = amount
+                        board = list(boards[data.get("preset", meta["default_preset"])])
+                        changed.setdefault("stock_mm", board)[bound.startswith("width")] = amount
                     yield f"{key}.{bound}", changed
 
         cases = [
@@ -237,6 +259,7 @@ class WebApiTests(unittest.TestCase):
             ("hardware.reference_spacing", request(outer_mm=[463, 200])),
             ("picture.fits_width", request(picture=dict(size_mm=[500, 500]))),
             ("nesting.part_fits_stock", request(outer_mm=[900, 1500])),
+            ("nesting.part_fits_stock", request(outer_mm=[2000, 2381], bars=(4, 10), preset="standard_4x8_v1")),
             ("nesting.board_width", request(stock_mm=[1220, 150, 20])),
         ]
         # Every suggested value, applied on its own, makes the engine stop reporting that rule.
@@ -448,22 +471,29 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         meta = self.call("GET", "/api/meta")[2]
         requests = [*EXAMPLES.values(), dict(R3, picture=None),
                     request(outer_mm=[600, 800], picture=dict(size_mm=[297, 420], margin_mm=10), stock_mm=[1220, 900, 18]),
-                    dict(type="single", hinge_side="right", inner_mm=[340.3, 820.7], lattice_per_leaf=[2, 6])]
+                    dict(type="single", hinge_side="right", inner_mm=[340.3, 820.7], lattice_per_leaf=[2, 6]),
+                    request(preset="standard_4x8_v1"), request(preset="standard_4x8_v1", stock_mm=[1220, 900, 20])]
         typed = dict(type="double", hinge="left", basis="outer", size=["463.0", " 586 "], lattice=["2", "4"],
                      preset="hanok_A3_portrait_R3", picture=dict(on=True, w="297", h="420", margin="10"),
                      stock=["1220", "900", "20"])
+        # Changing the preset: the R3 example's untouched board becomes the 4 x 8 board, an edited board
+        # stays, and the 4 x 8 board goes back to 1220 x 900 x 20 under standard_v1.
+        switches = [(typed, "standard_4x8_v1"), (dict(typed, stock=["1500", "900", "20"]), "standard_4x8_v1"),
+                    (dict(typed, preset="standard_4x8_v1", stock=["2400", "1200", "20"]), "standard_v1")]
         with tempfile.TemporaryDirectory() as tmp:
             for name in ("app.js", "preview.js", "packages.js", "messages.js"):
                 shutil.copy(STATIC / name, tmp)
             Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
             Path(tmp, "run.js").write_text(NODE_RUNNER, encoding="utf-8")
-            p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(dict(meta=meta, requests=requests, forms=[typed])),
+            p = subprocess.run(["node", "run.js"], cwd=tmp,
+                               input=json.dumps(dict(meta=meta, requests=requests, forms=[typed], switches=switches)),
                                capture_output=True, text=True, encoding="utf-8", timeout=60)
         self.assertEqual(p.returncode, 0, p.stderr)
         out = json.loads(p.stdout)
         exact = lambda value: json.dumps(value, sort_keys=True)  # 463 and 463.0 differ here
         self.assertEqual([exact(v) for v in out["requests"]], [exact(v) for v in requests])
         self.assertEqual(exact(out["forms"][0]), exact(R3))
+        self.assertEqual(out["switches"], [["2400", "1200", "20"], ["1500", "900", "20"], ["1220", "900", "20"]])
 
 
 def free_port():

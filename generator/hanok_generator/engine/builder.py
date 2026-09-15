@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 import ezdxf
-from shapely.geometry import Polygon, Point, box
+from shapely.geometry import Polygon, Point, LineString, box
 from shapely.affinity import affine_transform, translate, rotate
 from shapely.ops import unary_union
 from PIL import Image, ImageDraw
@@ -27,11 +27,14 @@ from .generate_spec import (build as build_spec, derive, bar_offsets, leaf_bound
 # metadata and on the sheet instead - see pin_build_identity.
 ezdxf.options.write_fixed_meta_data_for_testing=True
 
-# The same for every design: the length tolerance and the model-space origins of
-# the assembly and opening reference views.
+# The same for every design: the length tolerance, how far right of the board the
+# reference views start, and the Y origins of the assembly and opening views.
+# 1220 + 130 = 1350 keeps the drawings of a 1220 mm board where they always were.
 TOL=LENGTH_TOL_MM
-ASSEMBLY_ORIGIN=(1350.,100.)
-OPENING_ORIGIN=(1350.,-370.)
+REFERENCE_GAP_X=130.
+ASSEMBLY_Y=100.
+OPENING_Y=-370.
+REFERENCE_VIEWS=('assembly','detail','opening')
 
 
 @dataclass(frozen=True)
@@ -50,6 +53,7 @@ class Design:
     LEAVES: list; OPENINGS: list; SIZES: dict; NPART: int
     NPOCK: dict; NPOCKT: int; NSEAT: int; NDOG: int; POCKET_LAYER: str; LAYERS: dict
     FORMAT: list; TITLE: str; PICTURE: bool; PICX: float; PICY: float
+    ASSEMBLY_ORIGIN: tuple; OPENING_ORIGIN: tuple
 
 
 def configure(parameters, output):
@@ -100,6 +104,9 @@ def configure(parameters, output):
     PICTURE=PARAMS["picture"]["enabled"]
     PICX=PX+(PRW-A3W)/2
     PICY=PY+(PRH-A3H)/2
+    # The reference views start right of the board, so a longer board moves them.
+    ASSEMBLY_ORIGIN=(BL+REFERENCE_GAP_X,ASSEMBLY_Y)
+    OPENING_ORIGIN=(BL+REFERENCE_GAP_X,OPENING_Y)
     return Design(OUT=OUT,DXF=DXF,SPEC=SPEC,PARAMS=PARAMS,D=D,W=W,H=H,IW=IW,IH=IH,SIZE=SIZE,
                   FW=FW,SM=SM,BW=BW,LAP=LAP,LW=LW,LH=LH,MINR=MINR,
                   LY0=LY0,LY1=LY1,OW=OW,OH=OH,PX=PX,PY=PY,PRW=PRW,PRH=PRH,
@@ -108,7 +115,8 @@ def configure(parameters, output):
                   BL=BL,BWD=BWD,BT=BT,MARGIN=MARGIN,PGAP=PGAP,
                   LEAVES=LEAVES,OPENINGS=OPENINGS,SIZES=SIZES,NPART=NPART,
                   NPOCK=NPOCK,NPOCKT=NPOCKT,NSEAT=NSEAT,NDOG=NDOG,POCKET_LAYER=POCKET_LAYER,LAYERS=LAYERS,
-                  FORMAT=FORMAT,TITLE=TITLE,PICTURE=PICTURE,PICX=PICX,PICY=PICY)
+                  FORMAT=FORMAT,TITLE=TITLE,PICTURE=PICTURE,PICX=PICX,PICY=PICY,
+                  ASSEMBLY_ORIGIN=ASSEMBLY_ORIGIN,OPENING_ORIGIN=OPENING_ORIGIN)
 
 
 def load_spec(cfg):
@@ -254,7 +262,7 @@ def hardware_records(cfg):
 
 
 def add_hardware(cfg,m,parts):
-    ox,oy=ASSEMBLY_ORIGIN
+    ox,oy=cfg.ASSEMBLY_ORIGIN
     for d in hardware_records(cfg):
         p=parts[d['part_id']];g=box(*d['box'])
         glocal=affine_transform(g,inverse_map(p['assembly_transform']))
@@ -273,7 +281,7 @@ def add_hardware(cfg,m,parts):
 
 
 def add_assembly(cfg,m,parts):
-    ox,oy=ASSEMBLY_ORIGIN
+    ox,oy=cfg.ASSEMBLY_ORIGIN
     text(m,f'{cfg.TITLE} / W{cfg.W:g} x H{cfg.H:g}',(ox,oy+cfg.H+84),10,view='assembly',kind='title')
     text(m,f'{cfg.NLEAF} LEAF / REFERENCE ONLY',(ox,oy+cfg.H+61),5,view='assembly')
     if cfg.PICTURE:
@@ -323,7 +331,7 @@ def add_assembly(cfg,m,parts):
 
 def add_opening(cfg,m):
     """Illustrative plan at 90 degrees; provisional axis only, not hardware approval."""
-    ox,oy=OPENING_ORIGIN;arc=min(120,cfg.LW*.65);axz=cfg.THK+4
+    ox,oy=cfg.OPENING_ORIGIN;arc=min(120,cfg.LW*.65);axz=cfg.THK+4
     heading=max(330,cfg.LW+cfg.THK+80)
     text(m,'OPENING REFERENCE / PLAN (LOOKING DOWN)',(ox,oy+heading),8,view='opening',kind='title')
     text(m,'REFERENCE ONLY / AXES AND BACKING POSITION NOT FINAL',(ox,oy+heading-20),4.7,view='opening')
@@ -751,9 +759,18 @@ def check_assembly_dimensions(cfg,check,partents,ap):
           for pid,e in partents.items() if meta(e)['assembly_group']!='FIXED'))
 
 
+def reference_geometry(e):
+    """Model-space shape of one reference entity: closed polyline, line or text anchor."""
+    if e.dxftype()=='LINE':return LineString([(e.dxf.start.x,e.dxf.start.y),(e.dxf.end.x,e.dxf.end.y)])
+    if e.dxftype()=='TEXT':
+        p=e.dxf.align_point if e.dxf.halign or e.dxf.valign else e.dxf.insert
+        return Point(p.x,p.y)
+    return entity_polygon(e)
+
+
 def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
     """Assembly, picture, opening, hardware and detail references against the cut parts."""
-    ox,oy=ASSEMBLY_ORIGIN
+    ox,oy=cfg.ASSEMBLY_ORIGIN
     assemblies=[e for e in ents if meta(e).get('view')=='assembly']
     abodies=[e for e in assemblies if meta(e).get('role')=='body']
     check('assembly_reference_matches_all_cut_parts',len(abodies)==cfg.NPART and all(geometry_matches(translate(entity_polygon(e),-ox,-oy),ap[meta(e)['part_id']]) for e in abodies))
@@ -799,6 +816,13 @@ def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
     detailborders=[e for e in ents if meta(e).get('kind')=='detail_border']
     check('reference_detail_members_exist',all(all(count[k]>0 for k in meta(e)['detail_part_kinds']) for e in detailborders),[meta(e)['detail_part_kinds'] for e in detailborders])
     check('references_never_on_machining_layers',not any(meta(e).get('view') in ['assembly','detail','opening'] for e in mach))
+    # A CAM import of the whole sheet must not put a reference view on the parts.
+    # Detail dimensions carry only a detail key. TEXT is tested at its anchor,
+    # because how far it runs depends on the font.
+    board=box(0,0,cfg.BL,cfg.BWD)
+    refs=[e for e in ents if meta(e).get('view') in REFERENCE_VIEWS or meta(e).get('detail')]
+    onboard=sum(board.intersects(reference_geometry(e)) for e in refs)
+    check('references_outside_board',onboard==0,dict(reference_entities=len(refs),on_board=onboard))
     opened=[e for e in ents if meta(e).get('kind')=='opened_leaf_illustration']
     check('opening_illustration_matches_leaves',len(opened)==cfg.NLEAF and {meta(e).get('leaf') for e in opened}=={f.side.upper() for f in cfg.FORMAT} and all(meta(e).get('reference_only') for e in opened),len(opened))
     # A pocket check, kept last here because the report lists checks in call order.
@@ -846,7 +870,7 @@ def write_manifests(cfg,doc):
 
 def add_details(cfg,msp):
     variants=formats.detail_variants(cfg.PARAMS)
-    positions={key:(ASSEMBLY_ORIGIN[0]+cfg.W+160+(i%2)*270,100+(2-i//2)*210) for i,key in enumerate(variants)}
+    positions={key:(cfg.ASSEMBLY_ORIGIN[0]+cfg.W+160+(i%2)*270,100+(2-i//2)*210) for i,key in enumerate(variants)}
     for key,(ox,oy) in positions.items():
         j='J4' if key.startswith('J4') else key
         kinds={'J1':['F01','F02'],'J2':['S01','S02'],'J3':['L01','L02'],'J4V':['S02','L01'],'J4H':['S01','L02']}[key]
@@ -1024,7 +1048,7 @@ def render_assembly(cfg,doc):
     label(d,(105,62),f'03  ASSEMBLY / {cfg.TITLE}',54,bold=True)
     label(d,(105,151),f'{cfg.W:g} x {cfg.H:g} mm frame | {cfg.NLEAF} leaf, each {cfg.LW:g} x {cfg.LH:g} mm | Lattice {cfg.NV} vertical + {cfg.NH} horizontal',27,fill=COL['muted'])
     d.line((105,225,3495,225),fill=COL['border'],width=3)
-    ox,oy=ASSEMBLY_ORIGIN
+    ox,oy=cfg.ASSEMBLY_ORIGIN
     r=Renderer(im,(ox-78,oy-92,ox+cfg.W+75,oy+cfg.H+80),(70,290,2590,2980))
     ents=[e for e in doc.modelspace() if meta(e).get('view')=='assembly' and meta(e).get('kind')!='title']
     for role in ('picture','body','other'):
@@ -1059,7 +1083,7 @@ def render_opening(cfg,doc):
     label(d,(110,60),f'04  OPENING / {cfg.TITLE}',55,bold=True)
     label(d,(110,152),f'Looking down | {cfg.NLEAF} moving leaf | Opening toward the viewer | Reference axes',28,fill=COL['muted'])
     d.line((110,225,3890,225),fill=COL['border'],width=3)
-    ox,oy=OPENING_ORIGIN
+    ox,oy=cfg.OPENING_ORIGIN
     Renderer(im,(ox-50,oy-100,ox+cfg.W+50,oy+max(360,cfg.LW+cfg.THK+110)),(110,285,2720,2190)).entities(
         [e for e in doc.modelspace() if meta(e).get('view')=='opening'])
     y=365

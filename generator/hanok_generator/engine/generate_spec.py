@@ -216,6 +216,11 @@ def derive(params: dict) -> Derived:
     tool_r = params['machining']['tool_diameter'] / 2
     require(v['relief_radius'] >= tool_r or close(v['relief_radius'], tool_r),
             'machining.relief_cutter_compatibility', relief_radius=v['relief_radius'], tool_radius=tool_r)
+    # A cutter running around one part must not reach the next one, so parts lie at
+    # least one tool diameter apart.
+    tool_d = params['machining']['tool_diameter']
+    require(stock['part_gap'] >= tool_d or close(stock['part_gap'], tool_d),
+            'nesting.part_gap_tool', part_gap=stock['part_gap'], tool_diameter=tool_d)
     hw=params['hardware_reference']
     require(leaf_h > 2*hw['hinge_inset_from_leaf_end']+hw['hinge_length'],
             'hardware.reference_spacing', leaf_height=leaf_h,

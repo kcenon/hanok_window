@@ -199,6 +199,10 @@ def design_schema(meta):
     which several function-calling APIs refuse. resolve() still enforces every rule of the full schema."""
     member = format_mm(meta["frame_member_mm"])
     ratio = format_mm(next(p["min_leaf_ratio"] for p in meta["presets"] if p["id"] == "hanok_A3_portrait_R3"))
+    board = next(p for p in meta["presets"] if p["id"] == "standard_4x8_v1")
+    stocks = {}  # default board -> the presets that use it
+    for p in meta["presets"]:
+        stocks.setdefault(str(p["stock_mm"]), []).append(p["id"])
     return _object(
         ["type", "lattice_per_leaf"],
         type={"type": "string", "enum": ["single", "double"],
@@ -214,7 +218,10 @@ def design_schema(meta):
         preset={"type": "string", "enum": list(PRESETS),
                 "description": (f"Leave out for {meta['default_preset']}. hanok_A3_portrait_R3 follows the R3 "
                                 f"portrait window: double only, each leaf at least {ratio} times taller than wide, "
-                                "an A3 picture by default.")},
+                                "an A3 picture by default. standard_4x8_v1 keeps the standard_v1 rules on a 4 x 8 ft "
+                                f"board: stock_mm {board['stock_mm']} by default, parts "
+                                f"{format_mm(board['edge_margin_mm'])} mm from the board edge and "
+                                f"{format_mm(board['part_gap_mm'])} mm apart.")},
         picture={"type": ["object", "null"], "additionalProperties": False, "required": ["size_mm"],
                  "description": ("Rear picture sheet centred behind the frame. Leave out for the preset's default, "
                                  "null for no picture."),
@@ -225,8 +232,9 @@ def design_schema(meta):
                                                   f"{format_mm(meta['picture_margin_mm'])}."}}},
         stock_mm={"type": "array", "items": {"type": "number", "minimum": 1, "maximum": 3000},
                   "minItems": 3, "maxItems": 3,
-                  "description": (f"Stock board [length, width, thickness] in mm, default {meta['stock_mm']}; "
-                                  "thickness 5 to 60. Every part must fit on this one board.")})
+                  "description": ("Stock board [length, width, thickness] in mm. Leave out for the preset's board: "
+                                  + "; ".join(f"{value} for {' and '.join(ids)}" for value, ids in stocks.items())
+                                  + ". Thickness 5 to 60. Every part must fit on this one board.")})
 
 
 def canonical_request(args, meta):
@@ -256,7 +264,8 @@ def canonical_request(args, meta):
     defaults = {p["id"]: p["picture"] for p in meta["presets"]}
     if "picture" in request and preset in defaults and canonical(request["picture"]) == canonical(defaults[preset]):
         del request["picture"]
-    if request.get("stock_mm") == meta["stock_mm"]:
+    boards = {p["id"]: p["stock_mm"] for p in meta["presets"]}
+    if preset in boards and request.get("stock_mm") == boards[preset]:
         del request["stock_mm"]
     if request.get("schema_version") == 1:
         del request["schema_version"]
@@ -386,7 +395,8 @@ class Toolbox:
                             inner_mm=("clear opening inside the fixed frame; outer = inner + 2 x "
                                       f"{format_mm(meta['frame_member_mm'])} mm")),
             presets=[dict(id=p["id"], window_types=p["types"], default_picture=p["picture"],
-                          min_leaf_height_to_width=p["min_leaf_ratio"]) for p in meta["presets"]],
+                          min_leaf_height_to_width=p["min_leaf_ratio"], default_stock_mm=p["stock_mm"],
+                          edge_margin_mm=p["edge_margin_mm"], part_gap_mm=p["part_gap_mm"]) for p in meta["presets"]],
             defaults=dict(preset=meta["default_preset"], stock_mm=meta["stock_mm"],
                           picture_margin_mm=meta["picture_margin_mm"]),
             limits=meta["limits"], picture_sizes_mm=meta["picture_sizes"], examples=EXAMPLES,

@@ -129,6 +129,15 @@ class ToolboxTests(unittest.TestCase):
         # Mistakes are left for resolve() to name, never repaired silently.
         wrong = canonical_request(dict(EXAMPLES["double_600_800"], hinge_side="left", colour="red"), meta)
         self.assertEqual((wrong["hinge_side"], wrong["colour"]), ("left", "red"))
+        # A board is left out only when it is the default of the request's own preset.
+        board = dict(type="double", outer_mm=[463, 586], lattice_per_leaf=[2, 4], preset="standard_4x8_v1")
+        self.assertEqual(canonical_request(dict(board, stock_mm=[2400.0, 1200, 20]), meta), board)
+        for kept in (dict(board, preset="standard_v1", stock_mm=[2400, 1200, 20]), dict(board, stock_mm=[1220, 900, 20])):
+            self.assertEqual(canonical_request(kept, meta)["stock_mm"], kept["stock_mm"])
+        # describe_generator names that default board for each preset.
+        presets = {p["id"]: p for p in self.box.call("describe_generator").data["presets"]}
+        for name, want in (("standard_4x8_v1", [[2400, 1200, 20], 10, 12]), ("standard_v1", [[1220, 900, 20], 20, 12])):
+            self.assertEqual([presets[name][k] for k in ("default_stock_mm", "edge_margin_mm", "part_gap_mm")], want)
 
     def test_check_design_returns_the_design_or_the_rule_to_fix(self):
         r3 = self.box.call("check_design", EXAMPLES["double_r3"])

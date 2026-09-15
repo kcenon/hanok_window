@@ -279,11 +279,15 @@ export function packageTitle(s, sizes = {}) {
   return [kind, `${BASIS[s.size.basis]} ${pair(s.size.requested_mm)}`, `창살 ${s.lattice_per_leaf.join("+")}`, picture].join(" · ");
 }
 
+// The rules each preset follows; a preset not named here follows the shared standard rules.
+const PRESET_RULES = { hanok_A3_portrait_R3: "A3 세로형 R3 규칙", standard_4x8_v1: "4×8 원판 기본 규칙" };
+
 export function presetText(info) {
   if (!info) return "";
-  const parts = [info.id === "hanok_A3_portrait_R3" ? "A3 세로형 R3 규칙" : "단문·양문 공용 기본 규칙"];
+  const parts = [PRESET_RULES[info.id] ?? "단문·양문 공용 기본 규칙"];
   parts.push(info.types.length === 1 ? `${TYPE[info.types[0]]} 전용` : "단문·양문 모두");
   if (info.min_leaf_ratio > 0) parts.push(`창짝 높이/폭 ${fmt(info.min_leaf_ratio)} 이상`);
   parts.push(info.picture ? `그림 ${pair(info.picture.size_mm)} 기본` : "그림 없음이 기본");
+  if (info.stock_mm) parts.push(`원판 ${pair(info.stock_mm)} · 여유 ${fmt(info.edge_margin_mm)} · 간격 ${fmt(info.part_gap_mm)} mm`);
   return parts.join(" · ");
 }

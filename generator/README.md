@@ -191,7 +191,7 @@ MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내�
 .venv/bin/hanok-window-llm tools --format anthropic       # Messages API
 .venv/bin/hanok-window-llm tools --format mcp
 .venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
-.venv/bin/hanok-window-llm call get_drawing '{"package_id": "b9a13d66", "drawing": "assembly"}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "ab5a7bcd", "drawing": "assembly"}'
 ```
 
 `call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.
@@ -228,9 +228,9 @@ result.data, result.is_error, result.images  # JSON 결과, 실패 여부, [(MIM
 | `outer_mm` | 외경: 완성 외곽 `[가로, 세로]`, mm. 소수를 반올림해 설계를 바꾸지 않음 |
 | `inner_mm` | 내경: 고정틀 안목 `[가로, 세로]`, mm. `outer_mm`과 둘 중 하나만 지정 |
 | `lattice_per_leaf` | 창짝당 `[세로, 가로]` 부재 개수. 각 방향 0개 지원 |
-| `preset` | 기본 `standard_v1`. R3 재현용 `hanok_A3_portrait_R3` |
+| `preset` | 기본 `standard_v1`. R3 재현용 `hanok_A3_portrait_R3`, 4×8 원판용 `standard_4x8_v1` |
 | `picture` | 선택. `{"size_mm":[297,420],"margin_mm":10}` 또는 `null` |
-| `stock_mm` | 선택. 기본 `[1220,900,20]` |
+| `stock_mm` | 선택. 기본값은 프리셋을 따름: `standard_4x8_v1`은 `[2400,1200,20]`, 나머지는 `[1220,900,20]` |
 
 전체 스키마는 `.venv/bin/python -m hanok_generator schema`로, 프리셋 목록은 `presets`로 볼 수 있습니다.
 
@@ -245,6 +245,8 @@ result.data, result.is_error, result.images  # JSON 결과, 실패 여부, [(MIM
 
 `standard_v1`은 R3의 부재 폭·공구·간극 기본값을 사용하고 그림과 세장비 제한은 두지 않습니다.
 `hanok_A3_portrait_R3`은 양문 전용이며 창짝 세장비 2.6 하한과 A3 그림을 기본으로 둡니다.
+`standard_4x8_v1`은 `standard_v1`과 규칙이 같고, 4×8 원판 2400 × 1200 × 20 mm를 기본으로 원판 가장자리 여유 10 mm(다른 두 프리셋은 20 mm), 부재 간격 12 mm로 배치합니다. 여유와 간격은 입력으로 열지 않습니다. 이 여유에서 원판 한 장에 들어가는 부재 길이는 2380 mm까지입니다.
+부재 간격은 공구 지름 이상이어야 합니다(`nesting.part_gap_tool`).
 그림을 지정하면 외곽에서 계산한 후면 기준영역에 중앙 배치하고 네 변의 최소 여유를 검사합니다.
 그림을 외곽 치수의 등식 제약으로 사용하지 않습니다. 홈 깊이는 원판 두께의 절반으로 유도합니다.
 부재 폭·공구·경첩 모양은 공개 입력으로 열지 않고 버전 프리셋에서 공급합니다.
@@ -306,6 +308,7 @@ DXF와 PNG의 재현 조건은 `environment.json`에 기록하며 폰트 파일 
 단문은 지정한 쪽의 세로재에 경첩 2개, 반대 세로재에 손잡이와 캐치 참고 위치를 둡니다.
 양문은 양쪽 바깥 경첩을 쓰고 R3의 중앙 손잡이·상단 캐치 배치를 사용합니다.
 하드웨어의 모양과 위치는 실제 제품을 선정하기 전의 참고 정보입니다.
+DXF의 원판 안에는 부재 윤곽, 홈, 도그본, 부품 번호, 하드웨어 참고 표시만 둡니다. 가공 메모, 결 방향 화살표, 남는 판 안내는 원판 아래에 둡니다.
 
 - J1·J2: 고정틀·창짝 모서리.
 - J3: 두 방향 창살이 모두 있을 때만 생성.

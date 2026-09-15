@@ -46,7 +46,7 @@ export function formFromRequest(request, meta) {
   const size = Array.isArray(request[`${basis}_mm`]) ? request[`${basis}_mm`] : [];
   const lattice = Array.isArray(request.lattice_per_leaf) ? request.lattice_per_leaf : [];
   const picture = "picture" in request ? request.picture : presetInfo(meta, preset)?.picture ?? null;
-  const stock = Array.isArray(request.stock_mm) ? request.stock_mm : meta.stock_mm;
+  const stock = Array.isArray(request.stock_mm) ? request.stock_mm : presetInfo(meta, preset)?.stock_mm ?? meta.stock_mm;
   const a3 = meta.picture_sizes.A3;
   return {
     type: request.type === "single" ? "single" : "double",
@@ -78,8 +78,15 @@ export function compose(form, meta) {
     : null;
   if (key(picture) !== key(presetInfo(meta, form.preset)?.picture ?? null)) request.picture = picture;
   const stock = form.stock.map(number);
-  if (key(stock) !== key(meta.stock_mm)) request.stock_mm = stock;
+  if (key(stock) !== key(presetInfo(meta, form.preset)?.stock_mm ?? meta.stock_mm)) request.stock_mm = stock;
   return request;
+}
+
+export function stockAfterPresetChange(form, preset, meta) {
+  // An untouched board (the old preset's default) follows the new preset; an edited board stays.
+  const before = presetInfo(meta, form.preset)?.stock_mm;
+  const after = presetInfo(meta, preset)?.stock_mm;
+  return before && after && key(form.stock.map(number)) === key(before) ? after.map(String) : form.stock;
 }
 
 // ---- DOM helpers ----
@@ -190,6 +197,7 @@ function onFormInput(event) {
   const target = event.target;
   if (target.name === "basis" && target.value !== state.form.basis) convertBasis(target.value);
   if (target.name === "type" && target.value !== state.form.type) keepPresetValid(target.value);
+  if (target.id === "preset" && target.value !== state.form.preset) followPresetStock(target.value);
   const next = readForm();
   if (key(next) === key(state.form)) return; // radios fire both input and change
   state.form = next;
@@ -220,9 +228,14 @@ function keepPresetValid(type) {
   state.note = "";
   if (info && !info.types.includes(type)) {
     const fallback = state.meta.default_preset;
+    followPresetStock(fallback);
     $("preset").value = fallback;
     state.note = `${josa(TYPE[type], "은", "는")} ${info.id} 프리셋을 쓸 수 없어 ${josa(fallback, "으로", "로")} 바꿨습니다.`;
   }
+}
+
+function followPresetStock(preset) {
+  [$("stock-l").value, $("stock-w").value, $("stock-t").value] = stockAfterPresetChange(state.form, preset, state.meta);
 }
 
 function step(id, delta) {

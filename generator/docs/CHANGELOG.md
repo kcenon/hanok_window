@@ -274,10 +274,10 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | package_id 불변 | 같은 PC, 같은 가상환경(Pillow 12.3.0)에서 main(LF로 받은 worktree)과 이 버전의 소스로 `examples/double_r3.json`을 만들면 package_id가 둘 다 `48d2e12d…`다. 같은 PC에서 Pillow 11.3.0으로 만들면 `669c09fb…`였고, macOS 예제의 `3d8e6187…`과 다른 것은 실행 환경이 달라서다 |
 | macOS 예제 5종 | 이 PC에서는 만들 수 없어 직접 확인하지 않았다. 경계 안의 파일을 고치지 않았고 웹 시험이 소스 해시 16개가 `tests/results.json`과 같음을 확인하므로, 기록 당시와 같은 환경(Pillow 11.3.0)이면 이 버전의 수정으로는 바뀌지 않는다. Pillow 12.3.0으로 새로 설치한 환경에서는 PR #2 때문에 다르다 |
 
-## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리, latest.json 교체 재시도 (엔진 0.3.0)
+## 0.5.0 수정: 엔진 파일 입출력을 UTF-8·LF로 고정, builder 정리, latest.json 교체 재시도, 참고 도면 위치 (엔진 0.3.0)
 
-2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). Windows에서 동시에 끝난 빌드가 `latest.json`을 바꾸지 못하던 결함([#9](https://github.com/kcenon/hanok_window/issues/9))도 고쳤다(절 끝의 「latest.json 교체 재시도 (#9)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
-패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
+2026-09-14. 엔진이 로캘 인코딩과 OS 줄 끝으로 파일을 읽고 쓰던 곳을 고쳐, 한국어 로캘(cp949) Windows에서도 `PYTHONUTF8` 없이 시험과 생성이 돈다([#4](https://github.com/kcenon/hanok_window/issues/4)). Windows 호환 세 단계(#3~#5) 중 둘째 단계이고, 셋째 단계인 builder 정리([#5](https://github.com/kcenon/hanok_window/issues/5))도 태그 전에 이 버전에 넣었다(절 끝의 「builder 정리 (#5)」). Windows에서 동시에 끝난 빌드가 `latest.json`을 바꾸지 못하던 결함([#9](https://github.com/kcenon/hanok_window/issues/9))도 고쳤다(절 끝의 「latest.json 교체 재시도 (#9)」). 원판이 1220 mm보다 길면 참고 도면이 원판 위에 그려지던 결함([#11](https://github.com/kcenon/hanok_window/issues/11))도 고쳤다(절 끝의 「참고 도면 위치 (#11)」). 엔진 `__version__`은 0.3.0, 배포 버전은 0.5.0이다.
+패키지 `source/`에 들어가는 파일 7개(`__init__.py`, `cli.py`, `engine/builder.py`, `jobs.py`, `model.py`, `package.py`, `worker.py`)가 바뀌고 `resolved_parameters.json`의 engine이 0.3.0이 되었으므로 모든 입력의 package_id가 바뀐다. 기하와 도면을 만드는 계산은 바꾸지 않았다. 그래서 같은 입력의 revision은 그대로이고, macOS·Linux에서 만든 DXF는 0.4.2와 바이트까지 같다(POSIX에서는 텍스트 모드도 줄 끝을 바꾸지 않는다). 다만 원판 길이가 1220 mm가 아닌 입력은 #11 수정으로 참고 도면이 옮겨져 DXF가 다르다. Windows에서 만든 DXF, JSON, README는 줄 끝이 CRLF에서 LF로 바뀌어 macOS에서 만든 것과 같아졌다. Linux의 DXF는 이 변경과 무관하게 참고 그림의 점 하나가 마지막 자리에서 다르다(아래 확인 표의 OS 간 비교 행).
 0.4.1 패키지와 비교하면 package_id는 두 번 바뀐 셈이다. 이슈의 계획은 한 번이었지만, 0.4.2 절에 적은 대로 PR #2(Pillow 12.3.0)로 새로 설치한 환경의 package_id가 이미 한 번 바뀌었다.
 
 | 파일 | 내용 |
@@ -367,3 +367,36 @@ package_id는 도면 PNG(글꼴)와 `environment.json`(OS, Python과 라이브�
 | 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사·부품·홈·도그본 수는 그대로다. R3는 `01a8fcb5…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |
 | CI | PR #10의 CI(run `34834745553`)에서 세 OS 모두 네 시험이 통과했고, 시험 뒤 추적 파일이 바뀌지 않았다. ubuntu 24.04(CPython 3.11.16)는 생성기 15개(338.7초)·웹 20개(31.4초)·LLM 21개(22.7초), macOS 26 arm64(CPython 3.11.9)는 생성기 15개(230.3초)·웹 20개(25.3초)·LLM 21개(15.5초), Windows Server 2025(CPython 3.11.9)는 생성기 15개(411.1초)·웹 20개 중 15개와 5개 건너뜀(31.3초)·LLM 21개(27.7초)다 |
 | OS별 비교 | OS마다 R3 매니페스트(파일 34개)를 builder 정리의 CI(PR #8, run `34830043427`)와 비교했다. 세 OS 모두 `environment.json`과 `source/hanok_generator/jobs.py`만 다르고, PNG 5장, `window.dxf`, CSV 4종, `validation_report.json`을 포함한 32개는 같다 |
+
+### 참고 도면 위치 (#11)
+
+2026-09-15. 원판(`stock_mm`) 길이가 1220 mm보다 길면 조립도·상세도·열림도가 원판 위에 그려져 부품과 겹쳤다([#11](https://github.com/kcenon/hanok_window/issues/11)). 두 참고 도면의 원점이 1220 mm 원판에 맞춘 고정값 (1350, 100)과 (1350, -370)이었고, 상세도는 조립도 원점 오른쪽에 놓이기 때문이다. 참고 도형을 보는 검사 `references_never_on_machining_layers`는 도형이 가공 레이어에 있는지만 봐서 이를 잡지 못했다. 참고 레이어를 끄지 않고 원판 전체를 CAM에 넣으면 창 정면도가 부재 위에 같이 들어간다. 이제 원점 x는 원판 길이 + 130 mm이고, 참고 도형이 원판과 만나면 새 검사 `references_outside_board`가 실패한다. 설계당 검사는 68개가 된다.
+`engine/builder.py`는 패키지 `source/`에 들어가므로 모든 입력의 package_id가 #9 수정 뒤보다 한 번 더 바뀐다. 원판 길이 1220 mm인 입력은 원점이 1350 그대로여서 `window.dxf`, PNG 5장, CSV 4종, `design_spec.json`이 바이트까지 같고, 검사가 하나 늘어 `validation_report.json`과 `README.txt`(검사 수)가 달라진다. 원판이 1220 mm보다 짧으면 참고 도면이 왼쪽으로 옮겨져 DXF가 달라진다(예제와 시험에는 없다). 참고 도면의 가장 왼쪽(조립도 왼쪽 치수선)은 원판 길이와 상관없이 원판 오른쪽 끝에서 70 mm 떨어진다. 0.5.0 태그 전이라 버전은 올리지 않았다.
+
+| 파일 | 내용 |
+|---|---|
+| `engine/builder.py` | 모듈 상수 `ASSEMBLY_ORIGIN`, `OPENING_ORIGIN`을 지우고 `REFERENCE_GAP_X`(130), `ASSEMBLY_Y`(100), `OPENING_Y`(-370)를 두었다. `configure()`가 두 원점을 (원판 길이 + 130, y)로 계산해 `Design` 필드로 넘기고, 원점을 읽는 7곳(`add_hardware`, `add_assembly`, `add_opening`, `add_details`, `check_references`, `render_assembly`, `render_opening`)이 `cfg.`로 읽는다. 두 원점은 builder 정리(#5)에서 입력과 무관한 모듈 상수로 남겼던 것이다. 새 검사 `references_outside_board`는 `view`가 조립·상세·열림이거나 `detail` 키가 있는 도형(상세도 치수는 `detail` 키만 있다)이 원판 영역과 만나는지 본다. 선은 선분, 폴리라인은 다각형, 글자는 기준점으로 잰다. 글자가 뻗는 길이는 글꼴에 따라 달라서다. 측정값에는 참고 도형 수와 원판과 만난 수, 정수 두 개만 적는다. 좌표 같은 소수는 OS마다 마지막 자리가 다를 수 있어 적지 않았다. 이름에 `board`가 있어 대상은 `stock_mm`이고, 웹 화면에서는 원판 묶음(3개에서 4개)에 나온다 |
+| `llm/tools.py` | 모델에게 주는 문구 세 곳의 검사 수를 68로 고쳤다 |
+| `tests/test_generator.py` | 생성 요청에 R3 + 원판 2400×1200×20과 900×1200 양문 창살 2+6 + 같은 원판을 더했다(경우 17개에서 19개). 기존 시험이 두 설계의 부품 수, 검사 ID 목록, 상세도도 본다. 새 시험 `test_reference_views_stay_off_a_longer_board`는 두 패키지의 참고 도형을 엔진 도우미 대신 ezdxf가 계산한 도형별 외곽 상자로 재어, 원판과 만나는 도형이 없고 새 검사가 PASS인지 본다. 이어서 원점을 옛 값(x 1350)으로 되돌린 설정으로 두 설계를 빌드해, 저장 전 검사에서 `references_outside_board` 하나만 실패하고 폴더에 파일이 남지 않는지 본다. 소수 외곽 시험의 검사 수도 68로 고쳤다 |
+| `tests/test_web.py`, `tests/test_llm.py` | 검사 수를 68로 고쳤다 |
+| `tests/results.json` | 시험 수(15개에서 16개), 소스 해시 1개(`engine/builder.py`), 경우별 package_id 19개 |
+| `examples/built_packages.json`, `examples/README.md`, `README.md` | 예제 5종의 새 package_id와 검사 수, LLM 호출 예의 R3 ID, `build_package` 설명의 검사 수 |
+| `docs/manual/README.md` | 검사 수 네 곳(패키지 생성 절, 패키지 화면의 배지와 검사 설명, 패키지 파일 표) |
+
+| 구역 | 함수 | 검사 번호 |
+|---|---|---|
+| 참고 도면(조립·그림·열림·하드웨어·상세·원판 밖 위치) | `check_references` | 52~64 |
+| 메타데이터 | `check_metadata` | 65~68 |
+
+새 검사는 `references_never_on_machining_layers`(61번) 바로 뒤의 62번이다. 기존 검사에 조건을 합치면 이름과 뜻이 어긋나서 따로 두었다. 그 뒤의 `opening_illustration_matches_leaves`는 63번, `pockets_open_edge_intent`는 64번, 메타데이터 구역은 65~68번이 되고, 1~61번은 그대로다.
+설명서 스크린샷 세 장(`images/package.png`의 배지와 검사 표, `images/build-failed.png`, `images/package-checks.png`)에는 67이 그대로 찍혀 있다. 그림과 그림 설명(alt)은 고치지 않았다. 이 그림들은 엔진 0.2.0 때 찍은 것이어서 엔진 버전과 패키지 ID도 지금과 다르다.
+이슈 #11의 할 일 목록에 없던 변경은 0.5.0 절 머리의 두 문장(#11 소개, 원판 길이가 1220 mm가 아닌 입력은 DXF가 다르다는 단서)이다.
+참고 도면끼리 겹치는 곳은 고치지 않았다. 창짝이 넓은 900×1200 양문은 열림도 윗부분(y 최대 135.5)이 조립도 아래쪽(y 26부터)과 겹쳐, 열림도 도형 4개(제목과 부제 글자, 열린 창짝 그림 2개)가 조립도 도형 3개(고정틀 부재 F01-1·F02-1 윤곽, 치수선 1개)와 만난다. 두 원점이 같은 x로 함께 옮겨지므로 main에서도 같고 이 수정과 무관하다.
+
+| 확인 | 결과 |
+|---|---|
+| 같은 PC 비교 | 요청 8개(예제 5종, R3 + 원판 2400×1200×20, 900×1200 양문 2+6 + 같은 원판, `single_empty` + 원판 1000×900×20)를 main `2220587`과 이 수정 뒤에 각각 `run_job`(작업 프로세스 해시 시드 0)으로 만들어 파일별 SHA-256으로 비교했다. main은 `git archive`로 푼 사본을 `PYTHONPATH`로 불러 같은 가상환경에서 만들었다. 원판 1220 mm인 예제 5종은 파일 35개 중 `validation_report.json`, `README.txt`, `environment.json`, `package_manifest.json`, `source/hanok_generator/engine/builder.py`만 다르고, `window.dxf`, PNG 5장, CSV 4종, `design_spec.json`은 같다. 원판을 바꾼 세 요청은 여기에 `window.dxf`가 더해지고 PNG 5장은 같다(참고 도면 PNG는 원점 기준 상대 좌표로 그린다). 검사는 main에서 67개, 이 수정 뒤 68개가 모두 통과했다 |
+| 참고 도형 위치 | main에서 R3 + 2400 원판은 참고 도형 498개 중 421개(조립도 143개 전부, 상세도 293개 중 278개), 900×1200 + 2400 원판은 495개 중 99개(조립도 95개, 열림도 4개)가 원판과 만나는데도 검사 67개를 모두 통과했다. 이 수정 뒤에는 둘 다 0개이고, 조립도 원점 x는 2530, 참고 도형의 가장 왼쪽은 x 2470이다. 1000 mm 원판은 원점 x 1130, 가장 왼쪽 x 1070이고, 1220 mm 원판은 1350과 1290 그대로다. 새 검사와 같은 규칙으로 센 수와 ezdxf 외곽 상자로 센 수가 모든 요청에서 같았다 |
+| 옛 원점 | 원점을 x 1350으로 되돌린 설정으로 두 2400 원판 설계를 빌드하면 저장 전 검사(`IN_MEMORY_BEFORE_SAVE`)에서 `references_outside_board` 하나만 실패하고, 빌드 폴더에 파일이 남지 않는다(새 시험) |
+| Windows 시험 | Windows 11 한국어 로캘(AMD64), CPython 3.11.15, Pillow 12.3.0, `PYTHONUTF8`과 `PYTHONIOENCODING` 없음. 인코딩 1개 PASS(0.2초), 생성기 16개 PASS(새 시험 포함, 201초), 웹 20개 중 15개 PASS·5개 건너뜀(`web.sh` 시험, 13.8초), LLM 21개 PASS(14.2초). 생성기 시험을 스크립트로 먼저 돌려 `tests/results.json`을 다시 적었고, 시험 뒤 바뀐 추적 파일은 고친 파일과 그 파일뿐이다 |
+| 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사는 68개, 부품·홈·도그본 수는 그대로다. R3는 `b9a13d66…`이고, revision `HANOK_GEN_V1_04a2ec4c4f06`과 `window.dxf` SHA-256 `f13d4aef…`는 그대로다 |

@@ -180,7 +180,7 @@ def face_note(cfg):
 
 
 def add_board(cfg,m,spec):
-    tot=spec['derived']['totals'];top=spec['derived']['nesting_bounds'][3]
+    tot=spec['derived']['totals']
     rect(m,0,0,cfg.BL,cfg.BWD,'BOARD_BOUNDARY',kind='board',view='nest',size_mm=[cfg.BL,cfg.BWD,cfg.BT])
     text(m,f'HANOK WINDOW / {cfg.TITLE}',(0,cfg.BWD+55),13,kind='title',view='nest')
     # The saved header carries constant timestamps so builds stay reproducible;
@@ -191,21 +191,24 @@ def add_board(cfg,m,spec):
            f"{tot['reliefs']} RELIEFS / mm / MODEL SPACE 1:1",(0,cfg.BWD+30),5.5,view='nest')
     dimh(m,0,cfg.BL,cfg.BWD,cfg.BWD+14,f'{cfg.BL:g}',view='nest')
     dimv(m,0,cfg.BWD,0,-27,f'{cfg.BWD:g}',view='nest')
-    # The grain arrow and offcut labels sit in the band left empty above the parts.
-    gy=top+(cfg.BWD-top)*.32; oy=top+(cfg.BWD-top)*.65
-    line(m,(cfg.BL*.115,gy),(cfg.BL*.885,gy),'GRAIN_DIRECTION',view='nest')
-    for sg in (1,-1):
-        line(m,(cfg.BL*.885,gy),(cfg.BL*.885-44,gy+sg*21),'GRAIN_DIRECTION',view='nest')
-    text(m,'GRAIN DIRECTION  +X',(cfg.BL/2,gy+45),19,'GRAIN_DIRECTION','center',view='nest')
-    text(m,'UNUSED OFFCUT / NOT ADDITIONAL PARTS',(cfg.BL/2,oy),13,align='center',view='nest')
-    text(m,f'All {tot["parts"]} part lengths run parallel to the {cfg.BL:g} mm grain direction.',
-         (cfg.BL/2,oy-34),8,align='center',view='nest')
+    # Notes, the grain arrow and the offcut line sit below the board, so however full
+    # the layout is, the board holds only parts, pockets, reliefs, part labels and
+    # hardware marks. The nesting PNG leaves them out (kind sheet_note); its side
+    # panel carries the same notes.
     notes=[f'ONE BOARD {cfg.BL:g} x {cfg.BWD:g} x {cfg.BT:g} / ALL POCKETS MACHINED FROM COMMON FACE A',
            face_note(cfg),
            f'{cfg.POCKET_LAYER} + DOGBONE: UNION, REMOVE {cfg.DEPTH:g} mm. OPEN LAPS NEED WASTE-SIDE OVERRUN.',
            'HINGE_REF / LATCH_REF ARE POSITION REFERENCES ONLY. DO NOT MACHINE.',
-           'NOMINAL FIT: VERIFY STOCK, TEST COUPONS, WORKHOLDING AND CAM BEFORE CUTTING.']
-    for i,s in enumerate(notes):text(m,s,(30,cfg.BWD-48-i*20),6.6,view='nest')
+           'NOMINAL FIT: VERIFY STOCK, TEST COUPONS, WORKHOLDING AND CAM BEFORE CUTTING.',
+           'BOARD AREA WITHOUT PARTS: UNUSED OFFCUT / NOT ADDITIONAL PARTS']
+    for i,s in enumerate(notes):text(m,s,(0,-60-i*20),6.6,view='nest',kind='sheet_note')
+    gy=-235
+    line(m,(cfg.BL*.115,gy),(cfg.BL*.885,gy),'GRAIN_DIRECTION',view='nest',kind='sheet_note')
+    for sg in (1,-1):
+        line(m,(cfg.BL*.885,gy),(cfg.BL*.885-44,gy+sg*21),'GRAIN_DIRECTION',view='nest',kind='sheet_note')
+    text(m,'GRAIN DIRECTION  +X',(cfg.BL/2,gy+40),19,'GRAIN_DIRECTION','center',view='nest',kind='sheet_note')
+    text(m,f'All {tot["parts"]} part lengths run parallel to the {cfg.BL:g} mm grain direction.',
+         (cfg.BL/2,gy-40),8,align='center',view='nest',kind='sheet_note')
     text(m,'No G-code, tabs, toolpaths, feeds or speeds are included. All hardware and backing remain PENDING.',
          (0,-35),5.3,view='nest')
 
@@ -413,8 +416,9 @@ def build(cfg):
         role=meta(e).get('role')
         if role=='picture':e.dxf.linetype='A3_DASHDOT'
         elif role in ('opening','picture_region'):e.dxf.linetype='REF_DASH'
-    # Default view opens on the stock and machining layout, not the reference sheets.
-    doc.set_modelspace_vport(height=cfg.BWD+190,center=(cfg.BL/2,cfg.BWD/2-10))
+    # Default view opens on the stock, its machining layout and the notes below it, not
+    # the reference sheets: from 300 below the board to 85 above it.
+    doc.set_modelspace_vport(height=cfg.BWD+385,center=(cfg.BL/2,cfg.BWD/2-107.5))
     # Write candidates beside the outputs and swap them in only after both phases
     # pass, so a rejected build leaves the previous spec and DXF as they were
     # instead of pairing a new spec with an old drawing.
@@ -985,7 +989,8 @@ def nest_entities(cfg,doc,full=True):
     if full:out += [e for e in ents if e.dxf.layer=='BOARD_BOUNDARY']
     for lay in ['CUT_THROUGH',cfg.POCKET_LAYER,'DOGBONE','HINGE_REF','LATCH_REF','PART_ID']:
         out += [e for e in ents if e.dxf.layer==lay and (lay in ['CUT_THROUGH',cfg.POCKET_LAYER,'DOGBONE'] or meta(e).get('view')=='nest')]
-    if full:out += [e for e in ents if meta(e).get('view')=='nest' and e.dxf.layer in ['GRAIN_DIRECTION','NOTES','DIMENSIONS'] and meta(e).get('kind')!='title']
+    # Notes below the board lie outside the nesting viewport; the side panel carries them.
+    if full:out += [e for e in ents if meta(e).get('view')=='nest' and e.dxf.layer in ['GRAIN_DIRECTION','NOTES','DIMENSIONS'] and meta(e).get('kind') not in ('title','sheet_note')]
     return out
 
 

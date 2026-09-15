@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "tests": 18,
+  "tests": 19,
   "failures": [],
   "errors": [],
   "cases": [
@@ -11,7 +11,7 @@
       "parts": 12,
       "pockets": 24,
       "dogbones": 0,
-      "package_id": "fcc4ddb980da0df43bb9884a59d35116ef1576040092f3ae55dd151d522b6bd8"
+      "package_id": "93e2997d7f6e038d01166b25704dbdf091f25969b0deafa5b8399be77d0470ea"
     },
     {
       "case": "double_None_2_0",
@@ -20,7 +20,7 @@
       "parts": 16,
       "pockets": 40,
       "dogbones": 16,
-      "package_id": "d5f0fdd653e03fa1f0f52df47dfd4b48a60fafae63af6f6dd3ffe56b180a9317"
+      "package_id": "0155467504c9fa910798adec05148b79d370606a53d75eb0fcbe492772b12776"
     },
     {
       "case": "double_None_0_4",
@@ -29,7 +29,7 @@
       "parts": 20,
       "pockets": 56,
       "dogbones": 32,
-      "package_id": "3af6ebd6a28666176e58df577c4e5cf11c76f6fb65dd322f7caca825a63cbd1b"
+      "package_id": "423afb20f80d4fbab33da7c412561e9ca638f1310e26f9bf90570dd1cfd3d412"
     },
     {
       "case": "double_None_2_4",
@@ -38,7 +38,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "5162e99352c09fc359c5f3b515cd87440342a6ad96c3fdd83d1f0a8b46f31e44"
+      "package_id": "efd8c9e9a5b5d9dd617c72122bdb053ce351b7e159a881862b908398ae991568"
     },
     {
       "case": "single_left_2_4",
@@ -47,7 +47,7 @@
       "parts": 14,
       "pockets": 56,
       "dogbones": 24,
-      "package_id": "501dd4bc7ac0984dbd2fd89dc8ec8ead5e64503fd745c8b3f2a1c43887255741"
+      "package_id": "71f98c6803b6f262db4c93f59cace666ad11ca810a16a21779b8562a7ca2c9e2"
     },
     {
       "case": "single_left_0_4",
@@ -56,7 +56,7 @@
       "parts": 12,
       "pockets": 32,
       "dogbones": 16,
-      "package_id": "6ecf254c013a3da1092e344211a94bc7e4fd84d7513faf255d25dbd1df4761db"
+      "package_id": "7b512b6e42e19188a907ae2f3c68476c6dde5846fbb3934a67c12b67f4e07378"
     },
     {
       "case": "single_left_2_0",
@@ -65,7 +65,7 @@
       "parts": 10,
       "pockets": 24,
       "dogbones": 8,
-      "package_id": "41acd339151fe70db73c0dcf87471cf0497920558336b73db115a669d058199c"
+      "package_id": "222d085f3b04c150d06efb02620c3ec5795bc9e56e557209061104927099ead7"
     },
     {
       "case": "single_left_0_0",
@@ -74,16 +74,7 @@
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "a8d3176ed7fc968e38d561f806f9525f1877682296938494dd2e633cfbe88ceb"
-    },
-    {
-      "case": "single_right_2_4",
-      "status": "PASS",
-      "checks": 68,
-      "parts": 14,
-      "pockets": 56,
-      "dogbones": 24,
-      "package_id": "bd5f64ec035e08b31357101af669e9a1d06f4ea68851acd40afeb93ac09b0d48"
+      "package_id": "900df815c60f1b62a09b474ac4d7b48a9c29297c884fea4970c073a453f11114"
     },
     {
       "case": "single_right_0_0",
@@ -92,16 +83,7 @@
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "691b6719b2a4ac868d8a1a01958d18f3862964fe51453f8944660917f9a11fad"
-    },
-    {
-      "case": "single_right_2_0",
-      "status": "PASS",
-      "checks": 68,
-      "parts": 10,
-      "pockets": 24,
-      "dogbones": 8,
-      "package_id": "00198618b9245bc82c675b630edf242aff49cb215ef09bf3b80895412f732c35"
+      "package_id": "4cedf2a5a17f63b23db2753b8f4ab76d3965f0e81e7d7dc985357c87b5168eaa"
     },
     {
       "case": "single_right_0_4",
@@ -110,7 +92,25 @@
       "parts": 12,
       "pockets": 32,
       "dogbones": 16,
-      "package_id": "68a64c3882d645e6e71eaea552010ceb1027ea96730d0320883ff6fe44e92ae4"
+      "package_id": "9adfb7d8eb525067fff8018ee03f514f0bd1e8fffb4d7773ad6bcfd8f4ac1260"
+    },
+    {
+      "case": "single_right_2_0",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 10,
+      "pockets": 24,
+      "dogbones": 8,
+      "package_id": "ccdc092783a559b53f455845864789d0b4d7c1e6cfd4fabe9b9598e7e7006230"
+    },
+    {
+      "case": "single_right_2_4",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 14,
+      "pockets": 56,
+      "dogbones": 24,
+      "package_id": "1506ae7412f500ca43d912b78a5c7db03e30ffad822de5c95cfc35012a900ede"
     },
     {
       "case": "resize",
@@ -119,7 +119,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "25e12783ebfa85b2201be3d1ecfd642fee1203279d8db4633d9e24b4f8b2f573"
+      "package_id": "489660d9311e67ea6dd9f15114d7e4365649f87efc84e5f8ac149d95d58f20b7"
     },
     {
       "case": "r3",
@@ -128,7 +128,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "ab5a7bcd7c57abe302c9d98b245d3d06aea54f84085e859b14c14b9f2abdb264"
+      "package_id": "dc8b45098f4bd27c8db132584784904d0a966b3c6929e1e1067d11a485c55bef"
     },
     {
       "case": "picture",
@@ -137,7 +137,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "b10dd32e5e18c7b429204c6eda04e87a88f96848670902cd00767c306439d87d"
+      "package_id": "8e885e90170015cb940b9d63f685dce9b2ac5660d0e4f0bdc6a5d7aae1080ae7"
     },
     {
       "case": "lattice_3_5",
@@ -146,16 +146,7 @@
       "parts": 28,
       "pockets": 148,
       "dogbones": 64,
-      "package_id": "dee0f97b78126307ab89d2a24d47c2e6f6ab35d21977fc4ab80671a1ce4710ad"
-    },
-    {
-      "case": "inner_r3",
-      "status": "PASS",
-      "checks": 68,
-      "parts": 24,
-      "pockets": 104,
-      "dogbones": 48,
-      "package_id": "cad54045a36519cd7d2e4689e63d3d26330aff142eefaf7e90e29daa3ec8d5a0"
+      "package_id": "f560c0714ec84dc86017d0416c3db1b7a8aa557885f8117150ae6223905b9133"
     },
     {
       "case": "r3_stock_2400",
@@ -164,7 +155,16 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "248cdb0a2e2312372045d6228085096517900f07ec922e36e117d5c8d12a882b"
+      "package_id": "2fde2a362d99655e13c63607e6799db07cce481d2c62066f17465ac9b72cf980"
+    },
+    {
+      "case": "inner_r3",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "384974c1eac93a752a2e8be494d3c381d4947b479427da40e0825687972c78ad"
     },
     {
       "case": "standard_4x8",
@@ -173,7 +173,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "ed6d766721f266e28dc3a3d670a5759f805bdf98dcb0d7e94b82361dc1e5a63c"
+      "package_id": "0b2806fdbdfbd6b8ab75eeeea1c3c08967eb427f875631e46f0a8556d1556cc2"
     },
     {
       "case": "stock_2400_900x1200",
@@ -182,7 +182,25 @@
       "parts": 28,
       "pockets": 136,
       "dogbones": 64,
-      "package_id": "ae19308afc9b4c954e58813da390b7167cd88b70077ceb05cdcf0521e72f3662"
+      "package_id": "2a737bd5d4ad11a467bb5bc8a101a0cbf3d514ecd9511528edd1941e39c86360"
+    },
+    {
+      "case": "stock_18",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "b20a25bb0905db94d0773c2f683765215be23ac91a4685b78fadc3a921a742f5"
+    },
+    {
+      "case": "stock_24",
+      "status": "PASS",
+      "checks": 68,
+      "parts": 24,
+      "pockets": 104,
+      "dogbones": 48,
+      "package_id": "e728479f0f6f0d81dcc05ffffb2d20ce8b297d879e04f2c1bbff0be6d4dc50c0"
     },
     {
       "case": "standard_4x8_900x1200",
@@ -191,7 +209,7 @@
       "parts": 28,
       "pockets": 136,
       "dogbones": 64,
-      "package_id": "f0d4a891edd0e328cde2def9dc1603ebae119dd1c362b6099b5c584cd6284468"
+      "package_id": "803418762be528fa2c0ed6f06b410f1bb437cee32103690fd5438fdd72ceb5fb"
     },
     {
       "case": "failure_cad",
@@ -224,7 +242,7 @@
     {
       "case": "board_holds_only_machining",
       "status": "PASS",
-      "designs": 21,
+      "designs": 23,
       "sheet_notes": 11,
       "other_entities_on_board": 0
     },
@@ -296,6 +314,15 @@
       "rejections": 4
     },
     {
+      "case": "pocket_colour_any_thickness",
+      "status": "PASS",
+      "thickness_mm": [
+        18,
+        24
+      ],
+      "same_pocket_pixels_as_20_mm": true
+    },
+    {
       "case": "reference_views_off_2400_board",
       "status": "PASS",
       "designs": 2,
@@ -331,7 +358,7 @@
     "cli.py": "e7b5fbbf68427e03c2836bc2bd9f4abea4a165d1e795e1074cea6e404ef30de6",
     "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
     "engine/builder.py": "89e215f4996ed638213e5adfd76ffaa8566e81b653e6b6530c52379bd5960468",
-    "engine/cad_helpers.py": "fad3c229dedc1ef69b6a1ed76c2ad8616aac3ff0b4fda8849d8e7b00b94368b3",
+    "engine/cad_helpers.py": "67574f960be66aef15831aee145aa793ef9360c05569893fbed3caec3a63deb9",
     "engine/generate_spec.py": "9cddea7aedf13b4e4285f8cbe9d523a2b112eede42f8e0ad11e23988d751b659",
     "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",
     "engine/numeric_policy.py": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c",

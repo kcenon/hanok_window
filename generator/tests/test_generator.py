@@ -59,6 +59,8 @@ class GeneratorTests(unittest.TestCase):
         cls.requests["stock_2400_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),stock_mm=[2400,1200,20])
         cls.requests["standard_4x8"]=request(preset="standard_4x8_v1")
         cls.requests["standard_4x8_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),preset="standard_4x8_v1")
+        cls.requests["stock_18"]=request(stock_mm=[1220,900,18])
+        cls.requests["stock_24"]=request(stock_mm=[1220,900,24])
         def build(item):
             name,data=item;result=run_job(data,cls.output)
             LOG.append(dict(case=name,status="PASS",**{k:result[k] for k in ("checks","parts","pockets","dogbones","package_id")}))
@@ -295,6 +297,27 @@ class GeneratorTests(unittest.TestCase):
                 self.assertLess(max(b[2] for b in notes),stock["length"]+70)
         LOG.append(dict(case="board_holds_only_machining",status="PASS",designs=len(self.requests),sheet_notes=11,
                         other_entities_on_board=0))
+
+    def test_pockets_keep_their_colour_on_any_board_thickness(self):
+        # The pocket layer is named after the depth, half the board thickness, and the PNG renderer
+        # used to fill only POCKET_10MM: on an 18 or 24 mm board PNG 01 kept just its legend swatch
+        # and PNG 05 had no pocket colour at all. The layout does not depend on the thickness, so the
+        # pocket fill covers as many pixels as on the 20 mm board.
+        from PIL import Image
+        from hanok_generator.engine.cad_helpers import COL
+        colour=tuple(int(COL["pocket"][i:i+2],16) for i in (1,3,5))
+        def pixels(p,name):
+            with Image.open(p/name) as im:
+                return {c:n for n,c in im.convert("RGB").getcolors(1<<24)}.get(colour,0)
+        names=("01_one_board_nesting.png","05_all_pockets_closeup.png")
+        want={name:pixels(self.path("double_None_2_4"),name) for name in names}
+        self.assertGreater(want["05_all_pockets_closeup.png"],0)
+        for key,layer in (("stock_18","POCKET_9MM"),("stock_24","POCKET_12MM")):
+            with self.subTest(name=key):
+                p=self.path(key)
+                self.assertIn(layer,ezdxf.readfile(p/"window.dxf").layers)
+                self.assertEqual({name:pixels(p,name) for name in names},want)
+        LOG.append(dict(case="pocket_colour_any_thickness",status="PASS",thickness_mm=[18,24],same_pocket_pixels_as_20_mm=True))
 
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
         latest=(self.output/"latest.json").read_bytes()

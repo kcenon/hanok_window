@@ -146,7 +146,9 @@ class Renderer:
         data=meta(e);layer=e.dxf.layer;role=data.get('role','')
         stroke=COL['line'];fill=None;lw=max(1,round(self.s*.35));dashed=False
         if layer=='CUT_THROUGH' or role=='body':fill=COL['wood'];stroke=COL['ink'];lw=max(2,round(self.s*.45))
-        if layer=='POCKET_10MM' or role=='pocket':fill=COL['pocket'];stroke=COL['pocketline'];lw=max(2,round(self.s*.35))
+        # The pocket layer is named after the depth (POCKET_9MM on an 18 mm board), so
+        # nested pockets are known by their kind and detail pockets by their role.
+        if data.get('kind')=='pocket' or role=='pocket':fill=COL['pocket'];stroke=COL['pocketline'];lw=max(2,round(self.s*.35))
         if layer=='DOGBONE' or role=='dogbone':fill=COL['dog'];stroke=COL['dogline'];lw=max(1,round(self.s*.28))
         if layer in ('HINGE_REF','LATCH_REF'):stroke=COL['hardware'];dashed=True;lw=max(2,round(self.s*.4))
         if role=='section_front':fill=COL['front'];stroke=COL['ink'];lw=max(2,round(self.s*.35))

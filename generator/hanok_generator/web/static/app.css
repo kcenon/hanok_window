@@ -101,6 +101,8 @@ select[aria-invalid="true"] { border-color: var(--bad); }
 .sw-wood { background: var(--wood); }
 .sw-hinge { background: var(--surface); border: 2px solid var(--accent); }
 .sw-pic { background: transparent; border: 1.5px dashed var(--pic); }
+.sw-back { background: var(--wood-dark); opacity: .55; }
+.sw-art { background: transparent; border: 1.5px dashed var(--pic); }
 .sw-used { background: transparent; border: 1.5px dashed var(--accent); }
 .sw-margin { background: transparent; border: 1px dashed var(--line-strong); }
 .tip { position: absolute; z-index: 3; pointer-events: none; max-width: 300px; background: var(--ink); color: var(--surface); font-size: 12.5px; padding-block: 5px; padding-inline: 9px; border-radius: 6px; box-shadow: var(--shadow); }
@@ -114,6 +116,10 @@ select[aria-invalid="true"] { border-color: var(--bad); }
 .mk-hinge { stroke: var(--accent); stroke-width: 2.6; }
 .mk-pic { fill: none; stroke: var(--pic); stroke-width: 1.5; stroke-dasharray: 7 5; }
 .mk-pic-t { fill: var(--pic); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+/* The back frame is a solid member one layer behind the fixed frame; the panel is an outline. */
+.mk-back_frame { fill: var(--wood-dark); stroke: var(--ink); stroke-width: 1; opacity: .55; }
+.mk-art { fill: none; stroke: var(--pic); stroke-width: 1.5; stroke-dasharray: 7 5; }
+.mk-art-t { fill: var(--pic); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
 .mk-hinge-t { fill: var(--accent); font-weight: 600; }
 .mk-dim line { stroke: var(--muted); stroke-width: 1; }
 .mk-dim text { fill: var(--muted); }
@@ -123,6 +129,7 @@ select[aria-invalid="true"] { border-color: var(--bad); }
 .nk-margin { fill: none; stroke: var(--line-strong); stroke-dasharray: 6 6; }
 .nk-frame { fill: var(--wood-dark); stroke: var(--ink); stroke-width: .8; }
 .nk-sash, .nk-lattice { fill: var(--wood); stroke: var(--ink); stroke-width: .8; }
+.nk-back_frame { fill: var(--wood-dark); stroke: var(--ink); stroke-width: .8; opacity: .6; }
 .nk-used { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 8 5; }
 .nk-t { fill: var(--accent); font-weight: 600; }
 .drawing .mk-hot { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }

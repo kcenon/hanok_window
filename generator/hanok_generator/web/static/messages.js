@@ -1,11 +1,12 @@
 // Korean wording for the page. Values in messages come from the server's `details`,
 // and the rule id stays visible so every message traces back to an engine rule.
 
-export const KIND = { F01: "고정틀 선대", F02: "고정틀 가로대", S01: "창짝 선대", S02: "창짝 가로대", L01: "세로 창살", L02: "가로 창살" };
+export const KIND = { F01: "고정틀 선대", F02: "고정틀 가로대", S01: "창짝 선대", S02: "창짝 가로대", L01: "세로 창살", L02: "가로 창살",
+  B01: "뒤틀 선대", B02: "뒤틀 가로대" };
 export const GROUP = { FIXED: "고정틀", LEFT_LEAF: "왼쪽 창짝", RIGHT_LEAF: "오른쪽 창짝", LEAF_1: "창짝" };
 export const TYPE = { double: "양문", single: "단문" };
 export const SIDE = { left: "왼쪽", right: "오른쪽" };
-export const BASIS = { outer: "외경", inner: "내경" };
+export const BASIS = { outer: "외경", inner: "내경", artwork: "화판" };
 
 export function fmt(value, digits = 2) {
   if (typeof value !== "number" || !Number.isFinite(value)) return String(value);
@@ -43,6 +44,9 @@ const FIELD_LABELS = {
   "picture.size_mm": "그림 크기", "picture.size_mm[0]": "그림 가로", "picture.size_mm[1]": "그림 세로",
   "picture.margin_mm": "그림 여유", stock_mm: "원판", "stock_mm[0]": "원판 길이", "stock_mm[1]": "원판 폭",
   "stock_mm[2]": "원판 두께",
+  artwork: "화판", "artwork.size_mm": "화판 크기", "artwork.size_mm[0]": "화판 가로",
+  "artwork.size_mm[1]": "화판 세로", "artwork.thickness_mm": "화판 두께", "artwork.cover_mm": "덮는 폭",
+  "artwork.fit_mm": "끼움 여유", "artwork.spacer_mm": "스페이서",
 };
 // Request field -> input element ids on the design screen.
 const FIELD_INPUTS = {
@@ -52,6 +56,9 @@ const FIELD_INPUTS = {
   "picture.size_mm": ["pic-w", "pic-h"], "picture.size_mm[0]": ["pic-w"], "picture.size_mm[1]": ["pic-h"],
   "picture.margin_mm": ["pic-m"], stock_mm: ["stock-l", "stock-w", "stock-t"], "stock_mm[0]": ["stock-l"],
   "stock_mm[1]": ["stock-w"], "stock_mm[2]": ["stock-t"], preset: ["preset"],
+  artwork: ["size-w", "size-h"], "artwork.size_mm": ["size-w", "size-h"], "artwork.size_mm[0]": ["size-w"],
+  "artwork.size_mm[1]": ["size-h"], "artwork.thickness_mm": ["art-t"], "artwork.cover_mm": ["art-c"],
+  "artwork.fit_mm": ["art-f"], "artwork.spacer_mm": ["art-s"],
 };
 
 export const fieldLabel = (field) => FIELD_LABELS[field] ?? field ?? "입력";
@@ -64,7 +71,33 @@ const RULES = {
   "input.schema_version": () => ({ text: "지원하는 입력 스키마 버전은 1입니다." }),
   "input.type": () => ({ text: "창 형식은 양문 또는 단문입니다." }),
   "input.hinge_side": () => ({ text: "단문은 경첩 쪽(왼쪽·오른쪽)이 필요하고, 양문은 경첩 쪽을 따로 정하지 않습니다." }),
-  "input.size_basis": () => ({ text: "크기는 외경이나 내경 중 하나로만 입력합니다.", inputs: ["size-w", "size-h"] }),
+  "input.size_basis": () => ({ text: "크기는 외경·내경·화판 중 하나로만 입력합니다.", inputs: ["size-w", "size-h"] }),
+  "input.artwork": () => ({ text: "화판은 크기와 두께·덮는 폭·끼움 여유·스페이서로 지정합니다.", inputs: ["size-w", "size-h"] }),
+  "input.artwork_picture": () => ({ text: "액자형은 화판이 그림 자리를 대신하므로 그림을 함께 지정할 수 없습니다." }),
+  "input.preset_artwork": () => ({
+    text: "R3 프리셋은 A3 그림을 후면 지지판에 두는 규칙이라 액자형과 함께 쓸 수 없습니다. standard_v1이나 standard_4x8_v1을 쓰세요.",
+    inputs: ["preset"],
+  }),
+  "artwork.covers_inner": (d) => ({
+    text: `화판 ${pair(d.artwork)} mm가 내경 ${pair(d.inner)} mm를 각 변 ${fmt(d.cover)} mm씩 덮지 못합니다. `
+      + `화판을 ${pair(d.required)} mm로 맞추세요.`,
+    inputs: ["size-w", "size-h"],
+  }),
+  "artwork.cover_hides_edge": (d, ctx) => ({
+    text: `고정틀이 덮는 폭 ${fmt(d.cover)} mm가 끼움 여유 ${fmt(d.fit)} mm보다 크지 않아, 화판이 여유만큼 밀리면 가장자리가 보입니다. `
+      + advise(artworkAdvice(ctx.suggestion), "덮는 폭을 늘리거나 끼움 여유를 줄이세요."),
+    inputs: ["art-c", "art-f"],
+  }),
+  "artwork.back_member_width": (d, ctx) => ({
+    text: `고정틀 폭에서 덮는 폭과 끼움 여유를 뺀 뒤틀 폭이 ${fmt(d.back_member_width)} mm로, 창살 폭 ${fmt(d.minimum)} mm보다 좁습니다. `
+      + advise(artworkAdvice(ctx.suggestion), `덮는 폭을 ${fmt(d.cover_at_most)} mm 이하로 줄이세요.`),
+    inputs: ["art-c", "art-f"],
+  }),
+  "artwork.depth_within_stock": (d, ctx) => ({
+    text: `스페이서 ${fmt(d.spacer)} mm와 화판 두께 ${fmt(d.thickness)} mm를 더한 ${fmt(d.required)} mm가 원판 두께 ${fmt(d.available)} mm보다 깊습니다. `
+      + advise([...artworkAdvice(ctx.suggestion), ...stockAdvice(ctx.suggestion)], "화판이나 스페이서를 줄이세요."),
+    inputs: ["art-t", "art-s"],
+  }),
   "input.vector": (d) => ({ text: `${josa(fieldLabel(d.field), "은", "는")} 값 ${d.required}개로 입력합니다.` }),
   "input.number": (d) => ({
     text: String(d.field ?? "").startsWith("lattice")
@@ -153,11 +186,22 @@ const BOUNDS = [
 ];
 
 function sizeAdvice(suggestion) {
-  const key = suggestion?.outer_mm ? "outer_mm" : suggestion?.inner_mm ? "inner_mm" : null;
+  // A frame-type request is answered in its own field, so suggestion.artwork holds both the
+  // panel sides (width_at_least …) and the panel fields (cover_at_most …); BOUNDS picks the sides.
+  const key = suggestion?.outer_mm ? "outer_mm" : suggestion?.inner_mm ? "inner_mm" : suggestion?.artwork ? "artwork" : null;
   if (!key) return [];
-  const label = BASIS[key === "outer_mm" ? "outer" : "inner"];
+  const label = BASIS[{ outer_mm: "outer", inner_mm: "inner", artwork: "artwork" }[key]];
   return BOUNDS.filter(([bound]) => suggestion[key][bound] != null)
     .map(([bound, side, verb]) => `${label} ${side}를 ${fmt(suggestion[key][bound])} mm ${verb}`);
+}
+
+function artworkAdvice(suggestion) {
+  const art = suggestion?.artwork ?? {};
+  return [["cover_at_least", "덮는 폭을", "이상으로 늘리"], ["cover_at_most", "덮는 폭을", "이하로 줄이"],
+          ["fit_at_most", "끼움 여유를", "이하로 줄이"], ["thickness_at_most", "화판 두께를", "이하로 줄이"],
+          ["spacer_at_most", "스페이서를", "이하로 줄이"]]
+    .filter(([bound]) => art[bound] != null)
+    .map(([bound, what, verb]) => `${what} ${fmt(art[bound])} mm ${verb}`);
 }
 
 function pictureAdvice(suggestion) {
@@ -169,7 +213,7 @@ function pictureAdvice(suggestion) {
 
 function stockAdvice(suggestion) {
   const stock = suggestion?.stock_mm ?? {};
-  return [["length_at_least", "원판 길이를"], ["width_at_least", "원판 폭을"]]
+  return [["length_at_least", "원판 길이를"], ["width_at_least", "원판 폭을"], ["thickness_at_least", "원판 두께를"]]
     .filter(([bound]) => stock[bound] != null)
     .map(([bound, what]) => `${what} ${fmt(stock[bound])} mm 이상으로 늘리`);
 }
@@ -247,7 +291,7 @@ export const PENDING_KO = {
 };
 export const TARGETS = {
   saved_dxf: "저장 DXF 재측정", lattice_per_leaf: "창살 배치", stock_mm: "원판", picture: "그림",
-  outer_mm: "입력 크기(외경)", inner_mm: "입력 크기(내경)",
+  outer_mm: "입력 크기(외경)", inner_mm: "입력 크기(내경)", artwork: "화판",
 };
 export const DRAWINGS = [
   ["01_one_board_nesting.png", "01 원판 배치"], ["02_joinery_details.png", "02 결합 상세"],
@@ -272,7 +316,8 @@ export function when(iso) {
 export function packageTitle(s, sizes = {}) {
   const kind = s.type === "single" ? `단문 · ${SIDE[s.hinge_side] ?? ""} 경첩` : "양문";
   let picture = "그림 없음";
-  if (s.picture) {
+  if (s.artwork) picture = `액자형 · 화판 ${pair(s.artwork.size_mm)}`;
+  else if (s.picture) {
     const named = Object.entries(sizes).find(([, v]) => v[0] === s.picture.size_mm[0] && v[1] === s.picture.size_mm[1]);
     picture = `${named ? named[0] : pair(s.picture.size_mm)} 그림`;
   }
@@ -288,6 +333,7 @@ export function presetText(info) {
   parts.push(info.types.length === 1 ? `${TYPE[info.types[0]]} 전용` : "단문·양문 모두");
   if (info.min_leaf_ratio > 0) parts.push(`창짝 높이/폭 ${fmt(info.min_leaf_ratio)} 이상`);
   parts.push(info.picture ? `그림 ${pair(info.picture.size_mm)} 기본` : "그림 없음이 기본");
+  if (info.id !== "hanok_A3_portrait_R3") parts.push("액자형 가능");
   if (info.stock_mm) parts.push(`원판 ${pair(info.stock_mm)} · 여유 ${fmt(info.edge_margin_mm)} · 간격 ${fmt(info.part_gap_mm)} mm`);
   return parts.join(" · ");
 }

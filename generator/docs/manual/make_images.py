@@ -5,6 +5,8 @@ server in this process, drives headless Chrome over the DevTools protocol to pho
 screen, and saves reduced copies of the R3 package drawings. The real output folder is never
 touched. Needs Google Chrome or Chromium; uses only the standard library and Pillow, which the
 generator already depends on. Nothing here is part of a package, so package ids do not change.
+Chrome is driven over a DevTools port (macOS, Linux and Windows alike), so no file descriptor is
+handed to the child process.
 
     cd generator
     .venv/bin/python docs/manual/make_images.py
@@ -18,10 +20,13 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
+import struct
 import subprocess
 import tempfile
 import threading
 import time
+import urllib.parse
 
 from PIL import Image
 
@@ -44,42 +49,132 @@ PACKAGE_READY = ("!document.getElementById('pkg-body').hidden"
 VISIBLE_ERRORS = "[...document.querySelectorAll('[id^=\"err-\"]')].filter((e) => !e.hidden && e.textContent.trim())"
 
 
+class Wire:
+    """One WebSocket connection to a DevTools endpoint, with the little of RFC 6455 it needs.
+
+    Client frames are masked and server frames are not, so only masking is implemented here;
+    a message may arrive in several frames, and the server may ping while a screenshot is
+    being encoded.
+    """
+
+    def __init__(self, url, timeout=120):
+        parsed = urllib.parse.urlparse(url)
+        self.sock = socket.create_connection((parsed.hostname, parsed.port), timeout=timeout)
+        key = base64.b64encode(os.urandom(16)).decode()
+        self.sock.sendall((f"GET {parsed.path} HTTP/1.1\r\n"
+                           f"Host: {parsed.hostname}:{parsed.port}\r\n"
+                           "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+                           f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+        self.buffer = b""
+        head = self._until(b"\r\n\r\n")
+        if b" 101 " not in head.split(b"\r\n")[0]:
+            raise RuntimeError(f"DevTools refused the WebSocket upgrade: {head[:120]!r}")
+
+    def _recv(self):
+        chunk = self.sock.recv(1 << 16)
+        if not chunk:
+            raise EOFError("Chrome closed the DevTools connection")
+        self.buffer += chunk
+
+    def _until(self, marker):
+        while marker not in self.buffer:
+            self._recv()
+        head, self.buffer = self.buffer.split(marker, 1)
+        return head
+
+    def _take(self, count):
+        while len(self.buffer) < count:
+            self._recv()
+        data, self.buffer = self.buffer[:count], self.buffer[count:]
+        return data
+
+    def _frame(self, opcode, payload):
+        mask = os.urandom(4)
+        header = bytearray([0x80 | opcode])
+        size = len(payload)
+        if size < 126:
+            header.append(0x80 | size)
+        elif size < 1 << 16:
+            header.append(0x80 | 126)
+            header += struct.pack(">H", size)
+        else:
+            header.append(0x80 | 127)
+            header += struct.pack(">Q", size)
+        header += mask
+        self.sock.sendall(bytes(header) + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+
+    def send(self, text):
+        self._frame(0x1, text.encode())
+
+    def receive(self):
+        """The next text message, joined from its frames. Pings are answered on the way."""
+        parts = []
+        while True:
+            first, second = self._take(2)
+            final, opcode, size = first & 0x80, first & 0x0F, second & 0x7F
+            if size == 126:
+                size = struct.unpack(">H", self._take(2))[0]
+            elif size == 127:
+                size = struct.unpack(">Q", self._take(8))[0]
+            payload = self._take(size)
+            if opcode == 0x9:  # ping
+                self._frame(0xA, payload)
+                continue
+            if opcode == 0xA:  # pong
+                continue
+            if opcode == 0x8:
+                raise EOFError("Chrome closed the DevTools connection")
+            parts.append(payload)
+            if final:
+                return b"".join(parts).decode("utf-8")
+
+    def close(self):
+        try:
+            self._frame(0x8, b"")
+        except OSError:
+            pass
+        self.sock.close()
+
+
 class Chrome:
-    """Headless Chrome over --remote-debugging-pipe: commands on fd 3, replies on fd 4, NUL-delimited JSON."""
+    """Headless Chrome over a DevTools port: JSON commands and replies on one WebSocket.
+
+    --remote-debugging-pipe would need preexec_fn and pass_fds, which POSIX has and Windows does
+    not, so the port Chrome writes to DevToolsActivePort is used on every platform instead.
+    """
 
     def __init__(self, binary):
         self.profile = tempfile.TemporaryDirectory(prefix="hanok-manual-chrome-")
-        to_r, to_w = os.pipe()
-        from_r, from_w = os.pipe()
-
-        def wire():
-            a, b = os.dup(to_r), os.dup(from_w)
-            os.dup2(a, 3)
-            os.dup2(b, 4)
-
         self.proc = subprocess.Popen(
-            [binary, "--headless=new", "--remote-debugging-pipe", "--use-mock-keychain", "--password-store=basic",
-             "--no-first-run", "--no-default-browser-check", "--disable-extensions", "--disable-gpu",
-             "--hide-scrollbars", f"--user-data-dir={self.profile.name}", "about:blank"],
-            preexec_fn=wire, pass_fds=(3, 4), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        os.close(to_r)
-        os.close(from_w)
-        self.out, self.inp, self.buffer, self.next_id = to_w, from_r, b"", 0
+            [binary, "--headless=new", "--remote-debugging-port=0", "--use-mock-keychain",
+             "--password-store=basic", "--no-first-run", "--no-default-browser-check",
+             "--disable-extensions", "--disable-gpu", "--hide-scrollbars",
+             f"--user-data-dir={self.profile.name}", "about:blank"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.wire, self.next_id = Wire(self._endpoint()), 0
+
+    def _endpoint(self, timeout=60):
+        """Chrome writes the port it took and the browser path to DevToolsActivePort."""
+        path = Path(self.profile.name) / "DevToolsActivePort"
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self.proc.poll() is not None:
+                raise RuntimeError(f"Chrome exited with {self.proc.returncode} before opening a DevTools port")
+            try:
+                port, browser = path.read_text(encoding="utf-8").splitlines()[:2]
+                return f"ws://127.0.0.1:{port}{browser}"
+            except (OSError, ValueError):
+                time.sleep(0.05)
+        raise TimeoutError("Chrome did not write DevToolsActivePort")
 
     def send(self, method, params=None, session=None):
         self.next_id += 1
         message = {"id": self.next_id, "method": method, "params": params or {}}
         if session:
             message["sessionId"] = session
-        os.write(self.out, json.dumps(message).encode() + b"\0")
+        self.wire.send(json.dumps(message))
         while True:
-            while b"\0" not in self.buffer:
-                chunk = os.read(self.inp, 1 << 16)
-                if not chunk:
-                    raise EOFError("Chrome closed the pipe")
-                self.buffer += chunk
-            raw, self.buffer = self.buffer.split(b"\0", 1)
-            reply = json.loads(raw)
+            reply = json.loads(self.wire.receive())
             if reply.get("id") == self.next_id:
                 if "error" in reply:
                     raise RuntimeError(f"{method}: {reply['error']}")
@@ -90,6 +185,7 @@ class Chrome:
             self.send("Browser.close")
         except (EOFError, OSError, RuntimeError):
             pass
+        self.wire.close()
         try:
             self.proc.wait(timeout=15)
         except subprocess.TimeoutExpired:
@@ -212,6 +308,17 @@ def shoot(chrome, origin, r3, out):
     p.wait("document.getElementById('size-w').value === '383'")
     save(p.crop("#g-size"), out / "design-inner.png")
 
+    p = Page(chrome, design, DESIGN_READY)  # the frame type: the panel is the size basis
+    p.type("preset", "standard_4x8_v1")
+    p.click("#basis-artwork")
+    p.type("size-w", "420")
+    p.type("size-h", "594")
+    p.wait(f"!document.getElementById('g-artwork').hidden"
+           " && document.querySelector('#panel-elev .mk-art')"
+           f" && {DESIGN_READY}")
+    save(p.crop("#g-size", "#g-artwork"), out / "design-artwork.png")
+    save(p.crop("#preview-pane"), out / "design-artwork-preview.png")
+
     p = Page(chrome, design, DESIGN_READY)  # a single window shows the hinge side
     p.type("preset", "standard_v1")
     p.click("#type-single")
@@ -269,7 +376,7 @@ def main(argv=None):
         output = Path(tmp) / "output"
         print("예제 생성:")
         ids = build_examples(output)
-        chrome = Chrome(binary)  # before the server thread: subprocess preexec_fn is unsafe once threads run
+        chrome = Chrome(binary)
         server = make_server(output, port=0)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:

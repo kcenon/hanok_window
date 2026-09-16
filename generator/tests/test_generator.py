@@ -59,6 +59,8 @@ class GeneratorTests(unittest.TestCase):
         cls.requests["stock_2400_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),stock_mm=[2400,1200,20])
         cls.requests["standard_4x8"]=request(preset="standard_4x8_v1")
         cls.requests["standard_4x8_900x1200"]=request(outer_mm=[900,1200],bars=(2,6),preset="standard_4x8_v1")
+        cls.requests["artwork_a2"]=dict(type="double",lattice_per_leaf=[2,4],preset="standard_4x8_v1",
+                                        artwork=dict(size_mm=[420,594]))
         cls.requests["stock_18"]=request(stock_mm=[1220,900,18])
         cls.requests["stock_24"]=request(stock_mm=[1220,900,24])
         def build(item):
@@ -134,9 +136,11 @@ class GeneratorTests(unittest.TestCase):
         for name,data in self.requests.items():
             with self.subTest(name=name):
                 p=self.path(name);n=1 if data["type"]=="single" else 2;v,h=data["lattice_per_leaf"]
+                # A frame-type design adds four butt-jointed back frame members and no pocket.
+                back=4 if "artwork" in data else 0
                 r=self.results[name]
                 self.assertEqual((r["parts"],r["pockets"],r["dogbones"]),
-                                 (4+4*n+n*(v+h),8+8*n+2*n*v*h+4*n*(v+h),4*n*(v+h)))
+                                 (4+back+4*n+n*(v+h),8+8*n+2*n*v*h+4*n*(v+h),4*n*(v+h)))
                 self.assertEqual(verify(p)["status"],"PASS")
                 self.assertTrue(all((p/f).is_file() for f in PNG_FILES))
                 report=json.loads((p/"validation_report.json").read_text(encoding="utf-8"))
@@ -153,7 +157,7 @@ class GeneratorTests(unittest.TestCase):
                 self.assertEqual(report["manufacturing_assessment"]["status"],"PENDING")
                 doc=ezdxf.readfile(p/"window.dxf")
                 details={meta(e).get("detail") for e in doc.modelspace() if meta(e).get("view")=="detail"}
-                want={"J1","J2"}|({"J3"} if v*h else set())|({"J4V"} if v else set())|({"J4H"} if h else set())
+                want={"J1","J2"}|({"J3"} if v*h else set())|({"J4V"} if v else set())|({"J4H"} if h else set())|({"BF"} if back else set())
                 self.assertEqual(details,want)
                 if not v:
                     self.assertFalse(any("L01" in e.dxf.text for e in doc.modelspace() if e.dxftype()=="TEXT" and meta(e).get("view")=="detail"))
@@ -349,6 +353,69 @@ class GeneratorTests(unittest.TestCase):
         LOG.append(dict(case="members_on_layers",status="PASS",back_layer_z_mm=-cfg.THK,overlap_one_layer_back="PASS",
                         overlap_same_layer="FAIL",half_lap_across_layers="FAIL"))
 
+    def test_artwork_panel_sits_in_a_back_frame_one_layer_behind(self):
+        # A frame-type design is built around the artwork panel instead of fitting a picture
+        # inside the opening: the fixed frame covers the panel edge, and a back frame cut from
+        # the same board holds the panel one layer behind the frame, with a bought spacer in
+        # front of it. The back frame is butt jointed, so it adds parts and no pocket.
+        from hanok_generator.engine.generate_spec import ParameterError,build,derive
+        p=self.path("artwork_a2")
+        params=json.loads((p/"design_parameters.json").read_text(encoding="utf-8"))
+        self.assertEqual([params["frame"][k] for k in ("outer_width","outer_height")],[484,658])
+        self.assertEqual([params["artwork"][k] for k in ("sheet_width","sheet_height","thickness","cover","fit","spacer")],
+                         [420,594,3,8,1,3])
+        spec=json.loads((p/"design_spec.json").read_text(encoding="utf-8"))
+        back={q["part_id"]:q for q in spec["parts"] if q["part_id"][0]=="B"}
+        self.assertEqual(sorted(back),["B01-1","B01-2","B02-1","B02-2"])
+        self.assertEqual({q["assembly_z"] for q in back.values()},{-params["stock"]["thickness"]})
+        self.assertEqual([spec["derived"][k] for k in ("artwork_size","back_frame_opening","back_frame_member")],
+                         [[420,594],[422,596],31])
+        doc=ezdxf.readfile(p/"window.dxf")
+        cut={meta(e)["part_id"]:e for e in doc.modelspace() if e.dxf.layer=="CUT_THROUGH"}
+        self.assertEqual({meta(cut[pid]).get("assembly_z_mm") for pid in back},{-20})
+        self.assertEqual({meta(cut[pid]).get("assembly_z_mm") for pid in cut if pid[0]!="B"},{None})
+        self.assertEqual([e for e in doc.modelspace() if e.dxf.layer.startswith("POCKET_") and meta(e)["part_id"][0]=="B"],[])
+        # The panel and the members behind the fixed frame are drawn as hidden outlines.
+        assembly=[e for e in doc.modelspace() if meta(e).get("view")=="assembly"]
+        hidden={meta(e).get("part_id") or meta(e)["role"] for e in assembly if meta(e).get("hidden")}
+        self.assertEqual(hidden,set(back)|{"artwork"})
+        panel=next(e for e in assembly if meta(e).get("role")=="artwork")
+        # 2530 is the reference origin x (board 2400 plus REFERENCE_GAP_X 130), 100 its origin y.
+        self.assertTrue(geometry_matches(translate(entity_polygon(panel),-2530,-100),box(32,32,452,626)))
+        checks={c["rule_id"]:c for c in json.loads((p/"validation_report.json").read_text(encoding="utf-8"))["checks"]}
+        self.assertEqual({c["status"] for c in checks.values()},{"PASS"})
+        self.assertEqual(checks["back_frame_geometry"]["actual"],dict(parts=4,opening=[422,596],layer_z_mm=-20))
+        size=checks["requested_size_matches_measured_frame"]
+        self.assertEqual((size["expected"],size["targets"]),([420,594],["artwork"]))
+        self.assertEqual(checks["artwork_covers_inner_and_fits_back_frame"]["actual"]["measured_mm"]["size_mm"],[420,594])
+        # Every other design reports the same checks and no back frame.
+        plain={c["rule_id"] for c in json.loads((self.path("double_None_2_4")/"validation_report.json").read_text(encoding="utf-8"))["checks"]}
+        self.assertEqual(plain,set(checks))
+        # Each rule that keeps the panel behind the frame, in the stock, and the back frame wide
+        # enough to hold it, with the value that clears it.
+        def artwork(**changes):
+            return dict(type="double",lattice_per_leaf=[2,4],preset="standard_4x8_v1",
+                        artwork=dict({"size_mm":[420,594]},**changes))
+        for data,rule in [(artwork(cover_mm=1),"artwork.cover_hides_edge"),
+                          (artwork(cover_mm=31),"artwork.back_member_width"),
+                          (artwork(thickness_mm=18),"artwork.depth_within_stock")]:
+            with self.subTest(rule=rule),self.assertRaises(ParameterError) as caught:build(resolve(data).parameters)
+            self.assertEqual(caught.exception.rule_id,rule)
+        changed=copy.deepcopy(params);changed["artwork"]["sheet_width"]=400
+        with self.assertRaises(ParameterError) as caught:derive(changed)
+        self.assertEqual((caught.exception.rule_id,caught.exception.details["required"]),("artwork.covers_inner",[420,594]))
+        for data,rule in [(dict(artwork(),picture=dict(size_mm=[297,420])),"input.artwork_picture"),
+                          (dict(artwork(),preset="hanok_A3_portrait_R3"),"input.preset_artwork"),
+                          (dict(artwork(),outer_mm=[484,658]),"input.size_basis"),
+                          (dict(artwork(),artwork=dict(size_mm=[420,594],typo=1)),"input.artwork")]:
+            with self.subTest(rule=rule),self.assertRaises(InputError) as caught:resolve(data)
+            self.assertEqual(caught.exception.rule_id,rule)
+        LOG.append(dict(case="artwork_back_frame",status="PASS",artwork_mm=[420,594],outer_mm=[484,658],
+                        back_frame_opening_mm=[422,596],back_member_mm=31,layer_z_mm=-20,
+                        rejections=["artwork.cover_hides_edge","artwork.back_member_width","artwork.depth_within_stock",
+                                    "artwork.covers_inner","input.artwork_picture","input.preset_artwork",
+                                    "input.size_basis","input.artwork"]))
+
     def test_early_errors_and_cut_overlap_keep_previous_package(self):
         latest=(self.output/"latest.json").read_bytes()
         cases=[("scope_free_single",None),
@@ -448,7 +515,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_decimal_geometry_and_input_guards_under_optimization(self):
         # 200 original outer-size cases, now using outer-driven picture-free requests.
-        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=68 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
+        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=70 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
         processes=[]
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}

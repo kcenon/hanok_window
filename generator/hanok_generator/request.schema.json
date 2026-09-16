@@ -21,16 +21,28 @@
         }}
       ]
     },
+    "artwork": {
+      "description": "액자형(화판): 고정틀 뒤 뒤틀 안에 넣는 화판. 외경 = 화판 - 2 × cover_mm + 2 × 고정틀 폭",
+      "type": "object", "additionalProperties": false, "required": ["size_mm"], "properties": {
+        "size_mm": {"description": "화판 [가로, 세로] mm", "type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number", "minimum": 1, "maximum": 3000}},
+        "thickness_mm": {"description": "화판 두께 mm", "type": "number", "minimum": 0.1, "maximum": 60, "default": 3},
+        "cover_mm": {"description": "고정틀이 화판 가장자리를 덮는 폭 mm", "type": "number", "minimum": 0.1, "maximum": 500, "default": 8},
+        "fit_mm": {"description": "뒤틀 안쪽과 화판 사이 끼움 여유 mm", "type": "number", "minimum": 0, "maximum": 50, "default": 1},
+        "spacer_mm": {"description": "창살과 화판 사이 스페이서 두께 mm (별도 조달)", "type": "number", "minimum": 0, "maximum": 60, "default": 3}
+      }
+    },
     "stock_mm": {"description": "원판 [길이, 폭, 두께] mm. 생략하면 프리셋 기본값: standard_4x8_v1은 [2400, 1200, 20], 나머지는 [1220, 900, 20]", "type": "array", "minItems": 3, "maxItems": 3, "prefixItems": [
       {"type": "number", "minimum": 1, "maximum": 3000},
       {"type": "number", "minimum": 1, "maximum": 3000},
       {"type": "number", "minimum": 5, "maximum": 60}
     ], "items": false, "default": [1220, 900, 20]}
   },
-  "oneOf": [{"required": ["outer_mm"]}, {"required": ["inner_mm"]}],
+  "oneOf": [{"required": ["outer_mm"]}, {"required": ["inner_mm"]}, {"required": ["artwork"]}],
   "allOf": [
     {"if": {"properties": {"type": {"const": "single"}}},
      "then": {"required": ["hinge_side"], "properties": {"preset": {"enum": ["standard_v1", "standard_4x8_v1"]}}},
-     "else": {"not": {"required": ["hinge_side"]}}}
+     "else": {"not": {"required": ["hinge_side"]}}},
+    {"if": {"required": ["artwork"]},
+     "then": {"properties": {"preset": {"enum": ["standard_v1", "standard_4x8_v1"]}}, "not": {"required": ["picture"]}}}
   ]
 }

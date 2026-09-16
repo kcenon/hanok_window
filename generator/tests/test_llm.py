@@ -170,7 +170,7 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual(data["package_id"], self.direct["package_id"])
         self.assertEqual(data["request"], EXAMPLES["double_r3"])
         self.assertEqual((data["status"], data["checks"], data["manufacturing_status"]),
-                         ("PASS", {"passed": 68, "total": 68}, "PENDING"))
+                         ("PASS", {"passed": 70, "total": 70}, "PENDING"))
         self.assertEqual((len(data["pending"]), data["drawings"]), (6, list(DRAWINGS)))
 
     def test_a_build_reports_its_stages(self):

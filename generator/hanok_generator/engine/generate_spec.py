@@ -114,6 +114,9 @@ def derive(params: dict) -> Derived:
     """Expand the parameter file into the dimensions the rest of the package uses."""
     frame, leaf, lat = params['frame'], params['leaf'], params['lattice']
     clear, pic, stock = params['clearance'], params['picture'], params['stock']
+    # A frame-type design holds one artwork panel behind the fixed frame; every other design
+    # has no artwork section at all.
+    art = params.get('artwork')
 
     positive = {
         'frame': ('outer_width','outer_height','member_width'),
@@ -124,8 +127,12 @@ def derive(params: dict) -> Derived:
     }
     if pic['enabled']:
         positive['picture'] = ('sheet_width','sheet_height')
+    if art:
+        positive['artwork'] = ('sheet_width','sheet_height','thickness','cover')
     nonnegative = {'leaf': ('min_height_to_width_ratio',), 'clearance': ('frame_to_leaf','leaf_to_leaf'),
                    'stock': ('edge_margin','part_gap'), 'picture': ('region_margin',)}
+    if art:
+        nonnegative['artwork'] = ('fit','spacer')
     for groups, strict in ((positive,True),(nonnegative,False)):
         for group, fields in groups.items():
             for name in fields:
@@ -157,6 +164,11 @@ def derive(params: dict) -> Derived:
     region_w = board_w - 2 * (fw + clear['frame_to_leaf'] + sm)
     region_h = board_h - 2 * (fw + clear['frame_to_leaf'] + sm)
 
+    # The back frame runs from the outer edge to the panel: the fixed frame member less the
+    # covered band and the fit clearance. Its members are butt jointed, so the stiles run the
+    # full height and the rails fill what is left between them.
+    back_member = fw - (art['cover'] + art['fit']) if art else 0.
+
     v = dict(
         frame_member=fw, board_w=board_w, board_h=board_h,
         inner_w=inner_w, inner_h=inner_h,
@@ -183,6 +195,18 @@ def derive(params: dict) -> Derived:
                      'L01': nv * n, 'L02': nh * n},
     )
 
+    if art:
+        v.update(
+            artwork_w=art['sheet_width'], artwork_h=art['sheet_height'],
+            artwork_thickness=art['thickness'], artwork_cover=art['cover'],
+            artwork_fit=art['fit'], artwork_spacer=art['spacer'],
+            back_member=back_member,
+            back_inner_w=board_w - 2 * back_member, back_inner_h=board_h - 2 * back_member,
+            artwork_x0=back_member + art['fit'], artwork_y0=back_member + art['fit'])
+        v['part_lengths'].update({'B01': board_h, 'B02': board_w - 2 * back_member})
+        v['part_widths'].update({'B01': back_member, 'B02': back_member})
+        v['part_counts'].update({'B01': 2, 'B02': 2})
+
     # Explicit errors remain active under Python -O. Numerical comparisons are
     # separate from fit allowances and from minimum physical material widths.
     if pic['enabled']:
@@ -193,6 +217,25 @@ def derive(params: dict) -> Derived:
                 'picture.fits_height', available=region_h,
                 required=pic['sheet_height']+2*pic['region_margin'])
     require(close(region_h, open_h), 'picture.region_opening_height', region=region_h, opening=open_h)
+    if art:
+        # The panel hides behind the fixed frame instead of fitting inside the opening, so the
+        # rules run the other way round: the frame covers the panel edge on every side, and it
+        # keeps covering it after the panel shifts by the fit clearance inside the back frame.
+        require(close(inner_w + 2 * art['cover'], art['sheet_width'])
+                and close(inner_h + 2 * art['cover'], art['sheet_height']), 'artwork.covers_inner',
+                artwork=[art['sheet_width'], art['sheet_height']], inner=[inner_w, inner_h],
+                cover=art['cover'], required=[inner_w + 2 * art['cover'], inner_h + 2 * art['cover']])
+        require(art['cover'] - art['fit'] > PARAMETER_TOL_MM, 'artwork.cover_hides_edge',
+                cover=art['cover'], fit=art['fit'], required_greater_than=art['fit'])
+        # What is left of the frame member beside the panel is the back frame, and no member of
+        # this design is cut narrower than a lattice bar.
+        require(back_member >= bw - PARAMETER_TOL_MM, 'artwork.back_member_width',
+                back_member_width=back_member, minimum=bw,
+                cover_at_most=fw - art['fit'] - bw)
+        # The spacer and the panel share the depth of the back frame, one stock thickness.
+        require(art['spacer'] + art['thickness'] <= stock['thickness'] + PARAMETER_TOL_MM,
+                'artwork.depth_within_stock', spacer=art['spacer'], thickness=art['thickness'],
+                required=art['spacer'] + art['thickness'], available=stock['thickness'])
     require(v['vertical_gap']>0 and v['horizontal_gap']>0, 'lattice.positive_gap',
             horizontal=v['vertical_gap'], vertical=v['horizontal_gap'])
     # Growing the frame sideways can keep every relation above intact and still
@@ -272,9 +315,9 @@ def build_parts(d: Derived) -> list:
     W, H, t = d['board_w'], d['board_h'], d['thickness']
     parts = []
 
-    def add(pid, kind, axis, group, anchor, rect):
+    def add(pid, kind, axis, group, anchor, rect, z=0.0):
         parts.append(Part(pid, kind, axis, p['part_kinds'][kind]['family'], group,
-                          anchor, *rect, thickness=t))
+                          anchor, *rect, thickness=t, assembly_z=z))
 
     add('F01-1', 'F01', 'V', 'FIXED', 'near', (0, 0, fw, H))
     add('F01-2', 'F01', 'V', 'FIXED', 'far', (W - fw, 0, W, H))
@@ -305,6 +348,16 @@ def build_parts(d: Derived) -> list:
             cy = oy0 + off
             add(f'L02-{i * nh + k + 1}', 'L02', 'H', group_name(d, i), 'far',
                 (ox0 - lap, cy - bw / 2, ox1 + lap, cy + bw / 2))
+
+    # The back frame lies one stock thickness behind the fixed frame and carries the artwork
+    # panel. Its corners are butt joints, so the members only touch and never overlap in the
+    # front view: build_joints() finds no half lap between them and none to the layer in front.
+    if p.get('artwork'):
+        bm = d['back_member']
+        add('B01-1', 'B01', 'V', 'FIXED', 'near', (0, 0, bm, H), -t)
+        add('B01-2', 'B01', 'V', 'FIXED', 'far', (W - bm, 0, W, H), -t)
+        add('B02-1', 'B02', 'H', 'FIXED', 'near', (bm, 0, W - bm, bm), -t)
+        add('B02-2', 'B02', 'H', 'FIXED', 'far', (bm, H - bm, W - bm, H), -t)
     return parts
 
 
@@ -483,6 +536,13 @@ def build(params: dict) -> dict:
             crossings_total=d['crossings_total'],
             picture_region=[d['picture_region_w'], d['picture_region_h']],
             picture_origin=[d['picture_x0'], d['picture_y0']],
+            # Only a frame-type design records the panel and its back frame, so every spec
+            # written so far, the recorded R3 spec among them, keeps its bytes.
+            **(dict(artwork_size=[d['artwork_w'], d['artwork_h']],
+                    artwork_origin=[d['artwork_x0'], d['artwork_y0']],
+                    artwork_depth=[d['artwork_spacer'], d['artwork_thickness']],
+                    back_frame_member=d['back_member'],
+                    back_frame_opening=[d['back_inner_w'], d['back_inner_h']]) if params.get('artwork') else {}),
             part_lengths=d['part_lengths'], part_widths=d['part_widths'],
             part_counts=counts,
             totals=dict(parts=len(parts), pockets=len(pockets),

@@ -17,10 +17,17 @@ DEFAULT_STOCK_MM = [1220, 900, 20]
 # at the board edge and the gap between parts. Other presets keep DEFAULT_STOCK_MM
 # and the edge_margin and part_gap of presets/r3_parameters.json.
 PRESET_STOCK = {"standard_4x8_v1": dict(stock_mm=[2400, 1200, 20], edge_margin=10, part_gap=12)}
-# A size is given either as the finished outer frame (외경) or as the clear opening
-# inside the fixed frame (내경): request key -> (basis, provenance wording).
+# Fields of a frame-type (액자형) request, each (default, minimum, maximum) in mm: the artwork
+# panel thickness, how much of the panel edge the fixed frame covers, the fit clearance around
+# the panel inside the back frame, and the procured spacer that holds the panel off the lattice.
+ARTWORK_FIELDS = {"thickness_mm": (3, 0.1, 60), "cover_mm": (8, 0.1, 500),
+                  "fit_mm": (1, 0, 50), "spacer_mm": (3, 0, 60)}
+# A size is given as the finished outer frame (외경), as the clear opening inside the fixed frame
+# (내경), or as the artwork panel the frame is built around (화판): request key -> (basis,
+# provenance wording).
 SIZE_BASES = {"outer_mm": ("outer", "finished outer frame"),
-              "inner_mm": ("inner", "fixed-frame inner opening")}
+              "inner_mm": ("inner", "fixed-frame inner opening"),
+              "artwork": ("artwork", "artwork panel behind the fixed frame")}
 
 
 class InputError(ValueError):
@@ -79,14 +86,27 @@ def resolve(data: dict) -> ResolvedDesign:
              "input.hinge_side", "단문은 left/right 경첩 방향이 필요하고 양문은 바깥쪽 경첩을 사용합니다.")
     given = [key for key in SIZE_BASES if key in data]
     _require(len(given) == 1, "input.size_basis",
-             "창 크기는 outer_mm(외경) 또는 inner_mm(내경) 중 하나로만 지정합니다.", fields=given)
+             "창 크기는 outer_mm(외경), inner_mm(내경), artwork(화판) 중 하나로만 지정합니다.", fields=given)
     size_key = given[0]
-    size = _vector(data[size_key], size_key, 2, 1, 3000)
+    artwork = None
+    if size_key == "artwork":
+        artwork = data["artwork"]
+        _require(type(artwork) is dict and not set(artwork) - {"size_mm", *ARTWORK_FIELDS},
+                 "input.artwork", "화판은 size_mm과 thickness_mm·cover_mm·fit_mm·spacer_mm으로 지정합니다.")
+        size = _vector(artwork.get("size_mm"), "artwork.size_mm", 2, 1, 3000)
+        artwork = dict(size_mm=size, **{key: _number(artwork.get(key, default), f"artwork.{key}", low, high)
+                                        for key, (default, low, high) in ARTWORK_FIELDS.items()})
+    else:
+        size = _vector(data[size_key], size_key, 2, 1, 3000)
     lattice = _vector(data.get("lattice_per_leaf"), "lattice_per_leaf", 2, 0, 32, True)
     preset = data.get("preset", "standard_v1")
     _require(preset in PRESETS, "input.preset", "지원하지 않는 프리셋입니다.", supported=list(PRESETS))
     _require(preset != "hanok_A3_portrait_R3" or kind == "double", "input.preset_type",
              "R3 프리셋은 세로형 양문 규칙입니다. 단문은 standard_v1을 사용하세요.")
+    _require(artwork is None or preset != "hanok_A3_portrait_R3", "input.preset_artwork",
+             "R3 프리셋은 A3 그림을 후면 지지판에 두는 규칙입니다. 액자형은 standard_v1이나 standard_4x8_v1을 사용하세요.")
+    _require(artwork is None or "picture" not in data, "input.artwork_picture",
+             "액자형은 화판이 그림 자리를 대신하므로 picture를 함께 지정하지 않습니다.")
     picture = data.get("picture", {"size_mm": [297, 420], "margin_mm": 10} if preset == "hanok_A3_portrait_R3" else None)
     if picture is not None:
         _require(type(picture) is dict and not set(picture)-{"size_mm", "margin_mm"},
@@ -100,13 +120,17 @@ def resolve(data: dict) -> ResolvedDesign:
     # The inner size is the clear opening of the fixed frame, so the engine still
     # receives the outer size: one frame member is added on each side.
     member = params["frame"]["member_width"]
-    outer = size if size_key == "outer_mm" else [v + 2 * member for v in size]
-    _require(all(v <= 3000 for v in outer), "input.range", "내경에서 유도한 외곽이 입력 범위를 벗어났습니다.",
+    # The fixed frame is built around the artwork panel: it covers cover_mm of the panel edge on
+    # every side, so the clear opening is the panel less two covers.
+    outer = (size if size_key == "outer_mm" else
+             [v + 2 * member for v in size] if size_key == "inner_mm" else
+             [v - 2 * artwork["cover_mm"] + 2 * member for v in size])
+    _require(all(0 < v <= 3000 for v in outer), "input.range", "입력에서 유도한 외곽이 입력 범위를 벗어났습니다.",
              field="outer_mm", derived_from=size_key, actual=outer, maximum=3000)
     # An outer-size request normalizes exactly as in 0.1.0, so its revision is kept.
     request = dict(schema_version=1, type=kind, lattice_per_leaf=lattice,
                    preset=preset, picture=picture, stock_mm=stock)
-    request[size_key] = size
+    request[size_key] = artwork if artwork else size
     if side is not None:
         request["hinge_side"] = side
     params["frame"].update(outer_width=outer[0], outer_height=outer[1])
@@ -121,6 +145,17 @@ def resolve(data: dict) -> ResolvedDesign:
         sheet_width=picture["size_mm"][0] if picture else 0,
         sheet_height=picture["size_mm"][1] if picture else 0,
         region_margin=picture["margin_mm"] if picture else 0)
+    if artwork:
+        # Only a frame-type request carries these, so every design built so far keeps the
+        # parameter file it has always had. The back frame kinds are added for the same reason.
+        params["artwork"] = dict(sheet_width=size[0], sheet_height=size[1],
+                                 thickness=artwork["thickness_mm"], cover=artwork["cover_mm"],
+                                 fit=artwork["fit_mm"], spacer=artwork["spacer_mm"],
+                                 mounting="One panel held behind the fixed frame by a back frame cut from the "
+                                          "same board. Spacer, backing and fixings are procured separately.")
+        params["part_kinds"].update(B01=dict(role="back frame stile", axis="V", family="BACK_FRAME"),
+                                    B02=dict(role="back frame rail", axis="H", family="BACK_FRAME"))
+        params["nesting"]["families"]["BACK_FRAME"] = ["B01", "B02"]
     params["window"] = dict(type=kind, hinge_side=side, preset=preset)
     params["revision"] = "HANOK_GEN_V1_" + hashlib.sha256(canonical(request).encode()).hexdigest()[:12]
     params["build_date"] = "2026-09-12"  # engine release date, not a volatile build timestamp
@@ -131,6 +166,10 @@ def resolve(data: dict) -> ResolvedDesign:
     derived = {"machining.pocket_depth": "stock.thickness / 2"}
     if size_key == "inner_mm":
         derived["frame.outer_width, frame.outer_height"] = "inner_mm + 2 * frame.member_width"
+    if size_key == "artwork":
+        derived["frame.outer_width, frame.outer_height"] = ("artwork.size_mm - 2 * artwork.cover_mm "
+                                                            "+ 2 * frame.member_width")
+        derived["back frame member width"] = "frame.member_width - artwork.cover_mm - artwork.fit_mm"
     return ResolvedDesign(copy.deepcopy(request), params,
         dict(preset=preset, engine=ENGINE_VERSION, units="mm", size_basis=SIZE_BASES[size_key][1],
              user_fields=sorted(data), derived=derived,

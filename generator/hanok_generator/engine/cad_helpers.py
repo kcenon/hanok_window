@@ -154,6 +154,11 @@ class Renderer:
         if role=='section_front':fill=COL['front'];stroke=COL['ink'];lw=max(2,round(self.s*.35))
         if role=='section_back':fill=COL['back'];stroke=COL['ink'];lw=max(2,round(self.s*.35))
         if role=='picture':fill=COL['paper'];stroke=COL['picture'];dashed=True;lw=max(2,round(self.s*.55))
+        # An artwork panel and a procured spacer are drawn where a section shows them; a member
+        # or a panel edge that another member hides keeps its outline and loses its fill.
+        if role=='artwork':fill=COL['paper'];stroke=COL['picture'];dashed=True;lw=max(2,round(self.s*.55))
+        if role=='spacer':fill=COL['panel'];stroke=COL['muted'];lw=max(2,round(self.s*.3))
+        if data.get('hidden'):fill=None;dashed=True;stroke=COL['ink'];lw=max(2,round(self.s*.3))
         if role in ('opening','picture_region'):stroke=COL['opening'];dashed=True;lw=max(2,round(self.s*.45))
         if layer=='GRAIN_DIRECTION':stroke=COL['grain'];lw=max(3,round(self.s*1.1))
         if layer=='BOARD_BOUNDARY':fill=COL['paper'];stroke=COL['ink'];lw=max(3,round(self.s*.75))

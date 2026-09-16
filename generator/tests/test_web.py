@@ -342,7 +342,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
                 self.assertEqual(record["state"], "passed", record["error"])
                 self.assertEqual(record["request"], data)
                 self.assertEqual(record["result"]["package_id"], self.direct[name]["package_id"])
-                self.assertEqual(record["result"]["checks"], 68)
+                self.assertEqual(record["result"]["checks"], 70)
 
     def test_package_files_zip_and_history(self):
         r3 = self.built["double_r3"]["result"]["package_id"]
@@ -356,7 +356,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         self.assertEqual((detail["type"], detail["preset"], detail["size"]["outer_mm"], detail["lattice_per_leaf"]),
                          ("double", "hanok_A3_portrait_R3", [463, 586], [2, 4]))
         self.assertEqual((detail["checks"], len(detail["validation"]["checks"]), len(detail["validation"]["pending"])),
-                         ({"passed": 68, "total": 68}, 68, 6))
+                         ({"passed": 70, "total": 70}, 70, 6))
         self.assertEqual((detail["request"], detail["file_count"], len(detail["files"])), (R3, 34, 34))
         for row in detail["files"]:
             status, response, data = self.call("GET", f"/files/{r3}/{row['path']}", decode=False)

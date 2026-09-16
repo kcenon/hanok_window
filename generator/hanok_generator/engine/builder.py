@@ -54,6 +54,8 @@ class Design:
     NPOCK: dict; NPOCKT: int; NSEAT: int; NDOG: int; POCKET_LAYER: str; LAYERS: dict
     FORMAT: list; TITLE: str; PICTURE: bool; PICX: float; PICY: float
     ASSEMBLY_ORIGIN: tuple; OPENING_ORIGIN: tuple; PART_Z: dict
+    ART: bool; ARTW: float; ARTH: float; ARTT: float; ACOV: float; AFIT: float; ASPC: float
+    BMW: float; ARTX: float; ARTY: float
 
 
 def configure(parameters, output):
@@ -104,6 +106,14 @@ def configure(parameters, output):
     PICTURE=PARAMS["picture"]["enabled"]
     PICX=PX+(PRW-A3W)/2
     PICY=PY+(PRH-A3H)/2
+    # A frame-type design (액자형) holds one artwork panel behind the fixed frame inside a back
+    # frame cut from the same board. Other designs keep zeros here and draw nothing of it.
+    ART=bool(PARAMS.get('artwork'))
+    ARTW,ARTH=(D['artwork_w'],D['artwork_h']) if ART else (0.,0.)
+    ARTT,ACOV=(D['artwork_thickness'],D['artwork_cover']) if ART else (0.,0.)
+    AFIT,ASPC=(D['artwork_fit'],D['artwork_spacer']) if ART else (0.,0.)
+    BMW=D['back_member'] if ART else 0.
+    ARTX,ARTY=(D['artwork_x0'],D['artwork_y0']) if ART else (0.,0.)
     # The reference views start right of the board, so a longer board moves them.
     ASSEMBLY_ORIGIN=(BL+REFERENCE_GAP_X,ASSEMBLY_Y)
     OPENING_ORIGIN=(BL+REFERENCE_GAP_X,OPENING_Y)
@@ -118,7 +128,9 @@ def configure(parameters, output):
                   LEAVES=LEAVES,OPENINGS=OPENINGS,SIZES=SIZES,NPART=NPART,
                   NPOCK=NPOCK,NPOCKT=NPOCKT,NSEAT=NSEAT,NDOG=NDOG,POCKET_LAYER=POCKET_LAYER,LAYERS=LAYERS,
                   FORMAT=FORMAT,TITLE=TITLE,PICTURE=PICTURE,PICX=PICX,PICY=PICY,
-                  ASSEMBLY_ORIGIN=ASSEMBLY_ORIGIN,OPENING_ORIGIN=OPENING_ORIGIN,PART_Z=PART_Z)
+                  ASSEMBLY_ORIGIN=ASSEMBLY_ORIGIN,OPENING_ORIGIN=OPENING_ORIGIN,PART_Z=PART_Z,
+                  ART=ART,ARTW=ARTW,ARTH=ARTH,ARTT=ARTT,ACOV=ACOV,AFIT=AFIT,ASPC=ASPC,
+                  BMW=BMW,ARTX=ARTX,ARTY=ARTY)
 
 
 def load_spec(cfg):
@@ -148,6 +160,9 @@ def add_part_geometry(cfg,m,s,p):
              thickness_mm=cfg.THK,depth_mm=cfg.THK,nesting_origin=[x,y],
              assembly_map=p['assembly_transform'],assembly_face_A=p['face_a'],
              assembly_group=p['assembly_group'],machining_face='A')
+    # Only a member off the base layer records its Z, so the DXF of every design built so far
+    # keeps its bytes.
+    if p.get('assembly_z'):dat['assembly_z_mm']=p['assembly_z']
     rect(m,x,y,L,B,'CUT_THROUGH',**dat)
     # IDs are annotations, not engraving operations. For wide members the text
     # occupies the untouched lower band; lattice labels sit between slots.
@@ -176,9 +191,11 @@ def add_part_geometry(cfg,m,s,p):
 
 
 def face_note(cfg):
-    front=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F01','S01','L01'))
-    back=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F02','S02','L02'))
-    return f'{front}: A -> FRONT. {back}: flip A -> BACK.'
+    front=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F01','S01','L01','B01'))
+    back=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F02','S02','L02','B02'))
+    note=f'{front}: A -> FRONT. {back}: flip A -> BACK.'
+    # The back frame carries no machining, so the note says where it goes instead.
+    return note+f' B01 / B02: BEHIND THE FIXED FRAME, Z {-cfg.THK:g} TO 0.' if cfg.ART else note
 
 
 def add_board(cfg,m,spec):
@@ -292,11 +309,18 @@ def add_assembly(cfg,m,parts):
     if cfg.PICTURE:
         rect(m,ox+cfg.PICX,oy+cfg.PICY,cfg.A3W,cfg.A3H,'ASSEMBLY_REFERENCE',view='assembly',role='picture',
              nominal_size=[cfg.A3W,cfg.A3H],dxf_role='rear_picture')
-    # This reflects the same parts and transformations as the machining layout.
-    for p in sorted(parts.values(),key=lambda p:(p['face_a']=='BACK',p['part_id'])):
+    # This reflects the same parts and transformations as the machining layout. A member on a
+    # layer behind the base one is drawn last and without fill, so the members in front keep
+    # theirs and the hidden edges still read on top of them.
+    for p in sorted(parts.values(),key=lambda p:(bool(p.get('assembly_z')),p['face_a']=='BACK',p['part_id'])):
         g=translate(local_to_assembly(p,box(0,0,p['length'],p['width'])),ox,oy)
         poly(m,list(g.exterior.coords)[:-1],'ASSEMBLY_REFERENCE',view='assembly',role='body',
-             part_id=p['part_id'],assembly_group=p['assembly_group'])
+             part_id=p['part_id'],assembly_group=p['assembly_group'],
+             **({'hidden':True,'assembly_z_mm':p['assembly_z']} if p.get('assembly_z') else {}))
+    if cfg.ART:
+        # The panel edge runs behind the fixed frame, so it is a hidden outline as well.
+        rect(m,ox+cfg.ARTX,oy+cfg.ARTY,cfg.ARTW,cfg.ARTH,'ASSEMBLY_REFERENCE',view='assembly',role='artwork',
+             nominal_size=[cfg.ARTW,cfg.ARTH],hidden=True,thickness_mm=cfg.ARTT,spacer_mm=cfg.ASPC)
     if cfg.PICTURE:
         rect(m,ox+cfg.PX,oy+cfg.PY,cfg.PRW,cfg.PRH,'ASSEMBLY_REFERENCE',view='assembly',role='picture_region',nominal_size=[cfg.PRW,cfg.PRH])
     for x0,y0,x1,y1 in cfg.OPENINGS:
@@ -308,6 +332,9 @@ def add_assembly(cfg,m,parts):
     dimv(m,oy,oy+cfg.H,ox+cfg.W,ox+cfg.W+36,f'{cfg.H:g} OVERALL'+mark['outer'],view='assembly')
     dimh(m,ox+cfg.FW,ox+cfg.W-cfg.FW,oy+cfg.FW,oy-72,f'{cfg.IW:g} FRAME INNER'+mark['inner'],view='assembly')
     dimv(m,oy+cfg.FW,oy+cfg.H-cfg.FW,ox+cfg.FW,ox-58,f'{cfg.IH:g} FRAME INNER'+mark['inner'],view='assembly')
+    if cfg.ART:
+        dimh(m,ox+cfg.ARTX,ox+cfg.ARTX+cfg.ARTW,oy+cfg.ARTY,oy-86,f'{cfg.ARTW:g} ARTWORK (INPUT)',view='assembly')
+        dimv(m,oy+cfg.ARTY,oy+cfg.ARTY+cfg.ARTH,ox+cfg.ARTX,ox-72,f'{cfg.ARTH:g} ARTWORK (INPUT)',view='assembly')
     names=['LEFT','RIGHT'] if cfg.NLEAF==2 else ['SINGLE']
     for (x0,y0,x1,y1),nm in zip(cfg.LEAVES,names):
         dimh(m,ox+x0,ox+x1,oy+y0,oy-18,f'{cfg.LW:g} {nm} LEAF',view='assembly')
@@ -331,6 +358,10 @@ def add_assembly(cfg,m,parts):
     text(m,gaptext+f'{cfg.GAP_OUT:g} mm external clearances',(ox+cfg.W/2,oy-39),4.7,align='center',view='assembly')
     if cfg.PICTURE:
         text(m,f'Fixed rear picture region {cfg.PRW:g} x {cfg.PRH:g}; leaf members obscure the closed front.',
+             (ox+cfg.W/2,oy-53),3.8,align='center',view='assembly')
+    if cfg.ART:
+        text(m,f'Artwork {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} behind the fixed frame: {cfg.ACOV:g} covered each side, '
+               f'{cfg.AFIT:g} fit in the {cfg.BMW:g} back frame, {cfg.ASPC:g} spacer. Hidden outlines.',
              (ox+cfg.W/2,oy-53),3.8,align='center',view='assembly')
 
 
@@ -365,6 +396,20 @@ def add_opening(cfg,m):
             line(m,b,(b[0]-8*dx/ln+s2*3*dy/ln,b[1]-8*dy/ln-s2*3*dx/ln),
                  'ASSEMBLY_REFERENCE',view='opening',kind='direction')
         text(m,'90 deg REF',(ox+ax+sg*(arc+18.5),oy+188),4.8,'ASSEMBLY_REFERENCE','center',view='opening')
+    if cfg.ART:
+        # Section of the layer behind: the back frame, the procured spacer in the covered band,
+        # and the panel they hold. Z runs from the back face of the layer in front.
+        for g in [box(0,-cfg.THK,cfg.BMW,0),box(cfg.W-cfg.BMW,-cfg.THK,cfg.W,0)]:
+            poly(m,list(translate(g,ox,oy).exterior.coords)[:-1],'ASSEMBLY_REFERENCE',view='opening',
+                 role='body',kind='back_frame_section',assembly_z_mm=-cfg.THK,reference_only=True)
+        if cfg.ASPC:
+            for x0 in (cfg.ARTX,cfg.W-cfg.FW):
+                rect(m,ox+x0,oy-cfg.ASPC,cfg.ACOV,cfg.ASPC,'ASSEMBLY_REFERENCE',view='opening',role='spacer',
+                     reference_only=True,nominal_size=[cfg.ACOV,cfg.ASPC])
+        rect(m,ox+cfg.ARTX,oy-cfg.ASPC-cfg.ARTT,cfg.ARTW,cfg.ARTT,'ASSEMBLY_REFERENCE',view='opening',
+             role='artwork',reference_only=True,nominal_size=[cfg.ARTW,cfg.ARTT])
+        text(m,f'ARTWORK {cfg.ARTW:g} x {cfg.ARTT:g} IN A BACK FRAME. SPACER, BACKING AND FIXINGS SUPPLIED SEPARATELY.',
+             (ox+cfg.W/2,oy-47),4.4,align='center',view='opening')
     # One continuous fixed artwork plane. Its rear setback is illustrative.
     if cfg.PICTURE:
         rect(m,ox+cfg.PICX,oy-axz,cfg.A3W,4,'ASSEMBLY_REFERENCE',view='opening',role='picture',reference_only=True)
@@ -409,6 +454,9 @@ def build(cfg):
     for name,(c,lw) in cfg.LAYERS.items():doc.layers.new(name,dxfattribs={'color':c,'lineweight':lw})
     doc.linetypes.new('REF_DASH',dxfattribs={'description':'Reference dash 4-2','pattern':[6,4,-2]})
     doc.linetypes.new('A3_DASHDOT',dxfattribs={'description':'A3 picture dash-dot','pattern':[13,8,-2,1,-2]})
+    # Only a design with a member behind the base layer needs a hidden line, so the linetype
+    # table of every other design stays as it was.
+    if cfg.ART:doc.linetypes.new('HIDDEN',dxfattribs={'description':'Hidden line 6-3','pattern':[9,6,-3]})
     for name in ['HINGE_REF','LATCH_REF']:doc.layers.get(name).dxf.linetype='REF_DASH'
     msp=doc.modelspace()
     for p in parts.values():add_part_geometry(cfg,msp,spec,p)
@@ -416,8 +464,9 @@ def build(cfg):
     positions=add_details(cfg,msp);add_opening(cfg,msp)
     for e in msp:
         role=meta(e).get('role')
-        if role=='picture':e.dxf.linetype='A3_DASHDOT'
+        if role in ('picture','artwork'):e.dxf.linetype='A3_DASHDOT'
         elif role in ('opening','picture_region'):e.dxf.linetype='REF_DASH'
+        elif meta(e).get('hidden'):e.dxf.linetype='HIDDEN'
     # Default view opens on the stock, its machining layout and the notes below it, not
     # the reference sheets: from 300 below the board to 85 above it.
     doc.set_modelspace_vport(height=cfg.BWD+385,center=(cfg.BL/2,cfg.BWD/2-107.5))
@@ -501,6 +550,12 @@ def check_expectations(cfg):
         'leaf_envelopes':[[cfg.LW,cfg.LH]]*cfg.NLEAF, 'leaf_height_to_width_ratio':cfg.MINR,
         'leaf_clearances':dict(external=cfg.GAP_OUT,meeting=cfg.GAP_MID if cfg.NLEAF==2 else None),
         'picture_geometry':dict(enabled=cfg.PICTURE,size_mm=[cfg.A3W,cfg.A3H]),
+        'back_frame_geometry':dict(parts=4 if cfg.ART else 0,
+                                   opening=[cfg.D['back_inner_w'],cfg.D['back_inner_h']] if cfg.ART else None,
+                                   layer_z_mm=-cfg.THK if cfg.ART else None),
+        'artwork_covers_inner_and_fits_back_frame':dict(enabled=cfg.ART,artworks=1 if cfg.ART else 0,
+                                                        fit_mm=cfg.AFIT if cfg.ART else None,
+                                                        cover_mm=cfg.ACOV if cfg.ART else None),
         'picture_margins_match_each_side':dict(minimum_mm=cfg.PMG,centred=True),
         'leaf_opening_references':dict(count=cfg.NLEAF,size_mm=[cfg.OW,cfg.OH]),
         'hardware_counts_and_references':dict(HINGE=2*cfg.NLEAF,HANDLE=cfg.NLEAF,CATCH=cfg.NLEAF),
@@ -538,7 +593,10 @@ def check_parts_and_board(cfg,check,ents):
     check('unique_part_ids_and_total',len(partids)==cfg.NPART and len(set(partids))==cfg.NPART,len(partids))
     partents={meta(e)['part_id']:e for e in rawparts}
     count=Counter(meta(e).get('family') for e in rawparts)
-    for k,(_,_,n) in cfg.SIZES.items():check(f'{k}_part_count',count[k]==n,{'actual':count[k],'required':n})
+    # Back frame members are counted by back_frame_geometry, so every design reports the
+    # same list of checks whether or not it has one.
+    for k,(_,_,n) in cfg.SIZES.items():
+        if k[0]!='B':check(f'{k}_part_count',count[k]==n,{'actual':count[k],'required':n})
     mach=rawparts+pockets+dogs
     check('all_machining_entities_closed_lwpolyline',all(e.dxftype()=='LWPOLYLINE' and e.closed for e in mach),len(mach))
     geom={e.dxf.handle:entity_polygon(e) for e in mach}
@@ -573,7 +631,7 @@ def check_pockets_and_dogbones(cfg,check,rawparts,pockets,dogs,partents,geom,par
         d=meta(e);bypart[d['part_id']].append(e);byjoint[d['joint']]+=1;by_pair[d['joint_id']].append(e)
     for j,n in cfg.NPOCK.items():check(f'{j}_pocket_count',byjoint[j]==n,byjoint[j])
     check('total_base_pockets',len(pockets)==cfg.NPOCKT,len(pockets))
-    expected={'F01':2,'F02':2,'S01':2+cfg.NH,'S02':2+cfg.NV,'L01':2+cfg.NH,'L02':2+cfg.NV}
+    expected={'F01':2,'F02':2,'S01':2+cfg.NH,'S02':2+cfg.NV,'L01':2+cfg.NH,'L02':2+cfg.NV,'B01':0,'B02':0}
     check('pockets_per_part',all(len(bypart[p])==expected[p[:3]] for p in partents))
     check('S01_J4_seats_each',all(sum(meta(e)['joint']=='J4' and meta(e)['seat'] for e in bypart[p])==cfg.NH for p in partents if p.startswith('S01')),
           {p:sum(meta(e)['joint']=='J4' and meta(e)['seat'] for e in bypart[p]) for p in partents if p.startswith('S01')})
@@ -593,7 +651,8 @@ def check_pockets_and_dogbones(cfg,check,rawparts,pockets,dogs,partents,geom,par
         k=pid[:3];L,B,_=cfg.SIZES[k];x,y=meta(pe)['nesting_origin']
         got=sorted(translate(geom[e.dxf.handle],-x,-y).bounds for e in bypart[pid])
         lap=cfg.FW if k[0]=='F' else cfg.SM if k[0]=='S' else cfg.LAP
-        want=[(0,0,lap,B),(L-lap,0,L,B)]
+        # A back frame member is butt jointed at both ends, so it carries no pocket at all.
+        want=[] if k[0]=='B' else [(0,0,lap,B),(L-lap,0,L,B)]
         if k[0]=='S':
             # A seat is as wide as the bar it receives and as deep as the bar's
             # insertion, so its v extent is set by end_lap, never by bar width.
@@ -715,17 +774,35 @@ def check_assembly_dimensions(cfg,check,partents,ap):
     leaves=[unary_union([g for pid,g in ap.items() if meta(partents[pid])['assembly_group']==group_name(cfg.D,i)]) for i in range(cfg.NLEAF)]
     check('frame_geometry',geometry_matches(fixed,box(0,0,cfg.W,cfg.H).difference(box(cfg.FW,cfg.FW,cfg.W-cfg.FW,cfg.H-cfg.FW))),
           dict(bounds=list(fixed.bounds),area_mm2=fixed.area))
-    # Re-measure the size in the basis it was requested in: the outer boundary of
-    # the assembled fixed frame, or the clear opening that frame encloses.
+    # The back frame lies one layer behind the fixed frame and holds the artwork panel. It is
+    # measured the same way, and its members are counted here so that the list of checks does
+    # not depend on whether a design has a back frame.
+    back=sorted(pid for pid in ap if pid[0]=='B')
+    backgeo=unary_union([ap[pid] for pid in back]) if back else None
+    backholes=[box(*ring.bounds) for ring in getattr(backgeo,'interiors',[])] if back else []
+    backhole=max(backholes,key=lambda g:g.area).bounds if backholes else None
+    backopening=[backhole[2]-backhole[0],backhole[3]-backhole[1]] if backhole else None
+    backok=len(back)==(4 if cfg.ART else 0)
+    if cfg.ART:
+        backok &= geometry_matches(backgeo,box(0,0,cfg.W,cfg.H).difference(
+            box(cfg.BMW,cfg.BMW,cfg.W-cfg.BMW,cfg.H-cfg.BMW)))
+        backok &= all(close(cfg.PART_Z.get(pid,0.),-cfg.THK)
+                      and close(meta(partents[pid]).get('assembly_z_mm',0.),-cfg.THK) for pid in back)
+    check('back_frame_geometry',bool(backok),
+          dict(parts=len(back),opening=backopening,layer_z_mm=-cfg.THK if cfg.ART else None))
+    # Re-measure the size in the basis it was requested in: the outer boundary of the assembled
+    # fixed frame, the clear opening that frame encloses, or the panel the back frame holds.
     holes=[box(*ring.bounds) for ring in getattr(fixed,'interiors',[])]
     hole=max(holes,key=lambda g:g.area).bounds if holes else None
     measured=dict(outer=[fixed.bounds[2]-fixed.bounds[0],fixed.bounds[3]-fixed.bounds[1]],
                   inner=[hole[2]-hole[0],hole[3]-hole[1]] if hole else None)
+    if cfg.ART:
+        measured['artwork']=[v-2*cfg.AFIT for v in backopening] if backopening else None
     got=measured[cfg.SIZE['basis']]
     check('requested_size_matches_measured_frame',
           got is not None and all(abs(a-b)<TOL for a,b in zip(got,cfg.SIZE['requested_mm'])),
           dict(actual=got,required=cfg.SIZE['requested_mm'],basis=cfg.SIZE['basis'],measured_mm=measured),
-          target='inner_mm' if cfg.SIZE['basis']=='inner' else 'outer_mm')
+          target={'inner':'inner_mm','artwork':'artwork'}.get(cfg.SIZE['basis'],'outer_mm'))
     check('leaf_envelopes',all(
         coordinates_match(lf.bounds,cfg.LEAVES[i]) for i,lf in enumerate(leaves)),
         [[lf.bounds[2]-lf.bounds[0],lf.bounds[3]-lf.bounds[1]] for lf in leaves])
@@ -801,6 +878,30 @@ def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
     check('picture_geometry',picture_ok,dict(enabled=cfg.PICTURE,pictures=len(pictures),regions=len(regions)))
     check('picture_margins_match_each_side',margin_ok,dict(required_minimum_mm=cfg.PMG,measured_mm=margins))
     check('picture_reference_linetypes',line_ok)
+    # The panel is a reference outline like the picture, but it is measured against both frames:
+    # it sits centred in the back frame opening with the fit clearance on every side, and its
+    # edge lies cover deep behind the fixed frame, far enough to stay hidden when the panel
+    # shifts inside that clearance.
+    artworks=[e for e in assemblies if meta(e).get('role')=='artwork']
+    art_ok=not artworks;art_measured={}
+    if cfg.ART:
+        art_ok=len(artworks)==1
+        if art_ok:
+            g=translate(entity_polygon(artworks[0]),-ox,-oy)
+            backbox=box(cfg.BMW,cfg.BMW,cfg.W-cfg.BMW,cfg.H-cfg.BMW)
+            innerbox=box(cfg.FW,cfg.FW,cfg.W-cfg.FW,cfg.H-cfg.FW)
+            fits=[g.bounds[0]-backbox.bounds[0],backbox.bounds[2]-g.bounds[2],
+                  g.bounds[1]-backbox.bounds[1],backbox.bounds[3]-g.bounds[3]]
+            covers=[innerbox.bounds[0]-g.bounds[0],g.bounds[2]-innerbox.bounds[2],
+                    innerbox.bounds[1]-g.bounds[1],g.bounds[3]-innerbox.bounds[3]]
+            art_measured=dict(size_mm=[g.bounds[2]-g.bounds[0],g.bounds[3]-g.bounds[1]],
+                              fit_mm=fits,cover_mm=covers)
+            art_ok=(geometry_matches(g,box(cfg.ARTX,cfg.ARTY,cfg.ARTX+cfg.ARTW,cfg.ARTY+cfg.ARTH))
+                    and backbox.buffer(TOL).covers(g)
+                    and all(abs(v-cfg.AFIT)<TOL for v in fits) and all(abs(v-cfg.ACOV)<TOL for v in covers)
+                    and cfg.ACOV-cfg.AFIT>TOL)
+    check('artwork_covers_inner_and_fits_back_frame',bool(art_ok),
+          dict(enabled=cfg.ART,artworks=len(artworks),measured_mm=art_measured),target='artwork')
     openings=[e for e in assemblies if meta(e).get('role')=='opening']
     opening_geometry=[entity_polygon(e) for e in openings]
     check('leaf_opening_references',len(openings)==cfg.NLEAF and all(
@@ -823,7 +924,7 @@ def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
     check('hardware_attachment_geometry',set(actual_hw)==set(expected_hw) and all(geometry_matches(g,expected_hw[k]) for k,g in actual_hw.items() if k in expected_hw),
           dict(attachments=[list(k) for k in actual_hw]))
     detailtypes={meta(e).get('detail') for e in ents if meta(e).get('view')=='detail'}
-    check('reference_details_match_existing_joints',detailtypes==({'J1','J2'} | ({'J3'} if byjoint['J3'] else set()) | ({'J4V'} if count['L01'] else set()) | ({'J4H'} if count['L02'] else set())),sorted(detailtypes))
+    check('reference_details_match_existing_joints',detailtypes==({'J1','J2'} | ({'J3'} if byjoint['J3'] else set()) | ({'J4V'} if count['L01'] else set()) | ({'J4H'} if count['L02'] else set()) | ({'BF'} if count['B01'] else set())),sorted(detailtypes))
     detailborders=[e for e in ents if meta(e).get('kind')=='detail_border']
     check('reference_detail_members_exist',all(all(count[k]>0 for k in meta(e)['detail_part_kinds']) for e in detailborders),[meta(e)['detail_part_kinds'] for e in detailborders])
     check('references_never_on_machining_layers',not any(meta(e).get('view') in ['assembly','detail','opening'] for e in mach))
@@ -884,7 +985,8 @@ def add_details(cfg,msp):
     positions={key:(cfg.ASSEMBLY_ORIGIN[0]+cfg.W+160+(i%2)*270,100+(2-i//2)*210) for i,key in enumerate(variants)}
     for key,(ox,oy) in positions.items():
         j='J4' if key.startswith('J4') else key
-        kinds={'J1':['F01','F02'],'J2':['S01','S02'],'J3':['L01','L02'],'J4V':['S02','L01'],'J4H':['S01','L02']}[key]
+        kinds={'J1':['F01','F02'],'J2':['S01','S02'],'J3':['L01','L02'],'J4V':['S02','L01'],
+               'J4H':['S01','L02'],'BF':['F01','B01']}[key]
         common={'detail':key,'view':'detail','detail_part_kinds':kinds,'joint_type':j}
         def tx(s,x,y,h=3.8,align='left',layer='NOTES'):
             return text(msp,s,(ox+x,oy+y),h,layer,align,**common)
@@ -895,12 +997,35 @@ def add_details(cfg,msp):
             return poly(msp,[(ox+x,oy+y) for x,y in pts],'JOINT_DETAILS_REF',role=role,**common,**kw)
         rect(msp,ox,oy,240,190,'NOTES',kind='detail_border',**common)
         names={'J1':'FIXED FRAME HALF-LAP','J2':'SASH HALF-LAP',
-               'J3':'LATTICE CROSSING HALF-LAP','J4':'LATTICE-TO-SASH SEAT'}
+               'J3':'LATTICE CROSSING HALF-LAP','J4':'LATTICE-TO-SASH SEAT',
+               'BF':'FRAME / BACK FRAME / ARTWORK SECTION'}
         tx(f'{key}  {names[j]}',10,178,7)
-        n=cfg.FW if j=='J1' else cfg.SM if j=='J2' else cfg.BW
+        n=cfg.FW if j in ('J1','BF') else cfg.SM if j=='J2' else cfg.BW
         across=cfg.LAP if j=='J4' else n
-        tx(f'{n:g} x {across:g} pocket / depth {cfg.DEPTH:g} / stock {cfg.THK:g}',10,164,4.7)
-        if j in ('J1','J2'):
+        tx(f'cover {cfg.ACOV:g} / fit {cfg.AFIT:g} / spacer {cfg.ASPC:g} / panel {cfg.ARTT:g} / stock {cfg.THK:g}'
+           if j=='BF' else f'{n:g} x {across:g} pocket / depth {cfg.DEPTH:g} / stock {cfg.THK:g}',10,164,4.7)
+        if j=='BF':
+            # A section across the left edge at 1:1, outer edge at the left: the fixed frame in
+            # front, the back frame one layer behind it, and between them the procured spacer
+            # and the artwork panel. The panel runs on inward and is cut off in this view.
+            sx,sy,cut=30,95,120
+            tx('F01 / F02 FIXED FRAME / LAYER 0',15,150,4)
+            tx(f'B01 / B02 BACK FRAME / LAYER {-cfg.THK:g}',15,141,4)
+            pp([(sx,sy),(sx+cfg.FW,sy),(sx+cfg.FW,sy+cfg.THK),(sx,sy+cfg.THK)],'section_front')
+            pp([(sx,sy-cfg.THK),(sx+cfg.BMW,sy-cfg.THK),(sx+cfg.BMW,sy),(sx,sy)],'section_back')
+            if cfg.ASPC:
+                pp([(sx+cfg.ARTX,sy-cfg.ASPC),(sx+cfg.FW,sy-cfg.ASPC),(sx+cfg.FW,sy),(sx+cfg.ARTX,sy)],'spacer')
+            pp([(sx+cfg.ARTX,sy-cfg.ASPC-cfg.ARTT),(sx+cut,sy-cfg.ASPC-cfg.ARTT),
+                (sx+cut,sy-cfg.ASPC),(sx+cfg.ARTX,sy-cfg.ASPC)],'artwork')
+            dimh(msp,ox+sx+cfg.ARTX,ox+sx+cfg.FW,oy+sy+cfg.THK,oy+sy+cfg.THK+13,f'{cfg.ACOV:g} cover',detail=key)
+            dimh(msp,ox+sx+cfg.BMW,ox+sx+cfg.ARTX,oy+sy-cfg.THK,oy+sy-cfg.THK-13,f'{cfg.AFIT:g} fit',detail=key)
+            dimv(msp,oy+sy,oy+sy+cfg.THK,ox+sx,ox+sx-11,f'{cfg.THK:g}',detail=key)
+            dimv(msp,oy+sy-cfg.THK,oy+sy,ox+sx,ox+sx-11,f'{cfg.THK:g}',detail=key)
+            dimv(msp,oy+sy-cfg.ASPC-cfg.ARTT,oy+sy-cfg.ASPC,ox+sx+cut,ox+sx+cut+11,f'{cfg.ARTT:g} panel',detail=key)
+            tx(f'Artwork {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} and the spacer are supplied, not cut from the board.',10,52,3.4)
+            tx('Butt joints at the four back frame corners: through cuts only, no pockets.',10,42,3.4)
+            tx('Backing, fixings and hanging hardware remain PENDING.',10,32,3.4)
+        elif j in ('J1','J2'):
             fam1,fam2=('F01','F02') if j=='J1' else ('S01','S02')
             by=97 if j=='J1' else 107
             tx(f'{fam1} / A -> FRONT',15,148,4)
@@ -1072,7 +1197,10 @@ def render_assembly(cfg,doc):
               ('EACH OPENING',f'{cfg.OW:g} x {cfg.OH:g} mm before lattice subdivision.'),
               ('LATTICE',f'{cfg.NV} vertical + {cfg.NH} horizontal per leaf; {cfg.NV*cfg.NH} crossings.'),
               ('CLEARANCES',f'Frame to leaf: {cfg.GAP_OUT:g} mm.'+(f' Between leaves: {cfg.GAP_MID:g} mm.' if cfg.NLEAF==2 else '')),
-              ('REAR PICTURE',f'{cfg.A3W:g} x {cfg.A3H:g} mm, centred, minimum margin {cfg.PMG:g} mm.' if cfg.PICTURE else 'No picture specified.'),
+              ('ARTWORK PANEL' if cfg.ART else 'REAR PICTURE',
+               f'{cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm in a {cfg.BMW:g} mm back frame one layer behind; '
+               f'{cfg.ACOV:g} mm covered on each side, {cfg.AFIT:g} mm fit, {cfg.ASPC:g} mm spacer.' if cfg.ART else
+               f'{cfg.A3W:g} x {cfg.A3H:g} mm, centred, minimum margin {cfg.PMG:g} mm.' if cfg.PICTURE else 'No picture specified.'),
               ('HARDWARE REFERENCES',f'{2*cfg.NLEAF} hinges, {cfg.NLEAF} handles, {cfg.NLEAF} catches. Hinge sides: '+', '.join(f.side for f in cfg.FORMAT)+'.'),
               ('JOINT DETAILS',', '.join(formats.detail_variants(cfg.PARAMS)))]
     for ttl,body in schedule:
@@ -1084,6 +1212,8 @@ def render_assembly(cfg,doc):
            'Hardware shapes and opening axes are position references. Products and load capacity remain PENDING.',
            'Material minima, fit coupons, backing and CAM setup remain PENDING.']
     if cfg.PICTURE:notes.append('The picture is fixed to a separate rear support, never to moving leaves.')
+    if cfg.ART:notes.append('The artwork panel sits in the back frame behind the fixed frame, never on the moving leaves. '
+                            'Spacer, backing and fixings are supplied separately.')
     y=3530
     for note in notes:y=wrapped(d,note,(160,y),3270,28)+20
     label(d,(110,3850),'Reference members are transformed from the saved and verified CNC part geometry.',27,fill=COL['muted'])
@@ -1101,7 +1231,9 @@ def render_opening(cfg,doc):
     y=365
     for ttl,body in [('ILLUSTRATION ONLY','The plan shows a nominal 90-degree rotation about provisional front-projecting axes.'),
                      ('HINGE SIDES',', '.join(f.side.upper() for f in cfg.FORMAT)+'; two hinges per leaf.'),
-                     ('REAR PICTURE',f'One fixed {cfg.A3W:g} x {cfg.A3H:g} mm picture on a separate backing.' if cfg.PICTURE else 'No picture or rear picture plane is specified.'),
+                     ('ARTWORK PANEL' if cfg.ART else 'REAR PICTURE',
+                      f'One {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm panel in the back frame, {cfg.ASPC:g} mm behind the fixed frame.' if cfg.ART else
+                      f'One fixed {cfg.A3W:g} x {cfg.A3H:g} mm picture on a separate backing.' if cfg.PICTURE else 'No picture or rear picture plane is specified.'),
                      ('PENDING','Select actual hinges, screws, catches and backing. Check full movement, loads and clearances before manufacture.')]:
         label(d,(2970,y),ttl,29,bold=True);y+=57
         y=wrapped(d,body,(2970,y),875,29)+66
@@ -1120,7 +1252,11 @@ def write_readme(cfg,report):
            f'원판: {cfg.BL:g} x {cfg.BWD:g} x {cfg.THK:g} mm. 부재 길이는 목리 X 방향.',
            f'가공 깊이: {cfg.DEPTH:g} mm. 모든 가공은 A면. 공구 지름 {cfg.PARAMS["machining"]["tool_diameter"]:g}, 도그본 R{cfg.R:g}.',
            f'창짝-고정틀 간극 {cfg.GAP_OUT:g} mm.'+(f' 창짝 사이 간극 {cfg.GAP_MID:g} mm.' if cfg.NLEAF==2 else ''),
-           f'그림: {cfg.A3W:g} x {cfg.A3H:g} mm, 후면 기준영역 안에 중앙 배치, 각 변 최소 여유 {cfg.PMG:g} mm.' if cfg.PICTURE else '그림: 지정하지 않음.',
+           f'그림: {cfg.A3W:g} x {cfg.A3H:g} mm, 후면 기준영역 안에 중앙 배치, 각 변 최소 여유 {cfg.PMG:g} mm.' if cfg.PICTURE else
+           f'화판: {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm. 고정틀이 각 변 {cfg.ACOV:g} mm를 덮습니다.' if cfg.ART else '그림: 지정하지 않음.',
+           *([f'뒤틀(B01·B02) 4개: 폭 {cfg.BMW:g} mm, 안쪽 {cfg.D["back_inner_w"]:g} x {cfg.D["back_inner_h"]:g} mm, 끼움 여유 {cfg.AFIT:g} mm, 맞댄 이음.',
+              f'층: 고정틀·창짝·창살은 Z 0~{cfg.THK:g} mm, 뒤틀은 Z {-cfg.THK:g}~0 mm. 그 안에 스페이서 {cfg.ASPC:g} mm와 화판 {cfg.ARTT:g} mm가 들어갑니다.',
+              '스페이서·뒷판·걸이 철물은 별도 조달이며 PENDING입니다. 뒤틀 모서리 맞댄 이음의 접착·고정 방법도 확인해야 합니다.'] if cfg.ART else []),
            '실제 존재하는 결합 상세: '+', '.join(formats.detail_variants(cfg.PARAMS)),
            f'경첩 {2*cfg.NLEAF}, 손잡이 {cfg.NLEAF}, 캐치 {cfg.NLEAF}: 실물 선정 전 참고 위치.',
            '경첩 부재: '+', '.join(f'{f.hinge_stile}/{f.fixed_stile}' for f in cfg.FORMAT),

@@ -154,7 +154,7 @@ Claude, GPT, Gemini, 로컬 모델(Ollama 등) 같은 LLM이 도구 호출로 �
 |---|---|---|
 | `describe_generator` | 창 형식, 외경/내경, 프리셋 규칙, 입력 범위, 기본값, 예제 요청, 상태의 뜻을 알려 줍니다 | 없음 |
 | `check_design` | 사전 확인입니다. 치수·창짝·창살 칸·원판 사용량을 돌려주거나, 어긴 규칙의 `rule_id`와 수치, 고치는 방법(`hint`), 그 규칙을 통과하는 값(`suggestion`)을 돌려줍니다 | 없음 |
-| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 68개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
+| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 70개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
 | `list_packages` | 만든 패키지 목록(최신순) | 없음 |
 | `get_package` | 패키지 하나의 요청·치수·검사·PENDING 항목·파일 | 없음 |
 | `verify_package` | 패키지 파일 해시 대조(읽기 전용) | 없음 |
@@ -191,7 +191,7 @@ MCP 없이 모델 API를 직접 부르는 프로그램은 도구 정의를 내�
 .venv/bin/hanok-window-llm tools --format anthropic       # Messages API
 .venv/bin/hanok-window-llm tools --format mcp
 .venv/bin/hanok-window-llm call check_design '{"type": "double", "outer_mm": [600, 800], "lattice_per_leaf": [2, 4]}'
-.venv/bin/hanok-window-llm call get_drawing '{"package_id": "204e70b0", "drawing": "assembly"}'
+.venv/bin/hanok-window-llm call get_drawing '{"package_id": "08bb7527", "drawing": "assembly"}'
 ```
 
 `call`은 결과를 JSON으로 출력합니다. 도구가 실패하면 종료 코드 1, 도구 이름이나 JSON이 틀리면 2로 끝납니다. 도면 이미지는 `--image-dir`(기본: 임시 폴더)에 PNG로 저장하고 경로를 적습니다.
@@ -227,6 +227,7 @@ result.data, result.is_error, result.images  # JSON 결과, 실패 여부, [(MIM
 | `hinge_side` | 단문의 `left`/`right`. 양문은 양쪽 바깥 경첩 |
 | `outer_mm` | 외경: 완성 외곽 `[가로, 세로]`, mm. 소수를 반올림해 설계를 바꾸지 않음 |
 | `inner_mm` | 내경: 고정틀 안목 `[가로, 세로]`, mm. `outer_mm`과 둘 중 하나만 지정 |
+| `artwork` | 액자형: 화판 `{"size_mm":[420,594],"thickness_mm":3,"cover_mm":8,"fit_mm":1,"spacer_mm":3}`. `size_mm` 말고는 생략하면 기본값. `outer_mm`·`inner_mm`·`picture`와 함께 쓰지 않음 |
 | `lattice_per_leaf` | 창짝당 `[세로, 가로]` 부재 개수. 각 방향 0개 지원 |
 | `preset` | 기본 `standard_v1`. R3 재현용 `hanok_A3_portrait_R3`, 4×8 원판용 `standard_4x8_v1` |
 | `picture` | 선택. `{"size_mm":[297,420],"margin_mm":10}` 또는 `null` |
@@ -240,6 +241,14 @@ result.data, result.is_error, result.images  # JSON 결과, 실패 여부, [(MIM
 내경은 창짝이 들어가는 고정틀 안쪽 치수입니다. 엔진은 외곽 = 내경 + 2 × 고정틀 폭(현재 프리셋 40 mm)으로 유도하므로, 내경 383 × 506은 R3 외경 463 × 586과 같은 설계입니다.
 입력한 기준의 치수는 저장 DXF의 고정틀에서 다시 재어 `requested_size_matches_measured_frame` 검사로 기록합니다. 조립도에는 외경과 내경을 모두 표기하고 입력 기준에 `(INPUT)`을 붙입니다.
 외경 입력의 정규화 요청은 0.1과 같아서 기존 설계의 `revision`이 바뀌지 않습니다.
+
+### 액자형(화판 기준)
+
+`artwork`로 크기를 주면 창호가 그림 액자가 됩니다. 고정틀이 화판 가장자리를 `cover_mm`만큼 덮으므로 외경 = 화판 − 2 × 덮는 폭 + 2 × 고정틀 폭입니다. A2 420 × 594에 덮는 폭 8 mm, 고정틀 폭 40 mm이면 외경 484 × 658, 내경 404 × 578입니다.
+화판은 고정틀 뒤 한 층(Z −원판 두께)에서 뒤틀 4개(`B01` 세로 2개, `B02` 가로 2개)가 잡습니다. 뒤틀은 같은 원판에서 깎고 모서리는 맞댄 이음이라 홈이 없습니다. 뒤틀 폭은 고정틀 폭 − 덮는 폭 − 끼움 여유이고, 그 안쪽에 화판이 네 변 `fit_mm`씩 여유를 두고 들어갑니다. 창살과 화판 사이는 스페이서 `spacer_mm`로 띄웁니다. 스페이서·뒷판·걸이 철물과 뒤틀 모서리의 접착·고정 방법은 별도 조달이며 PENDING입니다.
+규칙 네 가지를 봅니다. `artwork.covers_inner`는 화판이 내경을 덮는지, `artwork.cover_hides_edge`는 덮는 폭이 끼움 여유보다 큰지, `artwork.back_member_width`는 남는 뒤틀 폭이 창살 폭 이상인지, `artwork.depth_within_stock`은 스페이서와 화판 두께의 합이 원판 두께 안인지 봅니다.
+`artwork`는 `outer_mm`·`inner_mm`·`picture`와 함께 쓸 수 없고, R3 프리셋(`hanok_A3_portrait_R3`)과도 함께 쓸 수 없습니다. R3는 A3 그림을 후면 지지판에 두는 규칙이어서 전제가 반대입니다.
+입력한 화판 크기는 저장 DXF의 뒤틀 안쪽에서 끼움 여유를 빼 다시 재어 `requested_size_matches_measured_frame` 검사로 기록합니다. 조립도는 뒤틀과 화판을 숨은선으로, 열림도는 층 단면을, 상세도는 단면 `BF`를 그립니다.
 
 ### 프리셋
 
@@ -314,9 +323,10 @@ DXF의 원판 안에는 부재 윤곽, 홈, 도그본, 부품 번호, 하드웨�
 - J3: 두 방향 창살이 모두 있을 때만 생성.
 - J4V: 세로 창살과 가로 테두리의 결합이 있을 때만 생성.
 - J4H: 가로 창살과 세로 테두리의 결합이 있을 때만 생성.
+- BF: 액자형일 때만 생성. 고정틀·뒤틀·화판의 층 단면.
 
 검사 결과는 `rule_id`, `expected`, `actual`, `tolerance`, `targets`, `status`를 구분합니다.
-창살 수나 치수를 바꿔도 검사 ID는 변하지 않습니다. 결합 상세에 실제 존재하는 부재 계열이 쓰였는지도 확인합니다.
+창살 수나 치수를 바꿔도, 액자형이어도 검사 ID는 변하지 않습니다. 액자형의 뒤틀 개수는 `back_frame_geometry`가 셉니다. 결합 상세에 실제 존재하는 부재 계열이 쓰였는지도 확인합니다.
 
 ## 검증
 

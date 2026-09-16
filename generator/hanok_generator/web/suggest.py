@@ -1,9 +1,10 @@
 """Values that clear a design rule, found by asking the engine again.
 
 Each suggestion changes one input at a time: a lattice bar count, one side of the window, the
-picture, or the stock board. The engine's own derive() and build() decide whether a value clears
-the rule, so no rule is restated here. Window sizes come back in the request's basis (outer_mm or
-inner_mm) as whole millimetres rounded the safe way, picture sizes in tenths of a millimetre.
+picture, the artwork panel, or the stock board. The engine's own derive() and build() decide
+whether a value clears the rule, so no rule is restated here. Window sizes come back in the
+request's basis (outer_mm, inner_mm or artwork) as whole millimetres rounded the safe way,
+picture and panel sizes in tenths of a millimetre.
 A suggestion clears only the rule it answers; the next check may name another one.
 """
 from __future__ import annotations
@@ -64,10 +65,16 @@ def _side(params, rule_id, axis, grow, *, spec=False, detail=None, isolate=False
     """Whole-mm outer width (axis 0) or height (axis 1) nearest the current one that clears rule_id
     when only that side changes, or None if no size within the request limit does."""
     key = ("outer_width", "outer_height")[axis]
+    panel = ("sheet_width", "sheet_height")[axis]
 
     def trial(value):
         def change(t):
             t["frame"][key] = value
+            if t.get("artwork"):
+                # resolve() builds the frame around the panel, so a trial that moves one without
+                # the other breaks artwork.covers_inner. That rule would then be raised instead
+                # of the one being searched for, and every trial would read as cleared.
+                t["artwork"][panel] = value - 2 * t["frame"]["member_width"] + 2 * t["artwork"]["cover"]
             if isolate:
                 _isolate(t)
         return _changed(params, change)
@@ -125,6 +132,48 @@ def _picture(params, exc, axis):
     return found
 
 
+# Frame-type rules whose values the page can offer. artwork.covers_inner is not among them: a
+# request names the panel and the engine derives the frame from it, so it holds by construction
+# and can only be broken by editing the parameters directly.
+ARTWORK_RULES = ("artwork.cover_hides_edge", "artwork.back_member_width", "artwork.depth_within_stock")
+# The smallest value the schema accepts for each panel field.
+ARTWORK_LEAST = {"thickness": 0.1, "cover": 0.1, "fit": 0.0, "spacer": 0.0}
+
+
+def _artwork(params, exc):
+    """Panel values that clear one frame-type rule, each on its own."""
+    art, details = params["artwork"], exc.details
+    if exc.rule_id == "artwork.cover_hides_edge":
+        wanted = {"fit_at_most": ("fit", _tenth(art["cover"] - 0.1)),
+                  "cover_at_least": ("cover", _tenth(art["fit"]) + 0.1)}
+    elif exc.rule_id == "artwork.back_member_width":
+        short = details["minimum"] - details["back_member_width"]
+        wanted = {"cover_at_most": ("cover", details["cover_at_most"]),
+                  "fit_at_most": ("fit", _tenth(art["fit"] - short))}
+    else:
+        available = details["available"]
+        wanted = {"thickness_at_most": ("thickness", _tenth(available - art["spacer"])),
+                  "spacer_at_most": ("spacer", _tenth(available - art["thickness"]))}
+
+    def change(name, value):
+        def apply(trial):
+            trial["artwork"][name] = value
+            if name == "cover":
+                # resolve() builds the frame around the panel, so a different cover is a
+                # different outer frame. Without this the trial would answer for a window the
+                # request can never produce.
+                member = trial["frame"]["member_width"]
+                for key, side in (("outer_width", "sheet_width"), ("outer_height", "sheet_height")):
+                    trial["frame"][key] = trial["artwork"][side] - 2 * value + 2 * member
+        return apply
+
+    found = {}
+    for label, (name, value) in wanted.items():
+        if value >= ARTWORK_LEAST[name] and _raised(_changed(params, change(name, value)), exc.rule_id) is None:
+            found[label] = value
+    return found
+
+
 def _stock(params, exc):
     """Smallest stock length or width that holds the part, or the layout, the engine reported."""
     stock, details = params["stock"], exc.details
@@ -147,7 +196,11 @@ def suggest(params, exc, size_key):
     {"vertical_per_leaf": 4, "outer_mm": {"width_at_least": 306}} means: four vertical bars per
     leaf, or an outer width of at least 306 mm, each on its own."""
     rule, details = exc.rule_id, exc.details
-    shift = 2 * params["frame"]["member_width"] if size_key == "inner_mm" else 0
+    member = params["frame"]["member_width"]
+    # outer = inner + 2 x member, and outer = panel - 2 x cover + 2 x member, so a suggested
+    # outer size is turned back into the field the request used.
+    shift = (2 * member if size_key == "inner_mm" else
+             2 * (member - params["artwork"]["cover"]) if size_key == "artwork" else 0)
     found = {}
 
     def side(axis, grow, **options):
@@ -179,4 +232,12 @@ def suggest(params, exc, size_key):
         if rule == "nesting.part_fits_stock":
             side(0, False, spec=True)
             side(1, False, spec=True)
+    elif rule in ARTWORK_RULES:
+        found["artwork"] = _artwork(params, exc)
+        if rule == "artwork.depth_within_stock":
+            # The board itself is the other way out of this one.
+            thickness = details["required"]
+            if thickness <= 60 and _raised(_changed(params, lambda t: t["stock"].update(thickness=thickness)),
+                                           rule) is None:
+                found["stock_mm"] = {"thickness_at_least": thickness}
     return {key: value for key, value in found.items() if value != {}} or None

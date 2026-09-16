@@ -49,6 +49,7 @@
       <div class="seg" role="radiogroup" aria-label="크기 기준">
         <input type="radio" name="basis" id="basis-outer" value="outer"><label for="basis-outer">외경</label>
         <input type="radio" name="basis" id="basis-inner" value="inner"><label for="basis-inner">내경</label>
+        <input type="radio" name="basis" id="basis-artwork" value="artwork"><label for="basis-artwork">화판</label>
       </div>
       <div class="pair">
         <input class="num" id="size-w" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="hint-size err-size">
@@ -58,6 +59,25 @@
       </div>
       <p class="hint" id="hint-size"></p>
       <p class="hint err" id="err-size" role="alert" hidden></p>
+    </details>
+
+    <details class="fg" id="g-artwork" open hidden>
+      <summary><span class="fl">화판 · 액자형</span><span class="cur" id="cur-artwork"></span></summary>
+      <div class="pair">
+        <label class="sub" for="art-t">두께</label>
+        <input class="num short" id="art-t" inputmode="decimal" autocomplete="off" aria-describedby="hint-artwork err-artwork">
+        <label class="sub" for="art-c">덮는 폭</label>
+        <input class="num short" id="art-c" inputmode="decimal" autocomplete="off" aria-describedby="hint-artwork err-artwork">
+      </div>
+      <div class="pair">
+        <label class="sub" for="art-f">끼움 여유</label>
+        <input class="num short" id="art-f" inputmode="decimal" autocomplete="off" aria-describedby="hint-artwork err-artwork">
+        <label class="sub" for="art-s">스페이서</label>
+        <input class="num short" id="art-s" inputmode="decimal" autocomplete="off" aria-describedby="hint-artwork err-artwork">
+        <span>mm</span>
+      </div>
+      <p class="hint" id="hint-artwork"></p>
+      <p class="hint err" id="err-artwork" role="alert" hidden></p>
     </details>
 
     <details class="fg" id="g-lattice" open>
@@ -146,11 +166,14 @@
     <div class="drawing" id="panel-nest" role="tabpanel" aria-labelledby="tab-nest" hidden></div>
     <div class="legend" id="legend-elev">
       <span><i class="sw sw-frame"></i>고정틀</span><span><i class="sw sw-wood"></i>창짝·창살</span>
-      <span><i class="sw sw-hinge"></i>경첩 쪽 선대</span><span><i class="sw sw-pic"></i>그림(뒤판)</span>
+      <span><i class="sw sw-hinge"></i>경첩 쪽 선대</span><span id="lg-pic"><i class="sw sw-pic"></i>그림(뒤판)</span>
+      <span id="lg-back" hidden><i class="sw sw-back"></i>뒤틀(고정틀 뒤 한 층)</span>
+      <span id="lg-art" hidden><i class="sw sw-art"></i>화판</span>
     </div>
     <div class="legend" id="legend-nest" hidden>
       <span><i class="sw sw-frame"></i>고정틀</span><span><i class="sw sw-wood"></i>창짝·창살</span>
       <span><i class="sw sw-used"></i>쓰는 범위</span><span><i class="sw sw-margin"></i>가장자리 여유</span>
+      <span id="lg-nest-back" hidden><i class="sw sw-back"></i>뒤틀</span>
     </div>
     <div class="tip" id="tip" role="tooltip" hidden></div>
   </section>

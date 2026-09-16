@@ -36,16 +36,19 @@ function dimV(parent, y0, y1, x, label, font, cls, right) {
 }
 
 export function drawElevation(host, data, { basis, tip }) {
-  const { width: W, height: H, parts, leaves, picture } = data.assembly;
+  const { width: W, height: H, parts, leaves, picture, artwork } = data.assembly;
   const font = Math.max(W, H) / divisor(host);
   const m = font * 4.4;
   const byId = new Map(parts.map((p) => [p.id, p]));
   const hinge = new Set(leaves.map((leaf) => leaf.hinge_stile));
   const svg = add(null, "svg", {
     class: "elev", viewBox: [-m, -m, W + 2 * m, H + 2 * m].map(round).join(" "), role: "img",
-    "aria-label": `정면도: 외경 ${pair(data.size.outer_mm)} mm, 부품 ${parts.length}개`,
+    "aria-label": `정면도: 외경 ${pair(data.size.outer_mm)} mm, 부품 ${parts.length}개`
+      + (artwork ? `, 화판 ${pair(artwork.size_mm)} mm` : ""),
   });
-  for (const family of ["FRAME", "SASH", "LATTICE"]) {
+  // The back frame lies one layer behind the fixed frame, so it is drawn first and the members
+  // in front cover it, exactly as the assembly drawing stacks them.
+  for (const family of ["BACK_FRAME", "FRAME", "SASH", "LATTICE"]) {
     for (const p of parts.filter((q) => q.family === family)) {
       const [x0, y0, x1, y1] = p.rect;
       add(svg, "rect", {
@@ -60,6 +63,13 @@ export function drawElevation(host, data, { basis, tip }) {
     add(svg, "text", { class: "mk-pic-t", x: (x0 + x1) / 2, y: H - y0 - font * 0.9, "text-anchor": "middle", "font-size": font * 0.85 },
       `그림 ${pair(picture.size_mm)} · 뒤판`);
   }
+  if (artwork) {
+    // The panel edge runs behind the fixed frame, so it is an outline like the picture.
+    const [x0, y0, x1, y1] = artwork.sheet;
+    add(svg, "rect", { class: "mk-art", x: x0, y: H - y1, width: x1 - x0, height: y1 - y0 });
+    add(svg, "text", { class: "mk-art-t", x: (x0 + x1) / 2, y: H - y0 - font * 0.9, "text-anchor": "middle", "font-size": font * 0.85 },
+      `화판 ${pair(artwork.size_mm)} · 뒤틀 ${fmt(artwork.back_frame_member_mm)}`);
+  }
   for (const id of hinge) {
     const [x0, y0, x1, y1] = byId.get(id)?.rect ?? [];
     if (x0 === undefined) continue;
@@ -73,8 +83,11 @@ export function drawElevation(host, data, { basis, tip }) {
   const right = byId.get("F01-2").rect[0];
   const bottom = byId.get("F02-1").rect[3];
   const top = byId.get("F02-2").rect[1];
-  const [outerTag, innerTag] = basis === "inner" ? ["", " (입력)"] : [" (입력)", ""];
-  const [outerCls, innerCls] = basis === "inner" ? ["mk-dim", "mk-dim mk-dim-in"] : ["mk-dim mk-dim-in", "mk-dim"];
+  // The basis the request gave carries the (입력) tag; a frame-type request tags neither, since
+  // the size it gave is the panel drawn inside.
+  const [outerTag, innerTag] = basis === "outer" ? [" (입력)", ""] : basis === "inner" ? ["", " (입력)"] : ["", ""];
+  const [outerCls, innerCls] = basis === "outer" ? ["mk-dim mk-dim-in", "mk-dim"]
+    : basis === "inner" ? ["mk-dim", "mk-dim mk-dim-in"] : ["mk-dim", "mk-dim"];
   dimH(svg, 0, W, -m * 0.42, `외경 ${fmt(data.size.outer_mm[0])}${outerTag}`, font, outerCls);
   dimV(svg, 0, H, W + m * 0.36, `외경 ${fmt(data.size.outer_mm[1])}${outerTag}`, font, outerCls, true);
   dimH(svg, left, right, H + m * 0.62, `내경 ${fmt(data.size.inner_mm[0])}${innerTag}`, font, innerCls);

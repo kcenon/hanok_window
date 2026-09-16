@@ -27,7 +27,8 @@ DRAWINGS = dict(zip(("nesting", "joinery", "assembly", "opening", "pockets"), PN
 DESIGN_TOOLS = ("check_design", "build_package")
 # Key order of examples/*.json and the web form. design_request.json sorts its keys, so the order
 # is only for reading; the package_id depends on which keys appear and how numbers are written.
-ORDER = ("type", "hinge_side", "outer_mm", "inner_mm", "lattice_per_leaf", "preset", "picture", "stock_mm")
+ORDER = ("type", "hinge_side", "outer_mm", "inner_mm", "artwork", "lattice_per_leaf", "preset", "picture",
+         "stock_mm")
 EXAMPLES = {
     "double_r3": {"type": "double", "outer_mm": [463, 586], "lattice_per_leaf": [2, 4], "preset": "hanok_A3_portrait_R3"},
     "double_inner_r3": {"type": "double", "inner_mm": [383, 506], "lattice_per_leaf": [2, 4],
@@ -46,7 +47,8 @@ HINTS = {
     "input.type": "Set type to \"single\" (one leaf) or \"double\" (two leaves).",
     "input.hinge_side": ("A single window needs hinge_side \"left\" or \"right\". A double window must not have "
                          "hinge_side: both of its leaves hinge on the outer frame."),
-    "input.size_basis": "Give exactly one of outer_mm (finished outer frame) or inner_mm (clear opening inside the frame).",
+    "input.size_basis": ("Give exactly one of outer_mm (finished outer frame), inner_mm (clear opening inside the "
+                         "frame) or artwork (the panel the frame is built around)."),
     "input.vector": "details.field must be an array of details.required numbers.",
     "input.number": "Use finite numbers; lattice bar counts must be whole numbers.",
     "input.range": ("details.field is outside details.minimum to details.maximum. With inner_mm the derived outer "
@@ -54,6 +56,12 @@ HINTS = {
     "input.preset": "Use one of details.supported, or leave preset out for standard_v1.",
     "input.preset_type": "hanok_A3_portrait_R3 is for double windows only; leave preset out for a single window.",
     "input.picture": "picture is left out (preset default), null (no picture) or {\"size_mm\": [w, h], \"margin_mm\": 10}.",
+    "input.artwork": ("artwork holds size_mm and, optionally, thickness_mm, cover_mm, fit_mm and spacer_mm. "
+                      "Remove any other field."),
+    "input.artwork_picture": ("A frame-type window has no picture: the panel takes its place. Remove picture, or "
+                              "give outer_mm or inner_mm instead of artwork."),
+    "input.preset_artwork": ("hanok_A3_portrait_R3 puts an A3 picture on a separate backing, which is the opposite "
+                             "of a frame-type window. Use standard_v1 or standard_4x8_v1 with artwork."),
     "input.stock_thickness": "The thickness, the third value of stock_mm, must be 5 to 60 mm.",
     "opening.positive_size": ("The window is too small to leave an opening inside the frame and leaf members "
                               "(details.width, details.height in mm). suggestion gives the smallest width or height "
@@ -74,6 +82,19 @@ HINTS = {
     "picture.fits_height": ("The picture plus top and bottom margins (details.required mm) is taller than the "
                             "picture region (details.available mm). suggestion gives the largest picture height or "
                             "margin and the smallest window height that fit."),
+    "artwork.covers_inner": ("The panel must cover the clear opening on every side: it has to be details.required "
+                             "mm (opening details.inner plus two covers). Change artwork.size_mm."),
+    "artwork.cover_hides_edge": ("The fixed frame covers details.cover mm of the panel edge, which is not more than "
+                                 "the fit clearance details.fit mm, so the panel edge shows when it shifts inside "
+                                 "the back frame. suggestion gives the largest fit or the smallest cover that "
+                                 "hides it."),
+    "artwork.back_member_width": ("What is left of the frame member beside the panel is the back frame, now "
+                                  "details.back_member_width mm, and no member may be cut narrower than a lattice "
+                                  "bar (details.minimum mm). suggestion gives the largest cover or fit that leaves "
+                                  "a wide enough back frame."),
+    "artwork.depth_within_stock": ("The spacer plus the panel (details.required mm) is deeper than the stock board "
+                                   "(details.available mm), so they do not fit behind the frame. suggestion gives "
+                                   "the largest panel thickness or spacer, and the thinnest board, that hold them."),
     "nesting.part_fits_stock": ("Part details.part_id [length, width] is larger than the usable board (details.usable "
                                 "mm). suggestion gives the smallest stock_mm side that holds it and, when one exists, "
                                 "the largest window side that fits. Only one board is supported."),
@@ -198,6 +219,7 @@ def design_schema(meta):
     """The request as a tool input: the fields of request.schema.json without oneOf, if/then or prefixItems,
     which several function-calling APIs refuse. resolve() still enforces every rule of the full schema."""
     member = format_mm(meta["frame_member_mm"])
+    art = {key: format_mm(value) for key, value in meta["artwork_defaults"].items()}
     ratio = format_mm(next(p["min_leaf_ratio"] for p in meta["presets"] if p["id"] == "hanok_A3_portrait_R3"))
     board = next(p for p in meta["presets"] if p["id"] == "standard_4x8_v1")
     stocks = {}  # default board -> the presets that use it
@@ -213,6 +235,28 @@ def design_schema(meta):
         outer_mm=_pair("number", 1, 3000, "Finished outer frame [width, height] in mm. Give either outer_mm or inner_mm."),
         inner_mm=_pair("number", 1, 3000, (f"Clear opening inside the fixed frame [width, height] in mm; the outer "
                                            f"frame is inner + 2 x {member} mm. Give either inner_mm or outer_mm.")),
+        artwork={"type": "object", "additionalProperties": False, "required": ["size_mm"],
+                 "description": ("Frame type: the artwork panel the window is built around, held in a back frame "
+                                 "cut from the same board one stock thickness behind the fixed frame. The outer "
+                                 f"frame is the panel less two covers plus 2 x {member} mm. Give artwork instead "
+                                 "of outer_mm or inner_mm; it cannot be combined with picture or with "
+                                 "hanok_A3_portrait_R3."),
+                 "properties": {
+                     "size_mm": _pair("number", 1, 3000, "Panel [width, height] in mm; A2 portrait is [420, 594]."),
+                     "thickness_mm": {"type": "number", "minimum": 0.1, "maximum": 60,
+                                      "description": f"Panel thickness in mm, default {art['thickness_mm']}. The "
+                                                     "spacer and the panel together must fit the board thickness."},
+                     "cover_mm": {"type": "number", "minimum": 0.1, "maximum": 500,
+                                  "description": f"How much of the panel edge the fixed frame covers on every side "
+                                                 f"in mm, default {art['cover_mm']}. It must exceed fit_mm, and what "
+                                                 "is left of the frame member is the back frame."},
+                     "fit_mm": {"type": "number", "minimum": 0, "maximum": 50,
+                                "description": f"Clearance between the panel and the back frame on every side in "
+                                               f"mm, default {art['fit_mm']}."},
+                     "spacer_mm": {"type": "number", "minimum": 0, "maximum": 60,
+                                   "description": f"Procured spacer between the lattice and the panel in mm, "
+                                                  f"default {art['spacer_mm']}; 0 leaves the panel against the "
+                                                  "lattice."}}},
         lattice_per_leaf=_pair("integer", 0, 32, ("Lattice bars per leaf [vertical, horizontal]; 0 is allowed in "
                                                   "either direction. The R3 window uses [2, 4].")),
         preset={"type": "string", "enum": list(PRESETS),
@@ -252,6 +296,18 @@ def canonical_request(args, meta):
     for key in ("outer_mm", "inner_mm", "lattice_per_leaf", "stock_mm"):
         if key in request:
             request[key] = numbers(request[key])
+    if isinstance(request.get("artwork"), dict):
+        # Written the way the form writes it: the panel size always, and a field only when it
+        # differs from the default, so both interfaces give one design one package_id.
+        artwork = dict(request["artwork"])
+        if "size_mm" in artwork:
+            artwork["size_mm"] = numbers(artwork["size_mm"])
+        for key, value in meta["artwork_defaults"].items():
+            if key in artwork and whole(artwork[key]) == value:
+                del artwork[key]
+            elif key in artwork:
+                artwork[key] = whole(artwork[key])
+        request["artwork"] = artwork
     preset = request.get("preset", meta["default_preset"])
     if request.get("preset") == meta["default_preset"]:
         del request["preset"]
@@ -276,10 +332,11 @@ def _png_size(data):
     return list(struct.unpack(">II", data[16:24]))  # width and height from the IHDR chunk
 
 
-BRIEF = ("package_id", "created", "type", "hinge_side", "preset", "size", "lattice_per_leaf", "picture", "checks",
-         "validation_status", "manufacturing_status", "error")
+BRIEF = ("package_id", "created", "type", "hinge_side", "preset", "size", "lattice_per_leaf", "picture",
+         "artwork", "checks", "validation_status", "manufacturing_status", "error")
 DETAIL = ("package_id", "created", "revision", "type", "hinge_side", "preset", "size", "lattice_per_leaf", "picture",
-          "stock_mm", "parts", "pockets", "dogbones", "checks", "validation_status", "manufacturing_status")
+          "artwork", "stock_mm", "parts", "pockets", "dogbones", "checks", "validation_status",
+          "manufacturing_status")
 
 
 class Toolbox:
@@ -379,9 +436,9 @@ class Toolbox:
         meta = self.service.meta()
         return ToolResult(dict(
             generator=dict(name="hanok-window-generator", version=meta["app_version"], engine=meta["engine_version"]),
-            makes=("CNC packages for Korean hanok lattice windows: one DXF with every part laid out on one stock "
-                   "board, five PNG drawings, four CSV manifests and a validation report that re-reads the saved DXF "
-                   "(70 checks)."),
+            makes=("CNC packages for Korean hanok lattice windows, plain or built around an artwork panel: one "
+                   "DXF with every part laid out on one stock board, five PNG drawings, four CSV manifests and a "
+                   "validation report that re-reads the saved DXF (70 checks)."),
             workflow=["check_design: validate a request without writing files. If it names a rule, apply one value "
                       "from suggestion (or follow hint) and check again; another rule may come next.",
                       "build_package: build the same request (a few seconds). The same request gives the same "
@@ -393,12 +450,15 @@ class Toolbox:
                    "stock_mm is [length, width, thickness]."),
             size_basis=dict(outer_mm="finished outer frame",
                             inner_mm=("clear opening inside the fixed frame; outer = inner + 2 x "
-                                      f"{format_mm(meta['frame_member_mm'])} mm")),
+                                      f"{format_mm(meta['frame_member_mm'])} mm"),
+                            artwork=("frame type: the artwork panel the frame is built around; outer = panel - 2 x "
+                                     f"cover + 2 x {format_mm(meta['frame_member_mm'])} mm, and a back frame cut "
+                                     "from the same board holds the panel one stock thickness behind the frame")),
             presets=[dict(id=p["id"], window_types=p["types"], default_picture=p["picture"],
                           min_leaf_height_to_width=p["min_leaf_ratio"], default_stock_mm=p["stock_mm"],
                           edge_margin_mm=p["edge_margin_mm"], part_gap_mm=p["part_gap_mm"]) for p in meta["presets"]],
             defaults=dict(preset=meta["default_preset"], stock_mm=meta["stock_mm"],
-                          picture_margin_mm=meta["picture_margin_mm"]),
+                          picture_margin_mm=meta["picture_margin_mm"], artwork_mm=meta["artwork_defaults"]),
             limits=meta["limits"], picture_sizes_mm=meta["picture_sizes"], examples=EXAMPLES,
             statuses=dict(
                 RESOLVED_NOT_DXF_VALIDATED="check_design passed; only build_package re-reads and checks the saved DXF.",
@@ -418,7 +478,8 @@ class Toolbox:
             size=body["size"], leaf_mm=derived["leaf_width_height"], leaf_opening_mm=derived["leaf_opening"],
             lattice=dict(per_leaf=derived["lattice_per_leaf"], cell_mm=derived["lattice_cell"],
                          crossings_total=derived["crossings_total"]),
-            picture=body["assembly"]["picture"], totals=derived["totals"], part_counts=derived["part_counts"],
+            picture=body["assembly"]["picture"], artwork=body["assembly"]["artwork"],
+            totals=derived["totals"], part_counts=derived["part_counts"],
             board=dict(stock_mm=nest["stock_mm"], usable_mm=nest["usable_mm"], used_mm=nest["used_mm"]),
             same_design_packages=body["same_revision"],
             next="build_package with the same request builds the package and runs every check on the saved DXF."))

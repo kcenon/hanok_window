@@ -16,6 +16,9 @@ from hanok_generator.jobs import run_job
 from hanok_generator.llm import FORMATS, Toolbox
 from hanok_generator.llm.mcp import PROTOCOL_VERSIONS
 from hanok_generator.llm.tools import DRAWINGS, EXAMPLES, MAX_TEXT, canonical_request
+
+ARTWORK = {"type": "double", "lattice_per_leaf": [2, 4], "preset": "standard_4x8_v1",
+           "artwork": {"size_mm": [420, 594]}}
 from hanok_generator.package import source_files
 
 ROOT = Path(__file__).parent.parent
@@ -100,6 +103,11 @@ class ToolboxTests(unittest.TestCase):
                 for keyword in ('"oneOf"', '"anyOf"', '"allOf"', '"prefixItems"', '"if"', '"$ref"'):
                     self.assertNotIn(keyword, text)
         check = mcp[1]
+        # The panel is a size basis a model can pick, with every field described.
+        panel = check["inputSchema"]["properties"]["artwork"]
+        self.assertEqual(set(panel["properties"]), {"size_mm", "thickness_mm", "cover_mm", "fit_mm", "spacer_mm"})
+        self.assertEqual(panel["required"], ["size_mm"])
+        self.assertIn("cannot be combined with picture", panel["description"])
         self.assertEqual(self.box.definitions("openai")[1], {"type": "function", "function": dict(
             name="check_design", description=check["description"], parameters=check["inputSchema"], strict=False)})
         self.assertEqual(self.box.definitions("openai-responses")[1], dict(
@@ -134,6 +142,13 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual(canonical_request(dict(board, stock_mm=[2400.0, 1200, 20]), meta), board)
         for kept in (dict(board, preset="standard_v1", stock_mm=[2400, 1200, 20]), dict(board, stock_mm=[1220, 900, 20])):
             self.assertEqual(canonical_request(kept, meta)["stock_mm"], kept["stock_mm"])
+        # A frame-type request is written the same way: the panel size always, and a panel field
+        # only when it differs from the default.
+        spelled_panel = dict(ARTWORK, artwork=dict(size_mm=[420.0, 594], thickness_mm=3.0, cover_mm=8, fit_mm=1,
+                                                   spacer_mm=3), stock_mm=[2400, 1200, 20])
+        self.assertEqual(canonical_request(spelled_panel, meta), ARTWORK)
+        changed = canonical_request(dict(ARTWORK, artwork=dict(size_mm=[420, 594], cover_mm=12.0)), meta)
+        self.assertEqual(changed["artwork"], {"size_mm": [420, 594], "cover_mm": 12})
         # describe_generator names that default board for each preset.
         presets = {p["id"]: p for p in self.box.call("describe_generator").data["presets"]}
         for name, want in (("standard_4x8_v1", [[2400, 1200, 20], 10, 12]), ("standard_v1", [[1220, 900, 20], 20, 12])):
@@ -155,6 +170,37 @@ class ToolboxTests(unittest.TestCase):
         hinge = self.box.call("check_design", dict(EXAMPLES["double_600_800"], hinge_side="left"))
         self.assertEqual((hinge.is_error, hinge.data["rule_id"]), (True, "input.hinge_side"))
         self.assertIn("double window must not have hinge_side", hinge.data["hint"])
+
+    def test_check_design_reports_the_panel_and_its_rules(self):
+        panel = self.box.call("check_design", ARTWORK)
+        self.assertFalse(panel.is_error, panel.data)
+        self.assertEqual(panel.data["size"]["basis"], "artwork")
+        self.assertEqual(panel.data["artwork"],
+                         dict(size_mm=[420, 594], sheet=[32, 32, 452, 626], cover_mm=8, fit_mm=1, spacer_mm=3,
+                              thickness_mm=3, back_frame_member_mm=31, back_frame_opening_mm=[422, 596]))
+        self.assertEqual(panel.data["totals"]["parts"], 28)
+        self.assertIsNone(self.box.call("check_design", EXAMPLES["double_r3"]).data["artwork"])
+        described = self.box.call("describe_generator").data
+        self.assertIn("artwork", described["size_basis"])
+        self.assertEqual(described["defaults"]["artwork_mm"],
+                         {"thickness_mm": 3, "cover_mm": 8, "fit_mm": 1, "spacer_mm": 3})
+        # Each refusal carries the rule, the numbers and a fix a model can act on.
+        for change, rule, words in ((dict(size_mm=[420, 594], cover_mm=31), "artwork.back_member_width", "cover"),
+                                    (dict(size_mm=[420, 594], thickness_mm=18), "artwork.depth_within_stock", "spacer"),
+                                    (dict(size_mm=[420, 594], cover_mm=1), "artwork.cover_hides_edge", "fit")):
+            with self.subTest(rule=rule):
+                refused = self.box.call("check_design", dict(ARTWORK, artwork=change))
+                self.assertTrue(refused.is_error, refused.data)
+                self.assertEqual((refused.data["rule_id"], refused.data["where"]), (rule, "artwork"))
+                self.assertIn(words, refused.data["hint"])
+                self.assertTrue(refused.data["suggestion"]["artwork"], refused.data)
+        for extra, rule in ((dict(picture={"size_mm": [297, 420]}), "input.artwork_picture"),
+                            (dict(preset="hanok_A3_portrait_R3"), "input.preset_artwork"),
+                            (dict(outer_mm=[484, 658]), "input.size_basis")):
+            with self.subTest(rule=rule):
+                refused = self.box.call("check_design", dict(ARTWORK, **extra))
+                self.assertEqual((refused.is_error, refused.data["rule_id"]), (True, rule))
+                self.assertTrue(refused.data["hint"])
 
     def test_a_model_can_follow_a_suggestion(self):
         wide = self.box.call("check_design", dict(EXAMPLES["double_r3"], outer_mm=[600, 586]))

@@ -81,6 +81,18 @@ def request(kind="double", bars=(2, 4), side=None, **changes):
     return value
 
 
+def artwork(bars=(2, 4), **panel):
+    """A frame-type request: the A2 panel of #15 on a 4 x 8 board, with panel fields changed."""
+    return dict(type="double", lattice_per_leaf=list(bars), preset="standard_4x8_v1",
+                artwork=dict({"size_mm": [420, 594]}, **panel))
+
+
+ARTWORK = artwork()
+# Suggested panel bounds name the field of artwork they change; the sides are width/height.
+ARTWORK_BOUNDS = {"cover_at_most": "cover_mm", "cover_at_least": "cover_mm", "fit_at_most": "fit_mm",
+                  "thickness_at_most": "thickness_mm", "spacer_at_most": "spacer_mm"}
+
+
 def serve(server):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
@@ -159,6 +171,11 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual((meta["default_preset"], meta["stock_mm"], meta["frame_member_mm"]), ("standard_v1", [1220, 900, 20], 40))
         self.assertEqual(meta["example"], R3)
         self.assertEqual((meta["limits"]["size_mm"], meta["limits"]["lattice"]), ([1, 3000], [0, 32]))
+        # The panel defaults and ranges come from the schema, so the form can fill and check them.
+        self.assertEqual(meta["artwork_defaults"], {"thickness_mm": 3, "cover_mm": 8, "fit_mm": 1, "spacer_mm": 3})
+        self.assertEqual(meta["limits"]["artwork_mm"], [1, 3000])
+        self.assertEqual(meta["limits"]["artwork_fields"],
+                         {"thickness_mm": [0.1, 60], "cover_mm": [0.1, 500], "fit_mm": [0, 50], "spacer_mm": [0, 60]})
 
     def test_preview_matches_cli_resolve(self):
         for name, path in EXAMPLE_FILES.items():
@@ -189,6 +206,27 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual((status, n["stock_mm"], n["margin_mm"], n["usable_mm"], n["used_mm"], n["parts"][0]["rect"]),
                          (200, [2400, 1200, 20], 10, [2380, 1180], [2353, 168], [10, 10, 596, 50]))
 
+    def test_preview_draws_the_artwork_panel_and_its_back_frame(self):
+        # A frame-type request resolves like any other; the page needs the panel rectangle and
+        # the back frame the engine already lays out, so it can draw what sits behind the frame.
+        status, _, body = self.call("POST", "/api/preview", ARTWORK)
+        self.assertEqual(status, 200, body)
+        self.assertEqual(body["size"], dict(basis="artwork", requested_mm=[420, 594], outer_mm=[484, 658],
+                                            inner_mm=[404, 578], frame_member_mm=40))
+        parts = body["assembly"]["parts"]
+        back = [p for p in parts if p["id"][0] == "B"]
+        self.assertEqual(len(parts), 28)
+        self.assertEqual([(p["id"], p["kind"], p["family"], p["group"]) for p in back],
+                         [("B01-1", "B01", "BACK_FRAME", "FIXED"), ("B01-2", "B01", "BACK_FRAME", "FIXED"),
+                          ("B02-1", "B02", "BACK_FRAME", "FIXED"), ("B02-2", "B02", "BACK_FRAME", "FIXED")])
+        self.assertEqual(body["assembly"]["artwork"],
+                         dict(size_mm=[420, 594], sheet=[32, 32, 452, 626], cover_mm=8, fit_mm=1, spacer_mm=3,
+                              thickness_mm=3, back_frame_member_mm=31, back_frame_opening_mm=[422, 596]))
+        self.assertIsNone(body["assembly"]["picture"])
+        self.assertIn("BACK_FRAME", {p["family"] for p in body["nesting"]["parts"]})
+        # Every other design says so plainly, so the page never draws a panel that is not there.
+        self.assertIsNone(self.call("POST", "/api/preview", R3)[2]["assembly"]["artwork"])
+
     def test_rule_errors_name_the_input_to_fix(self):
         cases = [
             ("input.range", "size", request(outer_mm=[0, 586]), "outer_mm[0]"),
@@ -204,6 +242,14 @@ class WebApiTests(unittest.TestCase):
             ("nesting.part_fits_stock", "stock", request(outer_mm=[900, 1500]), None),
             ("nesting.board_width", "stock", request(stock_mm=[1220, 150, 20]), None),
             ("nesting.part_fits_stock", "stock", request(outer_mm=[2000, 2381], bars=(4, 10), preset="standard_4x8_v1"), None),
+            # A frame-type request: the panel group holds every value these rules name.
+            ("artwork.cover_hides_edge", "artwork", artwork(cover_mm=1), None),
+            ("artwork.back_member_width", "artwork", artwork(cover_mm=31), None),
+            ("artwork.depth_within_stock", "artwork", artwork(thickness_mm=18), None),
+            ("input.artwork", "artwork", artwork(typo=1), None),
+            ("input.preset_artwork", "preset", dict(ARTWORK, preset="hanok_A3_portrait_R3"), None),
+            ("input.artwork_picture", "picture", dict(ARTWORK, picture=dict(size_mm=[297, 420])), None),
+            ("input.size_basis", "size", dict(ARTWORK, outer_mm=[484, 658]), None),
         ]
         for rule, group, data, field in cases:
             with self.subTest(rule=rule, data=str(data)):
@@ -241,13 +287,17 @@ class WebApiTests(unittest.TestCase):
                     changed = json.loads(json.dumps(data))
                     if key in ("outer_mm", "inner_mm"):
                         changed[key][bound.startswith("height")] = amount
+                    elif key == "artwork" and bound in ARTWORK_BOUNDS:
+                        changed["artwork"][ARTWORK_BOUNDS[bound]] = amount
+                    elif key == "artwork":
+                        changed["artwork"]["size_mm"][bound.startswith("height")] = amount
                     elif key == "picture" and bound == "margin_at_most":
                         changed["picture"]["margin_mm"] = amount
                     elif key == "picture":
                         changed["picture"]["size_mm"][bound.startswith("height")] = amount
                     else:
                         board = list(boards[data.get("preset", meta["default_preset"])])
-                        changed.setdefault("stock_mm", board)[bound.startswith("width")] = amount
+                        changed.setdefault("stock_mm", board)[{"length": 0, "width": 1, "thickness": 2}[bound.split("_")[0]]] = amount
                     yield f"{key}.{bound}", changed
 
         cases = [
@@ -261,6 +311,13 @@ class WebApiTests(unittest.TestCase):
             ("nesting.part_fits_stock", request(outer_mm=[900, 1500])),
             ("nesting.part_fits_stock", request(outer_mm=[2000, 2381], bars=(4, 10), preset="standard_4x8_v1")),
             ("nesting.board_width", request(stock_mm=[1220, 150, 20])),
+            # The frame-type rules, and a size rule answered in the panel field. The size search
+            # has to move the panel with the frame, or artwork.covers_inner masks every trial and
+            # the suggested size does not clear the rule.
+            ("artwork.cover_hides_edge", artwork(cover_mm=1)),
+            ("artwork.back_member_width", artwork(cover_mm=31)),
+            ("artwork.depth_within_stock", artwork(thickness_mm=18)),
+            ("lattice.positive_gap", artwork(bars=(6, 4), size_mm=[200, 300])),
         ]
         # Every suggested value, applied on its own, makes the engine stop reporting that rule.
         for rule, data in cases:
@@ -274,6 +331,15 @@ class WebApiTests(unittest.TestCase):
                     self.assertTrue(status == 200 or again["rule_id"] != rule, (what, changed, again.get("details")))
         # An inner-size request gets inner sizes back.
         self.assertEqual(set(self.call("POST", "/api/preview", cases[3][1])[2]["suggestion"]), {"inner_mm"})
+        # A frame-type request is answered in artwork: panel fields for the panel rules, and the
+        # panel size for a rule about the window.
+        depth = self.call("POST", "/api/preview", artwork(thickness_mm=18))[2]["suggestion"]
+        self.assertEqual(depth, {"artwork": {"thickness_at_most": 17, "spacer_at_most": 2},
+                                 "stock_mm": {"thickness_at_least": 21}})
+        self.assertEqual(self.call("POST", "/api/preview", artwork(cover_mm=31))[2]["suggestion"],
+                         {"artwork": {"cover_at_most": 29}})
+        bars = self.call("POST", "/api/preview", artwork(bars=(6, 4), size_mm=[200, 300]))[2]["suggestion"]
+        self.assertEqual((set(bars), set(bars["artwork"])), ({"vertical_per_leaf", "artwork"}, {"width_at_least"}))
 
     @unittest.skipUnless(shutil.which("node"), "node is not installed")
     def test_page_words_the_suggested_values(self):
@@ -284,7 +350,8 @@ for await (const chunk of process.stdin) input += chunk;
 process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeError(body).text)));
 """
         bodies = [self.call("POST", "/api/preview", data)[2] for data in (
-            dict(R3, outer_mm=[600, 586]), request(outer_mm=[463, 200]), request(stock_mm=[1220, 150, 20]))]
+            dict(R3, outer_mm=[600, 586]), request(outer_mm=[463, 200]), request(stock_mm=[1220, 150, 20]),
+            artwork(cover_mm=31), artwork(thickness_mm=18))]
         with tempfile.TemporaryDirectory() as tmp:
             shutil.copy(STATIC / "messages.js", tmp)
             Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
@@ -292,13 +359,17 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
             p = subprocess.run(["node", "run.js"], cwd=tmp, input=json.dumps(bodies), capture_output=True,
                                text=True, encoding="utf-8", timeout=60)
         self.assertEqual(p.returncode, 0, p.stderr)
-        aspect, hinge, board = json.loads(p.stdout)
+        aspect, hinge, board, member, depth = json.loads(p.stdout)
         size = bodies[0]["suggestion"]["outer_mm"]
         self.assertIn(f"외경 가로를 {size['width_at_most']} mm 이하로 줄이거나 외경 세로를 "
                       f"{size['height_at_least']} mm 이상으로 늘리세요.", aspect)
         self.assertIn(f"외경 세로를 {bodies[1]['suggestion']['outer_mm']['height_at_least']} mm 이상으로 늘리세요.", hinge)
         self.assertIn(f"원판 폭을 {bodies[2]['suggestion']['stock_mm']['width_at_least']} mm 이상으로 늘리거나 "
                       "창살을 줄이세요.", board)
+        # The panel rules are worded from the same suggestion, in the panel's own words.
+        self.assertIn("덮는 폭을 29 mm 이하로 줄이세요.", member)
+        self.assertIn("화판 두께를 17 mm 이하로 줄이거나 스페이서를 2 mm 이하로 줄이거나 "
+                      "원판 두께를 21 mm 이상으로 늘리세요.", depth)
 
     def test_request_limits_and_same_origin(self):
         port = self.server.port
@@ -472,10 +543,19 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         requests = [*EXAMPLES.values(), dict(R3, picture=None),
                     request(outer_mm=[600, 800], picture=dict(size_mm=[297, 420], margin_mm=10), stock_mm=[1220, 900, 18]),
                     dict(type="single", hinge_side="right", inner_mm=[340.3, 820.7], lattice_per_leaf=[2, 6]),
-                    request(preset="standard_4x8_v1"), request(preset="standard_4x8_v1", stock_mm=[1220, 900, 20])]
+                    request(preset="standard_4x8_v1"), request(preset="standard_4x8_v1", stock_mm=[1220, 900, 20]),
+                    # A frame-type request: the panel size alone, and every panel field changed.
+                    ARTWORK, artwork(thickness_mm=10, cover_mm=12, fit_mm=2, spacer_mm=5),
+                    dict(type="single", hinge_side="left", lattice_per_leaf=[2, 6], artwork=dict(size_mm=[297, 420]))]
         typed = dict(type="double", hinge="left", basis="outer", size=["463.0", " 586 "], lattice=["2", "4"],
                      preset="hanok_A3_portrait_R3", picture=dict(on=True, w="297", h="420", margin="10"),
-                     stock=["1220", "900", "20"])
+                     artwork=dict(t="3", c="8", f="1", s="3"), stock=["2400", "1200", "20"])
+        # The panel group is typed the same way: default fields are left out of the request.
+        panel = dict(typed, basis="artwork", size=["420", "594"], preset="standard_4x8_v1",
+                     picture=dict(on=False, w="297", h="420", margin="10"))
+        # A picture the form still holds from an earlier design never reaches a frame-type
+        # request: artwork and picture together are refused (input.artwork_picture).
+        panel_picture = dict(panel, picture=dict(on=True, w="297", h="420", margin="10"))
         # Changing the preset: the R3 example's untouched board becomes the 4 x 8 board, an edited board
         # stays, and the 4 x 8 board goes back to 1220 x 900 x 20 under standard_v1.
         switches = [(typed, "standard_4x8_v1"), (dict(typed, stock=["1500", "900", "20"]), "standard_4x8_v1"),
@@ -486,13 +566,16 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
             Path(tmp, "package.json").write_text('{"type": "module"}\n', encoding="utf-8")
             Path(tmp, "run.js").write_text(NODE_RUNNER, encoding="utf-8")
             p = subprocess.run(["node", "run.js"], cwd=tmp,
-                               input=json.dumps(dict(meta=meta, requests=requests, forms=[typed], switches=switches)),
+                               input=json.dumps(dict(meta=meta, requests=requests, forms=[typed, panel, panel_picture],
+                                                     switches=switches)),
                                capture_output=True, text=True, encoding="utf-8", timeout=60)
         self.assertEqual(p.returncode, 0, p.stderr)
         out = json.loads(p.stdout)
         exact = lambda value: json.dumps(value, sort_keys=True)  # 463 and 463.0 differ here
         self.assertEqual([exact(v) for v in out["requests"]], [exact(v) for v in requests])
-        self.assertEqual(exact(out["forms"][0]), exact(R3))
+        self.assertEqual(exact(out["forms"][0]), exact(dict(R3, stock_mm=[2400, 1200, 20])))
+        self.assertEqual(exact(out["forms"][1]), exact(ARTWORK))
+        self.assertEqual(exact(out["forms"][2]), exact(ARTWORK))
         self.assertEqual(out["switches"], [["2400", "1200", "20"], ["1500", "900", "20"], ["1220", "900", "20"]])
 
 

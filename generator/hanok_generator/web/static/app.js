@@ -5,8 +5,12 @@ import { setupPackages, showHistory, showPackage } from "./packages.js";
 import { SIDE, TYPE, describeBuildFailure, describeError, fmt, josa, pair, presetText } from "./messages.js";
 
 const STORE_KEY = "hanok-web.form.v1";
-const ERROR_BOXES = ["type", "size", "lattice", "preset", "picture", "stock", "request", "nest"];
-const INPUT_IDS = ["size-w", "size-h", "lat-v", "lat-h", "pic-w", "pic-h", "pic-m", "stock-l", "stock-w", "stock-t", "preset"];
+const ERROR_BOXES = ["type", "size", "artwork", "lattice", "preset", "picture", "stock", "request", "nest"];
+const INPUT_IDS = ["size-w", "size-h", "art-t", "art-c", "art-f", "art-s", "lat-v", "lat-h", "pic-w", "pic-h",
+  "pic-m", "stock-l", "stock-w", "stock-t", "preset"];
+// Panel field -> request key and input id, in the order the group shows them.
+const ARTWORK_FIELDS = [["t", "thickness_mm", "art-t"], ["c", "cover_mm", "art-c"], ["f", "fit_mm", "art-f"],
+  ["s", "spacer_mm", "art-s"]];
 const ACTIVE = ["submitting", "queued", "running"];
 const STATUS = {
   checking: ["st-wait", "◌ 확인 중"],
@@ -42,8 +46,11 @@ const presetInfo = (meta, id) => meta.presets.find((p) => p.id === id);
 
 export function formFromRequest(request, meta) {
   const preset = typeof request.preset === "string" ? request.preset : meta.default_preset;
-  const basis = "inner_mm" in request ? "inner" : "outer";
-  const size = Array.isArray(request[`${basis}_mm`]) ? request[`${basis}_mm`] : [];
+  // A frame-type request names the panel; the frame is built around it.
+  const artwork = request.artwork && typeof request.artwork === "object" ? request.artwork : null;
+  const basis = artwork ? "artwork" : "inner_mm" in request ? "inner" : "outer";
+  const given = artwork ? artwork.size_mm : request[`${basis}_mm`];
+  const size = Array.isArray(given) ? given : [];
   const lattice = Array.isArray(request.lattice_per_leaf) ? request.lattice_per_leaf : [];
   const picture = "picture" in request ? request.picture : presetInfo(meta, preset)?.picture ?? null;
   const stock = Array.isArray(request.stock_mm) ? request.stock_mm : presetInfo(meta, preset)?.stock_mm ?? meta.stock_mm;
@@ -61,6 +68,8 @@ export function formFromRequest(request, meta) {
       h: text(picture?.size_mm?.[1] ?? a3[1]),
       margin: text(picture?.margin_mm ?? meta.picture_margin_mm),
     },
+    artwork: Object.fromEntries(ARTWORK_FIELDS.map(([slot, field]) =>
+      [slot, text(artwork?.[field] ?? meta.artwork_defaults[field])])),
     stock: [text(stock[0]), text(stock[1]), text(stock[2])],
   };
 }
@@ -70,13 +79,28 @@ export function compose(form, meta) {
   // the defaults, so the same design gives the same package_id as the CLI.
   const request = { type: form.type };
   if (form.type === "single") request.hinge_side = form.hinge;
-  request[form.basis === "inner" ? "inner_mm" : "outer_mm"] = form.size.map(number);
+  if (form.basis === "artwork") {
+    // The panel size always, and a panel field only when it differs from the default, so the
+    // same design gives the same package_id from the page, the CLI and the tools.
+    const artwork = { size_mm: form.size.map(number) };
+    for (const [slot, field] of ARTWORK_FIELDS) {
+      const value = number(form.artwork[slot]);
+      if (key(value) !== key(meta.artwork_defaults[field])) artwork[field] = value;
+    }
+    request.artwork = artwork;
+  } else {
+    request[form.basis === "inner" ? "inner_mm" : "outer_mm"] = form.size.map(number);
+  }
   request.lattice_per_leaf = form.lattice.map(number);
   if (form.preset !== meta.default_preset) request.preset = form.preset;
   const picture = form.picture.on
     ? { size_mm: [number(form.picture.w), number(form.picture.h)], margin_mm: number(form.picture.margin) }
     : null;
-  if (key(picture) !== key(presetInfo(meta, form.preset)?.picture ?? null)) request.picture = picture;
+  // The panel takes the picture's place, so a frame-type request leaves the picture out
+  // whatever the form still holds from an earlier design; sending both is refused.
+  if (form.basis !== "artwork" && key(picture) !== key(presetInfo(meta, form.preset)?.picture ?? null)) {
+    request.picture = picture;
+  }
   const stock = form.stock.map(number);
   if (key(stock) !== key(presetInfo(meta, form.preset)?.stock_mm ?? meta.stock_mm)) request.stock_mm = stock;
   return request;
@@ -145,6 +169,7 @@ function readForm() {
     lattice: [$("lat-v").value, $("lat-h").value],
     preset: $("preset").value,
     picture: { on: radio("picture") === "on", w: $("pic-w").value, h: $("pic-h").value, margin: $("pic-m").value },
+    artwork: Object.fromEntries(ARTWORK_FIELDS.map(([slot, , id]) => [slot, $(id).value])),
     stock: [$("stock-l").value, $("stock-w").value, $("stock-t").value],
   };
 }
@@ -158,6 +183,7 @@ function writeForm(form) {
   [$("lat-v").value, $("lat-h").value] = form.lattice;
   $("preset").value = form.preset;
   [$("pic-w").value, $("pic-h").value, $("pic-m").value] = [form.picture.w, form.picture.h, form.picture.margin];
+  for (const [slot, , id] of ARTWORK_FIELDS) $(id).value = form.artwork[slot];
   [$("stock-l").value, $("stock-w").value, $("stock-t").value] = form.stock;
 }
 
@@ -174,7 +200,8 @@ function restore() {
     const form = JSON.parse(localStorage.getItem(STORE_KEY) ?? "null");
     const strings = (list, n) => Array.isArray(list) && list.length === n && list.every((v) => typeof v === "string");
     if (form && typeof form.type === "string" && typeof form.preset === "string" && strings(form.size, 2)
-        && strings(form.lattice, 2) && strings(form.stock, 3) && form.picture && typeof form.picture.on === "boolean") {
+        && strings(form.lattice, 2) && strings(form.stock, 3) && form.picture && typeof form.picture.on === "boolean"
+        && form.artwork && ARTWORK_FIELDS.every(([slot]) => typeof form.artwork[slot] === "string")) {
       return form;
     }
   } catch {
@@ -209,16 +236,19 @@ function onFormInput(event) {
 
 function convertBasis(to) {
   // Keep the same window (D5): take the other basis from the server's last answer for
-  // this exact input, else shift by the frame members the server reported in meta.
+  // this exact input, else shift by what the bases differ by. outer = inner + 2 x member
+  // and outer = panel - 2 x cover + 2 x member, so each basis is the outer size plus an offset.
   const form = state.form;
   const p = state.preview;
+  const member = state.meta.frame_member_mm;
+  const cover = number(form.artwork.c);
+  const offset = { outer: 0, inner: -2 * member, artwork: 2 * (typeof cover === "number" ? cover : 0) - 2 * member };
   let values = null;
   if (p?.size && state.previewKey === key(compose(form, state.meta))) {
-    values = to === "inner" ? p.size.inner_mm : p.size.outer_mm;
+    values = to === "inner" ? p.size.inner_mm : p.size.outer_mm.map((v) => v + offset[to]);
   } else {
     const sizes = form.size.map(number);
-    const shift = (to === "inner" ? -2 : 2) * state.meta.frame_member_mm;
-    if (sizes.every((v) => typeof v === "number")) values = sizes.map((v) => v + shift);
+    if (sizes.every((v) => typeof v === "number")) values = sizes.map((v) => v - offset[form.basis] + offset[to]);
   }
   if (values) [$("size-w").value, $("size-h").value] = values.map((v) => String(Math.round(v * 1e6) / 1e6));
 }
@@ -249,15 +279,20 @@ function step(id, delta) {
 function refreshForm() {
   const f = state.form;
   const meta = state.meta;
+  const art = f.basis === "artwork";
   $("hinge-row").hidden = f.type !== "single";
+  $("g-artwork").hidden = !art;
+  for (const [, , id] of ARTWORK_FIELDS) $(id).disabled = !art;
   for (const option of $("preset").options) option.disabled = !presetInfo(meta, option.value)?.types.includes(f.type);
-  for (const id of ["pic-w", "pic-h", "pic-m"]) $(id).disabled = !f.picture.on;
+  // A frame-type window has no picture: the panel takes its place, so the group is locked.
+  for (const radio of document.querySelectorAll('input[name="picture"]')) radio.disabled = art;
+  for (const id of ["pic-w", "pic-h", "pic-m"]) $(id).disabled = art || !f.picture.on;
   for (const chip of $("pic-chips").children) {
     const [w, hgt] = meta.picture_sizes[chip.dataset.size];
-    chip.disabled = !f.picture.on;
+    chip.disabled = art || !f.picture.on;
     chip.setAttribute("aria-pressed", String(f.picture.on && number(f.picture.w) === w && number(f.picture.h) === hgt));
   }
-  const basis = f.basis === "inner" ? "내경" : "외경";
+  const basis = { outer: "외경", inner: "내경", artwork: "화판" }[f.basis] ?? "외경";
   $("size-w").setAttribute("aria-label", `${basis} 가로 mm`);
   $("size-h").setAttribute("aria-label", `${basis} 세로 mm`);
   // One-line values shown on collapsed groups (narrow screens) and the stock fold.
@@ -265,7 +300,9 @@ function refreshForm() {
   $("cur-size").textContent = `${basis} ${f.size.join(" × ")}`;
   $("cur-lattice").textContent = `${f.lattice[0]} + ${f.lattice[1]}`;
   $("cur-preset").textContent = f.preset;
-  $("cur-picture").textContent = f.picture.on ? `${f.picture.w} × ${f.picture.h} · 여유 ${f.picture.margin}` : "없음";
+  $("cur-artwork").textContent = `두께 ${f.artwork.t} · 덮는 폭 ${f.artwork.c} · 여유 ${f.artwork.f} · 스페이서 ${f.artwork.s}`;
+  $("cur-picture").textContent = art ? "액자형 · 화판이 대신함"
+    : f.picture.on ? `${f.picture.w} × ${f.picture.h} · 여유 ${f.picture.margin}` : "없음";
   const thickness = number(f.stock[2]);
   $("cur-stock").textContent = `${f.stock.join(" × ")}${typeof thickness === "number" ? ` · 홈 깊이 ${fmt(thickness / 2)}` : ""}`;
   $("hint-type").textContent = state.note || (f.type === "single"
@@ -281,15 +318,23 @@ function refreshForm() {
 function renderHints() {
   const f = state.form;
   const size = state.preview?.size;
+  const artwork = state.preview?.assembly?.artwork;
   $("hint-size").textContent = f.basis === "inner"
     ? `내경은 고정틀 안쪽 치수(안목)입니다.${size ? ` 외경 ${pair(size.outer_mm)} mm = 내경 + 2 × ${fmt(size.frame_member_mm)}` : ""}`
-    : `외경은 완성된 바깥 치수입니다.${size ? ` 내경(고정틀 안목) ${pair(size.inner_mm)} mm` : ""}`;
+    : f.basis === "artwork"
+      ? `화판 크기입니다. 고정틀이 각 변을 덮으므로${size ? ` 외경 ${pair(size.outer_mm)} mm, 내경 ${pair(size.inner_mm)} mm입니다.` : " 외경은 화판 − 2 × 덮는 폭 + 2 × 고정틀 폭입니다."}`
+      : `외경은 완성된 바깥 치수입니다.${size ? ` 내경(고정틀 안목) ${pair(size.inner_mm)} mm` : ""}`;
   const d = state.previewOk ? state.preview.derived : null;
   const bars = d && d.lattice_per_leaf.some(Boolean);
   $("hint-lattice").textContent = !d ? "" : bars ? `빈칸 ${pair(d.lattice_cell)} mm · 교차 ${d.crossings_total}곳` : "창살 없음 · 개구부 전체가 한 칸입니다.";
-  $("hint-picture").textContent = d && f.picture.on
-    ? `그림 기준영역 ${pair(d.picture_region)} mm · 고정틀 뒤 별도 뒤판에 붙입니다.`
-    : "그림은 창짝이 아니라 고정틀 뒤 별도 뒤판에 붙입니다.";
+  $("hint-artwork").textContent = artwork
+    ? `뒤틀 폭 ${fmt(artwork.back_frame_member_mm)} mm · 뒤틀 안쪽 ${pair(artwork.back_frame_opening_mm)} mm · 화판은 고정틀 뒤 한 층에 들어갑니다. 스페이서·뒷판·걸이 철물은 별도 조달입니다.`
+    : "고정틀이 화판 가장자리를 덮고, 같은 원판에서 깎은 뒤틀 4개가 고정틀 뒤에서 화판을 잡습니다.";
+  $("hint-picture").textContent = f.basis === "artwork"
+    ? "액자형은 화판이 그림 자리를 대신하므로 그림을 함께 지정하지 않습니다."
+    : d && f.picture.on
+      ? `그림 기준영역 ${pair(d.picture_region)} mm · 고정틀 뒤 별도 뒤판에 붙입니다.`
+      : "그림은 창짝이 아니라 고정틀 뒤 별도 뒤판에 붙입니다.";
 }
 
 // ---- Preview ----
@@ -327,6 +372,11 @@ function render() {
   if (p?.assembly) drawElevation($("panel-elev"), p, { basis: state.form.basis, tip: state.tip });
   else if (!$("panel-elev").querySelector("svg")) $("panel-elev").replaceChildren(h("p", { class: "empty" }, "입력 오류를 고치면 정면도를 그립니다."));
   $("panel-elev").classList.toggle("stale", !p?.assembly);
+  // The legend names only what the drawing shows.
+  const artwork = Boolean(p?.assembly?.artwork);
+  for (const [id, on] of [["lg-back", artwork], ["lg-art", artwork], ["lg-nest-back", artwork], ["lg-pic", !artwork]]) {
+    $(id).hidden = !on;
+  }
   if (ok) drawNesting($("panel-nest"), p, { tip: state.tip });
   else if (!$("panel-nest").querySelector("svg")) $("panel-nest").replaceChildren(h("p", { class: "empty" }, "입력 오류를 고치면 원판 배치를 그립니다."));
   $("panel-nest").classList.toggle("stale", !ok);
@@ -374,9 +424,13 @@ function renderSummary() {
   if (!p) return;
   const d = p.derived;
   const basis = state.form.basis;
+  const art = p.assembly.artwork;
   const rows = [
     [`외경${basis === "outer" ? " (입력)" : ""}`, pair(p.size.outer_mm)],
     [`내경${basis === "inner" ? " (입력)" : ""}`, pair(p.size.inner_mm)],
+    ...(art ? [["화판 (입력)", `${pair(art.size_mm)} × ${fmt(art.thickness_mm)}`],
+               ["뒤틀 · 안쪽", `${fmt(art.back_frame_member_mm)} · ${pair(art.back_frame_opening_mm)}`],
+               ["덮는 폭 · 여유 · 스페이서", `${fmt(art.cover_mm)} · ${fmt(art.fit_mm)} · ${fmt(art.spacer_mm)}`]] : []),
     ["창짝", `${p.assembly.leaves.length} × ${pair(d.leaf_width_height)}`],
     ["개구부", pair(d.leaf_opening)],
     ["빈칸", pair(d.lattice_cell)],
@@ -503,7 +557,8 @@ function renderBuild() {
 // ---- Screens, notes and JSON files ----
 
 const VIEWS = ["design", "packages", "package"];
-const REQUEST_KEYS = ["schema_version", "type", "hinge_side", "outer_mm", "inner_mm", "lattice_per_leaf", "preset", "picture", "stock_mm"];
+const REQUEST_KEYS = ["schema_version", "type", "hinge_side", "outer_mm", "inner_mm", "artwork", "lattice_per_leaf",
+  "preset", "picture", "stock_mm"];
 
 function currentView() {
   return VIEWS.find((name) => !$(`view-${name}`).hidden) ?? "design";
@@ -557,15 +612,17 @@ async function importJson(file) {
   const notes = [`${josa(file.name, "을", "를")} 불러왔습니다.`];
   const ignored = Object.keys(data).filter((k) => !REQUEST_KEYS.includes(k));
   if (ignored.length) notes.push(`알 수 없는 항목 ${ignored.join(", ")}은(는) 무시했습니다.`);
-  if ("outer_mm" in data && "inner_mm" in data) notes.push("외경과 내경이 함께 있어 내경을 썼습니다.");
+  const bases = ["artwork", "inner_mm", "outer_mm"].filter((name) => name in data);
+  if (bases.length > 1) notes.push(`크기 기준이 여럿 있어 ${{ artwork: "화판", inner_mm: "내경", outer_mm: "외경" }[bases[0]]}을(를) 썼습니다.`);
   setForm(formFromRequest(data, state.meta));
   showNote(notes.join(" "));
 }
 
 function exportJson() {
   const request = compose(state.form, state.meta);
-  const basis = "inner_mm" in request ? "inner" : "outer";
-  const name = `hanok_${request.type}_${basis}_${request[`${basis}_mm`].join("x")}_${request.lattice_per_leaf.join("x")}.json`;
+  const basis = "artwork" in request ? "artwork" : "inner_mm" in request ? "inner" : "outer";
+  const size = basis === "artwork" ? request.artwork.size_mm : request[`${basis}_mm`];
+  const name = `hanok_${request.type}_${basis}_${size.join("x")}_${request.lattice_per_leaf.join("x")}.json`;
   const url = URL.createObjectURL(new Blob([`${JSON.stringify(request, null, 2)}\n`], { type: "application/json" }));
   const link = h("a", { href: url, download: name.replace(/[^\w.-]+/g, "_") });
   document.body.append(link);

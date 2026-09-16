@@ -36,14 +36,22 @@ THUMB_SIZE = (480, 1920)
 THUMB_CACHE = 120
 # Input group that shows an error: first by the request field it names, then by rule.
 FIELD_GROUPS = {"type": "type", "hinge_side": "type", "outer_mm": "size", "inner_mm": "size",
-                "lattice_per_leaf": "lattice", "preset": "preset", "picture": "picture", "stock_mm": "stock"}
+                "artwork": "artwork", "lattice_per_leaf": "lattice", "preset": "preset",
+                "picture": "picture", "stock_mm": "stock"}
 RULE_GROUPS = {"input.type": "type", "input.hinge_side": "type", "input.size_basis": "size",
                "input.preset": "preset", "input.preset_type": "preset", "input.picture": "picture",
                "input.stock_thickness": "stock", "opening.positive_size": "size",
                "picture.fits_width": "picture", "picture.fits_height": "picture",
                "lattice.positive_gap": "lattice", "leaf.aspect_ratio": "size",
                "hardware.reference_spacing": "size", "nesting.part_fits_stock": "stock",
-               "nesting.board_width": "stock"}
+               "nesting.board_width": "stock",
+               # A frame-type design: the panel group holds the size, the thickness, the cover,
+               # the fit and the spacer, so every rule about them points there. The two conflicts
+               # point at the field that has to go instead.
+               "input.artwork": "artwork", "input.preset_artwork": "preset",
+               "input.artwork_picture": "picture", "artwork.covers_inner": "artwork",
+               "artwork.cover_hides_edge": "artwork", "artwork.back_member_width": "artwork",
+               "artwork.depth_within_stock": "artwork"}
 
 
 def where(rule_id, details):
@@ -97,12 +105,22 @@ def assembly(params, derived):
         sx, sy = x0 + (rw - w) / 2, y0 + (rh - h) / 2
         picture = dict(size_mm=[w, h], margin_mm=pic["region_margin"],
                        region=[x0, y0, x0 + rw, y0 + rh], sheet=[sx, sy, sx + w, sy + h])
+    art, artwork = params.get("artwork"), None
+    if art:
+        # The panel sits behind the fixed frame, inside the back frame the parts list already
+        # carries (B01, B02). Its rectangle is measured the way the builder draws it.
+        x0, y0 = derived["artwork_x0"], derived["artwork_y0"]
+        w, h = art["sheet_width"], art["sheet_height"]
+        artwork = dict(size_mm=[w, h], sheet=[x0, y0, x0 + w, y0 + h],
+                       cover_mm=art["cover"], fit_mm=art["fit"], spacer_mm=art["spacer"],
+                       thickness_mm=art["thickness"], back_frame_member_mm=derived["back_member"],
+                       back_frame_opening_mm=[derived["back_inner_w"], derived["back_inner_h"]])
     return dict(width=derived["board_w"], height=derived["board_h"],
                 parts=[dict(id=q.part_id, kind=q.kind, family=q.family, group=q.group, axis=q.axis,
                             rect=[q.x0, q.y0, q.x1, q.y1]) for q in parts],
                 leaves=[dict(group=leaf.group, side=leaf.side, hinge_stile=leaf.hinge_stile,
                              handle_stile=leaf.handle_stile) for leaf in formats.leaves(params)],
-                picture=picture)
+                picture=picture, artwork=artwork)
 
 
 def nesting(params, spec):
@@ -128,11 +146,14 @@ def read_summary(package_id, folder):
     report = read_json(folder / "validation_report.json")
     manifest = read_json(folder / "package_manifest.json")
     window, lattice, picture, stock = params["window"], params["lattice"], params["picture"], params["stock"]
+    art = params.get("artwork")  # only a frame-type package has one
     return dict(package_id=package_id, created=created_at(folder), revision=params["revision"],
                 type=window["type"], hinge_side=window.get("hinge_side"), preset=window.get("preset", "standard_v1"),
                 size=size_of(params), lattice_per_leaf=[lattice["vertical_per_leaf"], lattice["horizontal_per_leaf"]],
                 picture=dict(size_mm=[picture["sheet_width"], picture["sheet_height"]],
                              margin_mm=picture["region_margin"]) if picture["enabled"] else None,
+                artwork=dict(size_mm=[art["sheet_width"], art["sheet_height"]], thickness_mm=art["thickness"],
+                             cover_mm=art["cover"], fit_mm=art["fit"], spacer_mm=art["spacer"]) if art else None,
                 stock_mm=[stock["length"], stock["width"], stock["thickness"]],
                 parts=report["parts_total"], pockets=report["nominal_pockets_total"],
                 dogbones=report["dogbone_reliefs_total"],
@@ -196,6 +217,7 @@ class Service:
                                 picture=dict(size_mm=PICTURE_SIZES["A3"]))).request
         props = schema["properties"]
         picture = props["picture"]["oneOf"][1]["properties"]
+        artwork = props["artwork"]["properties"]
 
         def span(item):
             return [item["minimum"], item["maximum"]]
@@ -204,11 +226,18 @@ class Service:
                     example=copy.deepcopy(EXAMPLE), presets=presets, default_preset=defaults["preset"],
                     stock_mm=defaults["stock_mm"], picture_margin_mm=defaults["picture"]["margin_mm"],
                     picture_sizes=PICTURE_SIZES, frame_member_mm=preset_file["frame"]["member_width"],
+                    # The panel defaults come from the schema, so the form and the tools show the
+                    # values resolve() fills in when a request leaves them out.
+                    artwork_defaults={key: artwork[key]["default"]
+                                      for key in ("thickness_mm", "cover_mm", "fit_mm", "spacer_mm")},
                     relief_radius_mm=preset_file["machining"]["relief_radius"],
                     limits=dict(size_mm=span(props["outer_mm"]["items"]),
                                 lattice=span(props["lattice_per_leaf"]["items"]),
                                 picture_mm=span(picture["size_mm"]["items"]), margin_mm=span(picture["margin_mm"]),
-                                stock_mm=[span(item) for item in props["stock_mm"]["prefixItems"]]),
+                                stock_mm=[span(item) for item in props["stock_mm"]["prefixItems"]],
+                                artwork_mm=span(artwork["size_mm"]["items"]),
+                                artwork_fields={key: span(artwork[key])
+                                                for key in ("thickness_mm", "cover_mm", "fit_mm", "spacer_mm")}),
                     schema=schema)
 
     def preview(self, data):
@@ -219,7 +248,8 @@ class Service:
             return 422, failure(exc.rule_id, exc.message, exc.details, stage="input")
         params = design.parameters
         body = dict(revision=params["revision"], request=design.request, size=size_of(params))
-        size_key = "inner_mm" if "inner_mm" in design.request else "outer_mm"
+        # The field the request gave its size in; suggestions come back in the same one.
+        size_key = next((key for key in ("inner_mm", "artwork") if key in design.request), "outer_mm")
         try:
             derived = generate_spec.derive(params)
         except ParameterError as exc:

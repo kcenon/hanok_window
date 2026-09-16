@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 
 HERE = Path(__file__).parent
-ROOTS = (HERE.parent / "hanok_generator", HERE)
+ROOTS = (HERE.parent / "hanok_generator", HERE.parent / "tools", HERE)
 
 
 def _mode(call, position):

@@ -113,12 +113,13 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 ```bash
 cd generator
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 5초
 ```
 
-네 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법은 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+다섯 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법, 세 운영체제의 패키지 바이트 비교는 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
 
 ## 라이선스
 

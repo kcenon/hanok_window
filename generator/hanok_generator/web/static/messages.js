@@ -299,6 +299,15 @@ export const DRAWINGS = [
   ["05_all_pockets_closeup.png", "05 전체 홈 확대"],
 ];
 
+// The DWG row: `dwg` in the package payload is web/dwg.py status().
+export function dwgText(info) {
+  if (!info?.available) {
+    return { label: "DWG 받기", note: "ODA File Converter가 이 컴퓨터에 없습니다. 설치하면 바로 받을 수 있습니다." };
+  }
+  const made = info.converter ? `변환기 ${info.converter}` : "변환기 설치됨";
+  return { label: "DWG 받기", note: `${info.release ?? "AutoCAD 2010"} 형식 · ${made} · 받을 때 변환하므로 패키지 파일에는 없습니다` };
+}
+
 export function bytes(n) {
   if (n < 1024) return `${n} B`;
   return n < 1e6 ? `${fmt(n / 1024, 1)} KB` : `${fmt(n / 1e6, 2)} MB`;

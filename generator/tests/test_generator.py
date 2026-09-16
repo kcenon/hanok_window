@@ -7,6 +7,7 @@ import copy
 import csv
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -187,7 +188,7 @@ class GeneratorTests(unittest.TestCase):
 
     @unittest.skipUnless(dwg.executable(), "ODA File Converter is not installed")
     def test_dwg_round_trip_keeps_every_check(self):
-        """DXF -> DWG -> DXF: the drawing that comes back still passes all 70 checks."""
+        """DXF -> DWG -> DXF: the drawing that comes back still passes all 71 checks."""
         from hanok_generator.engine import builder
         for name in ("r3","artwork_a2"):
             with self.subTest(case=name):
@@ -198,7 +199,7 @@ class GeneratorTests(unittest.TestCase):
                 doc=ezdxf.readfile(back)
                 cfg=builder.configure(json.loads((p/"design_parameters.json").read_text(encoding="utf-8")),p)
                 report=builder.validate(cfg,doc,"READ_BACK_FROM_SAVED_DXF",p/"design_spec.json")
-                self.assertEqual(report["checks_passed"],70)
+                self.assertEqual(report["checks_passed"],71)
                 # XDATA is what the checks read; a converter that dropped it would fail above,
                 # and this says so directly instead of through a check name.
                 self.assertEqual(sum(1 for e in doc.modelspace() if meta(e)),
@@ -323,6 +324,40 @@ class GeneratorTests(unittest.TestCase):
                 self.assertLess(max(b[2] for b in notes),stock["length"]+70)
         LOG.append(dict(case="board_holds_only_machining",status="PASS",designs=len(self.requests),sheet_notes=11,
                         other_entities_on_board=0))
+
+    def test_ai_export_carries_the_board_and_nothing_else(self):
+        # window.ai carries the machining that lies on the board, written from the entities the
+        # DXF already holds. It is a package file, so the same design has to produce the same
+        # bytes: no font file is read and no time is recorded.
+        from hanok_generator.engine import ai_export, builder
+        reference=("NOTES","DIMENSIONS","ASSEMBLY_REFERENCE","JOINT_DETAILS_REF","GRAIN_DIRECTION")
+        for name in self.requests:
+            with self.subTest(name=name):
+                p=self.path(name)
+                params=json.loads((p/"design_parameters.json").read_text(encoding="utf-8"))
+                stock=params["stock"]
+                self.assertTrue((p/"window.ai").read_bytes().isascii())
+                doc=ezdxf.readfile(p/"window.dxf")
+                board=ai_export.board_entities(doc)
+                layers=ai_export.read(p/"window.ai")
+                self.assertEqual([q["name"] for q in layers],ai_export.layer_order(board))
+                self.assertFalse(set(reference)&{q["name"] for q in layers})
+                # Measured here rather than through the exporter's own comparison: every vertex of
+                # every contour has to come back on its own layer where the DXF put it.
+                points={q["name"]:[xy for path in q["paths"] for xy in path["points"]] for q in layers}
+                worst=max(min(math.hypot(x-gx,y-gy) for gx,gy in points[e.dxf.layer])
+                          for e in board if e.dxftype()!="TEXT" for x,y in e.get_points("xy"))
+                self.assertLessEqual(worst,LENGTH_TOL_MM)
+                self.assertTrue(all(-LENGTH_TOL_MM<=x<=stock["length"]+LENGTH_TOL_MM
+                                    and -LENGTH_TOL_MM<=y<=stock["width"]+LENGTH_TOL_MM
+                                    for recovered in points.values() for x,y in recovered))
+                row={c["rule_id"]:c for c in json.loads((p/"validation_report.json").read_text(encoding="utf-8"))["checks"]}["ai_export_matches_saved_dxf"]
+                self.assertEqual((row["status"],row["targets"],row["measured"]["entities"]),("PASS",["saved_ai"],len(board)))
+                again=self.root/f"{name}_again.ai"
+                ai_export.write(builder.configure(params,p),doc,again)
+                self.assertEqual(digest(again),digest(p/"window.ai"))
+        LOG.append(dict(case="ai_export_board_only",status="PASS",designs=len(self.requests),
+                        same_bytes=True,reference_layers_present=0))
 
     def test_pockets_keep_their_colour_on_any_board_thickness(self):
         # The pocket layer is named after the depth, half the board thickness, and the PNG renderer
@@ -537,7 +572,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_decimal_geometry_and_input_guards_under_optimization(self):
         # 200 original outer-size cases, now using outer-driven picture-free requests.
-        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=70 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
+        code='''import json,tempfile\nfrom pathlib import Path\nfrom decimal import Decimal\nfrom hanok_generator.model import resolve\nfrom hanok_generator.engine import builder\nfrom hanok_generator.engine.generate_spec import derive,ParameterError\nwith tempfile.TemporaryDirectory() as tmp:\n for axis,start in [(0,"463"),(1,"586")]:\n  for i in range(1,101):\n   size=[463,586];size[axis]=float(Decimal(start)+Decimal(i)/10)\n   p=resolve(dict(type="double",outer_mm=size,lattice_per_leaf=[2,4])).parameters\n   _,r,_=builder.build(builder.configure(p,tmp))\n   if r["checks_passed"]!=71 or not r["saved_dxf_reread"]:raise RuntimeError("decimal failure")\n p=resolve(dict(type="double",outer_mm=[463,586],lattice_per_leaf=[2,4])).parameters\n for group,key,value in [("machining","pocket_depth",9),("machining","tool_diameter",10)]:\n  q=json.loads(json.dumps(p));q[group][key]=value\n  try:derive(q)\n  except ParameterError:pass\n  else:raise RuntimeError("guard bypass")\nprint(json.dumps(dict(decimals=200,guards=2,status="PASS")))\n'''
         processes=[]
         for optimized in ("0","1"):
             env={**os.environ,"PYTHONOPTIMIZE":optimized,"PYTHONHASHSEED":"0","PYTHONDONTWRITEBYTECODE":"1"}

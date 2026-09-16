@@ -2,7 +2,7 @@
 import { BASIS, DRAWINGS, PENDING_KO, SIDE, TARGETS, brief, bytes, dwgText, pair, packageTitle, when } from "./messages.js";
 
 const $ = (id) => document.getElementById(id);
-const MAIN_FILES = ["window.dxf", "parts_manifest.csv", "pocket_manifest.csv", "dogbone_manifest.csv",
+const MAIN_FILES = ["window.dxf", "window.ai", "parts_manifest.csv", "pocket_manifest.csv", "dogbone_manifest.csv",
   "hardware_reference_manifest.csv", "README.txt", "design_request.json", "validation_report.json"];
 const viewer = { list: [], index: 0, scale: 1, x: 0, y: 0, drag: null };
 let deps = null; // { api, h, code, meta, loadRequest, fresh }

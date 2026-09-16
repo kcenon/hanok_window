@@ -154,7 +154,7 @@ Claude, GPT, Gemini, 로컬 모델(Ollama 등) 같은 LLM이 도구 호출로 �
 |---|---|---|
 | `describe_generator` | 창 형식, 외경/내경, 프리셋 규칙, 입력 범위, 기본값, 예제 요청, 상태의 뜻을 알려 줍니다 | 없음 |
 | `check_design` | 사전 확인입니다. 치수·창짝·창살 칸·원판 사용량을 돌려주거나, 어긴 규칙의 `rule_id`와 수치, 고치는 방법(`hint`), 그 규칙을 통과하는 값(`suggestion`)을 돌려줍니다 | 없음 |
-| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 70개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
+| `build_package` | 사전 확인 뒤 작업 프로세스에서 패키지를 만들고 저장 DXF 검사 71개를 돌립니다. 실패하면 실패한 검사를 돌려줍니다 | `output/` |
 | `list_packages` | 만든 패키지 목록(최신순) | 없음 |
 | `get_package` | 패키지 하나의 요청·치수·검사·PENDING 항목·파일 | 없음 |
 | `verify_package` | 패키지 파일 해시 대조(읽기 전용) | 없음 |
@@ -273,6 +273,7 @@ output/
 ├── latest.json                         마지막 완료 패키지의 상대 경로
 ├── packages/<내용 SHA-256>/
 │   ├── window.dxf
+│   ├── window.ai                       원판 가공 도형만, Illustrator 8 형식
 │   ├── 01_*.png ... 05_*.png
 │   ├── *_manifest.csv                  4종; 도그본 0개도 헤더 포함
 │   ├── design_request.json             재생성 입력
@@ -320,7 +321,16 @@ ODA File Converter가 설치된 PC에서만 동작하고(`winget install ODA.ODA
 변환은 요청할 때 실행하고 결과를 패키지에 넣지 않습니다. 같은 DXF를 바꿔도 변환기가 매번 다른 바이트를 쓰므로
 (길이는 같고 수백 바이트가 다름) 패키지에 넣으면 같은 입력의 내용 ID가 흔들립니다.
 되돌리기는 손실이 없습니다. DXF → DWG → DXF로 돌아온 도면은 XDATA와 레이어·선 종류를 유지하며
-저장 DXF 검사 70개를 그대로 통과합니다(`tests/test_generator.py`, 변환기가 없으면 건너뜁니다).
+저장 DXF 검사 71개를 그대로 통과합니다(`tests/test_generator.py`, 변환기가 없으면 건너뜁니다).
+
+### AI 파일
+
+패키지의 `window.ai`는 원판 위 가공 도형만 담은 Illustrator 8 형식(옛 PostScript 텍스트 AI) 파일입니다.
+Illustrator 8부터 CS6 이후 버전까지 열리며, 부재 윤곽·홈·도그본·부재 번호·하드웨어 참고 표시를 레이어로 나눠 담습니다.
+조립도·상세도·열림도·치수·가공 메모는 넣지 않습니다. 좌표는 1 mm = 72/25.4 pt로 1:1입니다.
+부재 번호는 글꼴 파일 대신 내장 획 글꼴로 그리고 만든 시각·작업 ID를 적지 않으므로, 어느 PC에서나 같은 입력이 같은 바이트를 냅니다.
+그래서 DWG와 달리 패키지 파일이며 내용 ID에 함께 들어갑니다.
+저장할 때마다 이 파일을 다시 읽어 좌표가 DXF와 1e-7 mm 안에서 같은지 검사합니다(`ai_export_matches_saved_dxf`).
 
 ### 형식과 상세도
 

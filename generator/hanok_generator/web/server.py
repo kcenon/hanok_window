@@ -28,7 +28,7 @@ SECURITY_HEADERS = (("Content-Security-Policy", CSP), ("X-Content-Type-Options",
 IMMUTABLE = "private, max-age=31536000, immutable"
 FILE_TYPES = {".png": "image/png", ".json": "application/json; charset=utf-8", ".csv": "text/csv; charset=utf-8",
               ".txt": "text/plain; charset=utf-8", ".py": "text/plain; charset=utf-8", ".dxf": "application/dxf",
-              ".dwg": "image/vnd.dwg"}
+              ".dwg": "image/vnd.dwg", ".ai": "application/postscript"}
 # A fixed list: a request path is never joined onto a file system path.
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),

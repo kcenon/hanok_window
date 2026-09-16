@@ -601,4 +601,5 @@ DWG와 달리 AI는 패키지 파일이다. 외부 변환기를 부르지 않고
 | 같은 바이트 | 같은 입력을 서로 다른 출력 폴더에 두 번 만들면 `window.ai`의 SHA-256이 같다(R3 `6e9a7ae4…`) |
 | 경계 | `window.dxf`는 바이트까지 그대로다. R3의 SHA-256은 `25ccf2f3…`으로, 이 절의 「액자형 화판과 뒤틀 (#15)」에 적힌 값과 같다. 바뀐 것은 패키지 파일 수(34 → 36)와 검사 수(70 → 71), 그리고 그에 딸린 `validation_report.json`·`README.txt`·`environment.json`·`package_manifest.json`이다 |
 | 예제 5종 | 새 package_id 5개가 옛 값과 모두 다르고, 검사는 71개, 부품·홈·도그본 수는 그대로다. R3는 `645289be…`다 |
+| CI | PR #26의 커밋 `bfd89c2`에서 세 OS가 모두 통과했다(`macos-latest` CPython 3.11.9 arm64 6분 21초, `ubuntu-latest` CPython 3.11.16 12분 55초, `windows-latest` CPython 3.11.9 16분 5초). `R3 package manifest` 단계의 파일은 세 OS 모두 36개, 검사는 71개다. `window.ai`의 SHA-256은 세 OS와 이 PC에서 모두 `6e9a7ae4…`로 같다. 같은 단계의 `window.dxf`는 ubuntu만 `6fc8aa36…`이고 macOS·Windows는 `25ccf2f3…`다. 이 절 머리글에 적은 기존 현상이며, 그 차이는 참고 그림의 점 하나에서 나므로 원판 위 도형만 담는 AI 파일에는 나타나지 않는다 |
 | Illustrator | 이 PC에 Illustrator가 없어 실제로 열어 확인하지는 못했다. 형식은 사양서(1998-02-23, AI 7)의 문서 구조·레이어·경로·색 연산자를 따랐고 파서로 되읽어 대조했지만, 프로그램에서 열리는지는 사람이 한 번 봐야 한다 |

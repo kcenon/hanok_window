@@ -22,6 +22,7 @@ from ..engine import generate_spec
 from ..engine.generate_spec import ParameterError
 from ..model import InputError, PRESETS, canonical, resolve
 from ..package import PNG_FILES, PackageError, verify as verify_package
+from . import dwg
 from .suggest import suggest
 
 PACKAGE_ID = re.compile(r"[0-9a-f]{64}")
@@ -352,7 +353,7 @@ class Service:
                                         pending=report.get("pending", [])),
                         request=read_json(folder / "design_request.json"),
                         normalized_request=resolved.get("request"), provenance=resolved.get("provenance"),
-                        drawings=self._drawing_sizes(folder, manifest))
+                        drawings=self._drawing_sizes(folder, manifest), dwg=dwg.status())
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise PackageError(f"Invalid package: {exc}") from exc
 
@@ -404,6 +405,21 @@ class Service:
             return (folder / name).read_bytes(), name
         row = next((r for r in manifest["files"] if r["path"] == name), None)
         return None if row is None else (self._checked(folder, row), name.rsplit("/", 1)[-1])
+
+    def package_dwg(self, package_id):
+        """window.dxf as a DWG, converted now, or None when there is no such package.
+
+        The bytes are checked against the manifest first, exactly as a download is, and the
+        converter reads a copy in a temporary folder: no other program is handed a package.
+        """
+        found = self._manifest(package_id)
+        if found is None:
+            return None
+        folder, manifest = found
+        row = next((r for r in manifest["files"] if r["path"] == "window.dxf"), None)
+        if row is None:
+            return None
+        return dwg.convert(self._checked(folder, row), ".dwg"), zip_name(self.summary(package_id), package_id) + ".dwg"
 
     def package_zip(self, package_id):
         """The whole package as one ZIP built in memory; every file is checked on the way in."""

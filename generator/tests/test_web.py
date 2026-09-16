@@ -26,6 +26,7 @@ import zipfile
 from hanok_generator import __version__, cli, web
 from hanok_generator.jobs import run_job
 from hanok_generator.package import digest, source_files
+from hanok_generator.web import dwg
 from hanok_generator.web.server import Handler, make_server
 
 if os.name == "posix":  # web.control imports fcntl; only BackgroundServerTests use it, and they skip elsewhere
@@ -66,9 +67,18 @@ with tempfile.TemporaryDirectory() as tmp:
     build = call(server.port, "POST", "/api/builds", sys.argv[1])[1]["build_id"]
     while (state := call(server.port, "GET", "/api/builds/" + build)[1]["state"]) in ("queued", "running"):
         time.sleep(0.2)
+    package = call(server.port, "GET", "/api/builds/" + build)[1]["result"]["package_id"]
+    # A DWG download must not pull ezdxf into the server process either.
+    connection = http.client.HTTPConnection("127.0.0.1", server.port, timeout=120)
+    connection.request("GET", "/files/" + package + "/window.dwg")
+    answer = connection.getresponse()
+    answer.read()
+    dwg = answer.status
+    connection.close()
     server.shutdown()
     server.close()
-print(json.dumps(dict(preview=preview, build=state, builder="hanok_generator.engine.builder" in sys.modules,
+print(json.dumps(dict(preview=preview, build=state, dwg=dwg,
+                      builder="hanok_generator.engine.builder" in sys.modules,
                       ezdxf="ezdxf" in sys.modules)))
 """
 
@@ -404,7 +414,8 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         p = subprocess.run([sys.executable, "-c", ISOLATION, json.dumps(R3)], cwd=HERE.parent, env=env,
                            capture_output=True, text=True, encoding="utf-8", timeout=300)
         self.assertEqual(p.returncode, 0, p.stderr)
-        self.assertEqual(json.loads(p.stdout), dict(preview=200, build="passed", builder=False, ezdxf=False))
+        self.assertEqual(json.loads(p.stdout), dict(preview=200, build="passed", builder=False, ezdxf=False,
+                                                    dwg=200 if dwg.executable() else 501))
 
     def test_web_builds_match_run_job(self):
         for name, data in EXAMPLES.items():
@@ -454,6 +465,25 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
                      f"/api/builds/{'0' * 32}", f"/thumbs/{r3}/window.dxf", f"/thumbs/{r3}/source.png"):
             with self.subTest(path=path):
                 self.assertEqual(self.call("GET", path)[0], 404)
+
+    def test_dwg_is_converted_on_request_and_is_not_a_package_file(self):
+        r3 = self.built["double_r3"]["result"]["package_id"]
+        detail = self.call("GET", f"/api/packages/{r3}")[2]
+        info = detail["dwg"]
+        self.assertEqual((info["version"], info["release"]), ("ACAD2010", "AutoCAD 2010"))
+        self.assertEqual(info["available"], dwg.executable() is not None)
+        # The converter writes different bytes every run, so a DWG is never one of the 34 files.
+        self.assertNotIn("window.dwg", [row["path"] for row in detail["files"]])
+        status, response, data = self.call("GET", f"/files/{r3}/window.dwg", decode=False)
+        if not info["available"]:
+            self.assertEqual((status, json.loads(data)["rule_id"]), (501, "dwg.converter_missing"))
+            return
+        top = f"hanok_double_outer_463x586_2x4_{r3[:8]}"
+        self.assertEqual((status, response.getheader("Content-Type")), (200, "image/vnd.dwg"))
+        self.assertEqual(response.getheader("Content-Disposition"), f'attachment; filename="{top}.dwg"')
+        self.assertEqual(response.getheader("Cache-Control"), "no-store")
+        self.assertEqual(data[:6], b"AC1024")  # the DWG release the engine's DXF uses
+        self.assertEqual(self.call("GET", f"/files/{'0' * 64}/window.dwg")[0], 404)
 
     def test_changed_package_file_is_refused(self):
         r3 = self.built["double_r3"]["result"]["package_id"]

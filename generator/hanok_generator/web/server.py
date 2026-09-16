@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlsplit
 from ..jobs import run_job
 from ..package import PackageError
 from .builds import BuildQueue, QueueFull
+from .dwg import DwgError
 from .service import Service, failure
 
 MAX_BODY = 64 * 1024
@@ -26,7 +27,8 @@ SECURITY_HEADERS = (("Content-Security-Policy", CSP), ("X-Content-Type-Options",
 # A package id is the hash of its files, so the same URL can never name other bytes.
 IMMUTABLE = "private, max-age=31536000, immutable"
 FILE_TYPES = {".png": "image/png", ".json": "application/json; charset=utf-8", ".csv": "text/csv; charset=utf-8",
-              ".txt": "text/plain; charset=utf-8", ".py": "text/plain; charset=utf-8", ".dxf": "application/dxf"}
+              ".txt": "text/plain; charset=utf-8", ".py": "text/plain; charset=utf-8", ".dxf": "application/dxf",
+              ".dwg": "image/vnd.dwg"}
 # A fixed list: a request path is never joined onto a file system path.
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),
@@ -45,6 +47,8 @@ ROUTES = [(method, re.compile(pattern), name) for method, pattern, name in (
     ("GET", r"/api/packages/([0-9a-f]{64})/verify", "get_verify"),
     ("GET", r"/thumbs/([0-9a-f]{64})/([0-9a-z_]+\.png)", "get_thumb"),
     ("GET", r"/files/([0-9a-f]{64})\.zip", "get_zip"),
+    # Before the file route: a DWG is made on request and is not one of the package files.
+    ("GET", r"/files/([0-9a-f]{64})/window\.dwg", "get_dwg"),
     ("GET", r"/files/([0-9a-f]{64})/(.+)", "get_file"),
 )]
 
@@ -221,6 +225,17 @@ class Handler(BaseHTTPRequestHandler):
         disposition = "inline" if kind == "image/png" else "attachment"
         self.send_bytes(200, data, kind, [("Content-Disposition", f'{disposition}; filename="{filename}"')],
                         cache=IMMUTABLE)
+
+    def get_dwg(self, package_id):
+        try:
+            data, filename = found(self.server.service.package_dwg(package_id))
+        except DwgError as exc:
+            # 501: this machine has no converter. 502: it has one and the conversion failed.
+            status = 501 if exc.rule_id == "dwg.converter_missing" else 502
+            raise HttpError(status, exc.rule_id, exc.message, **exc.details) from None
+        # Not immutable: the converter writes different bytes for the same drawing every time.
+        self.send_bytes(200, data, FILE_TYPES[".dwg"],
+                        [("Content-Disposition", f'attachment; filename="{filename}"')])
 
     def get_thumb(self, package_id, name):
         self.send_bytes(200, found(self.server.service.thumbnail(package_id, name)), "image/png", cache=IMMUTABLE)

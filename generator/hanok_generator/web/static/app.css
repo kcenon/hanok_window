@@ -192,6 +192,10 @@ table.checks .small { margin: 2px 0 0; }
 .dl a { text-decoration: none; }
 .dl .dl-zip { background: var(--accent); }
 .dl .dl-zip a, .dl .dl-zip span { color: var(--on-accent); }
+/* The DWG row carries a sentence, not a size, so the label holds one line and the note wraps. */
+.dl .dl-dwg > :first-child { white-space: nowrap; }
+.dl .dl-dwg > span:last-child { white-space: normal; text-align: right; }
+.dl .dl-dwg.off { color: var(--muted); }
 .dl li.more { display: block; padding: 0; background: none; }
 .dl li.more summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding-block: 4px; padding-inline: 8px; }
 .btnrow.plain { border-top: 0; }

@@ -28,6 +28,7 @@ from hanok_generator.engine.numeric_policy import LENGTH_TOL_MM, geometry_matche
 from hanok_generator.jobs import JobError, replace_pointer, run_job
 from hanok_generator.model import InputError, resolve
 from hanok_generator.package import PNG_FILES, PackageError, digest, source_files, verify
+from hanok_generator.web import dwg
 
 HERE=Path(__file__).parent
 LOG=[]
@@ -183,6 +184,27 @@ class GeneratorTests(unittest.TestCase):
             self.assertTrue(geometry_matches(want,entity_polygon(opened[0])))
             heading=next(e for e in doc.modelspace() if meta(e).get("view")=="opening" and meta(e).get("kind")=="title")
             self.assertGreater(heading.dxf.insert.y-heading.dxf.height,entity_polygon(opened[0]).bounds[3])
+
+    @unittest.skipUnless(dwg.executable(), "ODA File Converter is not installed")
+    def test_dwg_round_trip_keeps_every_check(self):
+        """DXF -> DWG -> DXF: the drawing that comes back still passes all 70 checks."""
+        from hanok_generator.engine import builder
+        for name in ("r3","artwork_a2"):
+            with self.subTest(case=name):
+                p=self.path(name)
+                original=ezdxf.readfile(p/"window.dxf")
+                returned_bytes=dwg.convert(dwg.convert((p/"window.dxf").read_bytes(),".dwg"),".dxf")
+                back=Path(self.temp.name)/f"{name}_roundtrip.dxf";back.write_bytes(returned_bytes)
+                doc=ezdxf.readfile(back)
+                cfg=builder.configure(json.loads((p/"design_parameters.json").read_text(encoding="utf-8")),p)
+                report=builder.validate(cfg,doc,"READ_BACK_FROM_SAVED_DXF",p/"design_spec.json")
+                self.assertEqual(report["checks_passed"],70)
+                # XDATA is what the checks read; a converter that dropped it would fail above,
+                # and this says so directly instead of through a check name.
+                self.assertEqual(sum(1 for e in doc.modelspace() if meta(e)),
+                                 sum(1 for e in original.modelspace() if meta(e)))
+                LOG.append(dict(case=f"dwg_round_trip_{name}",status="PASS",checks=report["checks_passed"],
+                                converter=dwg.version()))
 
     def test_saved_geometry_rejects_phantom_detail_and_wrong_hinge(self):
         from hanok_generator.engine import builder

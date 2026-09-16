@@ -1,5 +1,5 @@
 // History and package screens: read-only views of published packages, and the drawing viewer.
-import { BASIS, DRAWINGS, PENDING_KO, SIDE, TARGETS, brief, bytes, pair, packageTitle, when } from "./messages.js";
+import { BASIS, DRAWINGS, PENDING_KO, SIDE, TARGETS, brief, bytes, dwgText, pair, packageTitle, when } from "./messages.js";
 
 const $ = (id) => document.getElementById(id);
 const MAIN_FILES = ["window.dxf", "parts_manifest.csv", "pocket_manifest.csv", "dogbone_manifest.csv",
@@ -128,6 +128,18 @@ function renderDrawings(d) {
   }));
 }
 
+function dwgRow(d) {
+  const { h } = deps;
+  const info = d.dwg ?? { available: false };
+  const { label, note } = dwgText(info);
+  // A DWG is converted on request, so the row is a plain link when the converter is there and
+  // an explanation when it is not; the package itself is the same either way.
+  const first = info.available
+    ? h("a", { href: `/files/${d.package_id}/window.dwg` }, h("b", {}, label))
+    : h("span", {}, h("b", {}, label));
+  return h("li", { class: info.available ? "dl-dwg" : "dl-dwg off" }, first, h("span", {}, note));
+}
+
 function renderFiles(d) {
   const { h, code } = deps;
   const row = (f) => h("li", {}, h("a", { href: `/files/${d.package_id}/${f.path}` }, code(f.path)), h("span", {}, bytes(f.bytes)));
@@ -137,6 +149,7 @@ function renderFiles(d) {
   $("pkg-files").replaceChildren(
     h("li", { class: "dl-zip" }, h("a", { href: `/files/${d.package_id}.zip` }, h("b", {}, "전체 ZIP")),
       h("span", {}, `파일 ${d.files.length + 1}개 · ${bytes(total)}`)),
+    dwgRow(d),
     ...main.map(row),
     h("li", { class: "more" }, h("details", {}, h("summary", {}, `나머지 파일 ${rest.length}개 (도면 PNG, 부품표 원본, 소스)`),
       h("ul", { class: "dl" }, ...rest.map(row)))));

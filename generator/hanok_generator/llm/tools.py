@@ -125,7 +125,7 @@ CHECK = ("Pre-check a window design without writing any file. Validates the requ
          "suggestion clears only that rule, so check again. Passing does not mean the saved DXF passed: "
          "build_package runs those checks.")
 BUILD = ("Build the complete CNC package for a design: DXF, five PNG drawings, four CSV manifests and a validation "
-         "report. An isolated worker saves the DXF, re-reads it and runs 70 checks; this takes a few seconds and "
+         "report. An isolated worker saves the DXF, re-reads it and runs 71 checks; this takes a few seconds and "
          "reports progress to MCP clients that ask for it. The same request yields the same package_id only in the "
          "same environment (OS, fonts, Python and library versions); to tell whether two packages hold the same "
          "design, compare the revision from check_design or get_package. Existing packages are never overwritten. "
@@ -142,8 +142,9 @@ DRAWING = ("Return one drawing of a built package as a PNG image at most 480 px 
            "of the leaves swinging open) or pockets (close-ups of every pocket).")
 READ = ("Read one text file of a built package, checked against its manifest first: README.txt (making notes), "
         "parts_manifest.csv, pocket_manifest.csv, dogbone_manifest.csv, hardware_reference_manifest.csv, "
-        "validation_report.json, design_parameters.json and the other files get_package lists, except the DXF and "
-        f"the PNG drawings. Long files come in pages of {MAX_TEXT} characters: pass next_offset as offset.")
+        "validation_report.json, design_parameters.json and the other files get_package lists, except the DXF, the "
+        f"Illustrator file and the PNG drawings. Long files come in pages of {MAX_TEXT} characters: pass next_offset "
+        "as offset.")
 
 STRING, INTEGER, BOOLEAN, OBJECT = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}, {"type": "object"}
 NUMBERS, INTEGERS, STRINGS, OBJECTS = ({"type": "array", "items": {"type": kind}}
@@ -438,7 +439,7 @@ class Toolbox:
             generator=dict(name="hanok-window-generator", version=meta["app_version"], engine=meta["engine_version"]),
             makes=("CNC packages for Korean hanok lattice windows, plain or built around an artwork panel: one "
                    "DXF with every part laid out on one stock board, five PNG drawings, four CSV manifests and a "
-                   "validation report that re-reads the saved DXF (70 checks)."),
+                   "validation report that re-reads the saved DXF (71 checks)."),
             workflow=["check_design: validate a request without writing files. If it names a rule, apply one value "
                       "from suggestion (or follow hint) and check again; another rule may come next.",
                       "build_package: build the same request (a few seconds). The same request gives the same "
@@ -492,7 +493,7 @@ class Toolbox:
         if code != 200:
             return self._refused(body, request)
         before = {s["package_id"] for s in self.service.packages()["packages"]}
-        report(1, 3, "Building in a worker: saving the DXF, drawing the PNGs and running 70 checks")
+        report(1, 3, "Building in a worker: saving the DXF, drawing the PNGs and running 71 checks")
         try:
             result = run_job(request, self.service.root, timeout=self.timeout)
         except JobError as exc:

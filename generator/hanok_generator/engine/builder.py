@@ -9,6 +9,7 @@ from shapely.geometry import Polygon, Point, LineString, box
 from shapely.affinity import affine_transform, translate, rotate
 from shapely.ops import unary_union
 from PIL import Image, ImageDraw
+from . import ai_export
 from .cad_helpers import *
 from .numeric_policy import (POLICY_VERSION, LENGTH_TOL_MM, RATIO_TOL, AREA_TOL_MM2,
                             VOLUME_TOL_MM3, ARC_CHORD_TOL_MM, close, coordinates_match,
@@ -43,7 +44,7 @@ class Design:
 
     The fields keep the short names that the drawing and check code has always used.
     """
-    OUT: Path; DXF: Path; SPEC: Path; PARAMS: dict; D: dict
+    OUT: Path; DXF: Path; SPEC: Path; AI: Path; PARAMS: dict; D: dict
     W: float; H: float; IW: float; IH: float; SIZE: dict
     FW: float; SM: float; BW: float; LAP: float; LW: float; LH: float; MINR: float
     LY0: float; LY1: float; OW: float; OH: float; PX: float; PY: float; PRW: float; PRH: float
@@ -63,6 +64,7 @@ def configure(parameters, output):
     OUT=Path(output)
     DXF=OUT/'window.dxf'
     SPEC=OUT/'design_spec.json'
+    AI=OUT/'window.ai'
     PARAMS=parameters
     D=derive(PARAMS)
     
@@ -119,7 +121,7 @@ def configure(parameters, output):
     OPENING_ORIGIN=(BL+REFERENCE_GAP_X,OPENING_Y)
     # Each member's assembly Z, the back face of its layer, for the joint and solid checks.
     PART_Z={q.part_id:q.assembly_z for q in build_parts(D)}
-    return Design(OUT=OUT,DXF=DXF,SPEC=SPEC,PARAMS=PARAMS,D=D,W=W,H=H,IW=IW,IH=IH,SIZE=SIZE,
+    return Design(OUT=OUT,DXF=DXF,SPEC=SPEC,AI=AI,PARAMS=PARAMS,D=D,W=W,H=H,IW=IW,IH=IH,SIZE=SIZE,
                   FW=FW,SM=SM,BW=BW,LAP=LAP,LW=LW,LH=LH,MINR=MINR,
                   LY0=LY0,LY1=LY1,OW=OW,OH=OH,PX=PX,PY=PY,PRW=PRW,PRH=PRH,
                   A3W=A3W,A3H=A3H,PMG=PMG,DEPTH=DEPTH,THK=THK,R=R,
@@ -474,16 +476,20 @@ def build(cfg):
     # pass, so a rejected build leaves the previous spec and DXF as they were
     # instead of pairing a new spec with an old drawing.
     tmp=cfg.OUT/'_validated_candidate.dxf';tmpspec=cfg.OUT/'_validated_candidate_spec.json'
+    tmpai=cfg.OUT/'_validated_candidate.ai'
     tmpspec.write_bytes((json.dumps(spec,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
     try:
-        pre=validate(cfg,doc,'IN_MEMORY_BEFORE_SAVE',tmpspec)
+        # Written from the document still in memory, so both phases read one file and the
+        # report lists the same checks whichever phase produced it.
+        ai_export.write(cfg,doc,tmpai)
+        pre=validate(cfg,doc,'IN_MEMORY_BEFORE_SAVE',tmpspec,tmpai)
         with open(tmp,'wt',encoding=doc.output_encoding,errors='dxfreplace',newline='\n') as fp:doc.write(fp)
         checkdoc=ezdxf.readfile(tmp)
-        report=validate(cfg,checkdoc,'READ_BACK_FROM_SAVED_DXF',tmpspec)
+        report=validate(cfg,checkdoc,'READ_BACK_FROM_SAVED_DXF',tmpspec,tmpai)
     except BaseException:
-        tmp.unlink(missing_ok=True);tmpspec.unlink(missing_ok=True)
+        tmp.unlink(missing_ok=True);tmpspec.unlink(missing_ok=True);tmpai.unlink(missing_ok=True)
         raise
-    tmpspec.replace(cfg.SPEC);tmp.replace(cfg.DXF)
+    tmpspec.replace(cfg.SPEC);tmp.replace(cfg.DXF);tmpai.replace(cfg.AI)
     report.update(file=cfg.DXF.name,sha256=hashlib.sha256(cfg.DXF.read_bytes()).hexdigest(),
                   pre_save_status=pre['status'],ezdxf_version=ezdxf.__version__)
     (cfg.OUT/'validation_report.json').write_bytes((json.dumps(report,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
@@ -498,7 +504,7 @@ class ValidationError(AssertionError):
         super().__init__('DXF validation failed: '+', '.join(self.report['failed_checks']))
 
 
-def validate(cfg,doc,phase,spec_path=None):
+def validate(cfg,doc,phase,spec_path=None,ai_path=None):
     """Inspect actual DXF geometry against expectations rebuilt from the parameters.
 
     The generator reaches pocket coordinates by intersecting assembled members
@@ -517,6 +523,7 @@ def validate(cfg,doc,phase,spec_path=None):
     ap,assembled=check_joint_pairs_and_solids(cfg,check,rawparts,pockets,dogs,partents,geom,partgeo,pairs,by_pair)
     check_assembly_dimensions(cfg,check,partents,ap)
     check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled)
+    check_ai_export(cfg,check,doc,ai_path)
     check_metadata(cfg,check,doc,spec_path)
     if errors:raise ValidationError(phase,checks)
     return dict(status='PASS_NOMINAL_DXF_GEOMETRY',phase=phase,saved_dxf_reread=phase=='READ_BACK_FROM_SAVED_DXF',
@@ -941,6 +948,12 @@ def check_references(cfg,check,ents,mach,pockets,count,byjoint,ap,assembled):
     check('pockets_open_edge_intent',all(bool(meta(e).get('open_edges')) for e in pockets))
 
 
+def check_ai_export(cfg,check,doc,ai_path):
+    """The Illustrator file written beside the DXF, read back and measured against the board."""
+    ok,measured=ai_export.verify(doc,cfg.AI if ai_path is None else ai_path)
+    check('ai_export_matches_saved_dxf',ok,measured,target='saved_ai')
+
+
 def check_metadata(cfg,check,doc,spec_path):
     """Recorded revision and numeric policy, design_spec.json on disk and the DXF audit."""
     md=doc.ezdxf_metadata()
@@ -1267,7 +1280,7 @@ def write_readme(cfg,report):
            '부재는 명목 무공차입니다. 시험편·끼움 공차·재료·하드웨어·후판 고정·개폐 간섭·CAM·고정 지그를 확인해야 합니다.',
            'CUT_THROUGH는 전체 두께. POCKET과 DOGBONE은 부모 홈과 합쳐 절삭합니다. 개방 경계는 폐기물 방향 오버런이 필요합니다.',
            'HINGE_REF와 LATCH_REF는 생산 가공에서 제외합니다. 공구 경로·탭·이송·회전수·G-code는 포함하지 않습니다.',
-           '', '파일: window.dxf, PNG 5장, CSV 4종, design_request.json, design_parameters.json, design_spec.json,',
+           '', '파일: window.dxf, window.ai, PNG 5장, CSV 4종, design_request.json, design_parameters.json, design_spec.json,',
            'resolved_parameters.json, validation_report.json, environment.json, package_manifest.json, source/.',
            '재생성: source/requirements.txt를 설치하고 PYTHONPATH=source python -m hanok_generator build --input design_request.json --output rebuilt',
            '검증: PYTHONPATH=source python -m hanok_generator verify .',

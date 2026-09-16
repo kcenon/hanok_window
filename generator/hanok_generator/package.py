@@ -14,7 +14,7 @@ from .model import canonical
 PNG_FILES = ["01_one_board_nesting.png", "02_joinery_details.png", "03_assembly_reference.png",
              "04_opening_reference.png", "05_all_pockets_closeup.png"]
 CSV_FILES = ["parts_manifest.csv", "pocket_manifest.csv", "dogbone_manifest.csv", "hardware_reference_manifest.csv"]
-REQUIRED = {"window.dxf", "README.txt", "design_request.json", "design_parameters.json", "design_spec.json",
+REQUIRED = {"window.dxf", "window.ai", "README.txt", "design_request.json", "design_parameters.json", "design_spec.json",
             "resolved_parameters.json", "validation_report.json", "environment.json", "source/requirements.txt",
             "source/hanok_generator/__main__.py", *PNG_FILES, *CSV_FILES}
 DEPENDENCIES = ("ezdxf", "shapely", "Pillow", "numpy", "fonttools", "pyparsing", "typing_extensions")

@@ -424,7 +424,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
                 self.assertEqual(record["state"], "passed", record["error"])
                 self.assertEqual(record["request"], data)
                 self.assertEqual(record["result"]["package_id"], self.direct[name]["package_id"])
-                self.assertEqual(record["result"]["checks"], 70)
+                self.assertEqual(record["result"]["checks"], 71)
 
     def test_package_files_zip_and_history(self):
         r3 = self.built["double_r3"]["result"]["package_id"]
@@ -438,8 +438,11 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         self.assertEqual((detail["type"], detail["preset"], detail["size"]["outer_mm"], detail["lattice_per_leaf"]),
                          ("double", "hanok_A3_portrait_R3", [463, 586], [2, 4]))
         self.assertEqual((detail["checks"], len(detail["validation"]["checks"]), len(detail["validation"]["pending"])),
-                         ({"passed": 70, "total": 70}, 70, 6))
-        self.assertEqual((detail["request"], detail["file_count"], len(detail["files"])), (R3, 34, 34))
+                         ({"passed": 71, "total": 71}, 71, 6))
+        self.assertEqual((detail["request"], detail["file_count"], len(detail["files"])), (R3, 36, 36))
+        # Unlike the DWG, the Illustrator file is written by the engine and is one of the package
+        # files, so it is listed, hashed and served with the immutable cache like the rest.
+        self.assertIn("window.ai", [row["path"] for row in detail["files"]])
         for row in detail["files"]:
             status, response, data = self.call("GET", f"/files/{r3}/{row['path']}", decode=False)
             self.assertEqual((status, hashlib.sha256(data).hexdigest()), (200, row["sha256"]), row["path"])
@@ -454,7 +457,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
             self.assertEqual(sorted(archive.namelist()), sorted(f"{top}/{p}" for p in paths))
             for row in detail["files"]:
                 self.assertEqual(hashlib.sha256(archive.read(f"{top}/{row['path']}")).hexdigest(), row["sha256"])
-        self.assertEqual(self.call("GET", f"/api/packages/{r3}/verify")[2], dict(status="PASS", package_id=r3, files=34))
+        self.assertEqual(self.call("GET", f"/api/packages/{r3}/verify")[2], dict(status="PASS", package_id=r3, files=36))
         # Drawing sizes come from the PNG headers; thumbnails are 480 px wide copies.
         png = self.call("GET", f"/files/{r3}/03_assembly_reference.png", decode=False)[2]
         self.assertEqual(detail["drawings"]["03_assembly_reference.png"], list(struct.unpack(">II", png[16:24])))
@@ -472,7 +475,7 @@ process.stdout.write(JSON.stringify(JSON.parse(input).map((body) => describeErro
         info = detail["dwg"]
         self.assertEqual((info["version"], info["release"]), ("ACAD2010", "AutoCAD 2010"))
         self.assertEqual(info["available"], dwg.executable() is not None)
-        # The converter writes different bytes every run, so a DWG is never one of the 34 files.
+        # The converter writes different bytes every run, so a DWG is never one of the 36 files.
         self.assertNotIn("window.dwg", [row["path"] for row in detail["files"]])
         status, response, data = self.call("GET", f"/files/{r3}/window.dwg", decode=False)
         if not info["available"]:

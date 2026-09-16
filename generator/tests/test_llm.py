@@ -216,7 +216,7 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual(data["package_id"], self.direct["package_id"])
         self.assertEqual(data["request"], EXAMPLES["double_r3"])
         self.assertEqual((data["status"], data["checks"], data["manufacturing_status"]),
-                         ("PASS", {"passed": 70, "total": 70}, "PENDING"))
+                         ("PASS", {"passed": 71, "total": 71}, "PENDING"))
         self.assertEqual((len(data["pending"]), data["drawings"]), (6, list(DRAWINGS)))
 
     def test_a_build_reports_its_stages(self):
@@ -233,7 +233,7 @@ class ToolboxTests(unittest.TestCase):
         shown = self.box.call("get_package", {"package_id": package_id[:8]})
         self.assertFalse(shown.is_error, shown.data)
         self.assertEqual((shown.data["package_id"], shown.data["failed_checks"], len(shown.data["files"])),
-                         (package_id, [], 34))
+                         (package_id, [], 36))
         self.assertEqual(self.box.call("verify_package", {"package_id": package_id}).data["status"], "PASS")
         drawing = self.box.call("get_drawing", {"package_id": package_id[:12], "drawing": "assembly"})
         self.assertFalse(drawing.is_error, drawing.data)

@@ -63,11 +63,12 @@ claude mcp add hanok-window -- C:\절대\경로\generator\.venv\Scripts\hanok-wi
   "args": ["--output", "C:\\절대\\경로\\generator\\output"]}}}
 ```
 
-시험은 [검증](#검증)의 네 명령을 `.venv\Scripts\python`으로 돌리고 `web.sh` 시험 5개는 건너뜁니다.
+시험은 [검증](#검증)의 다섯 명령을 `.venv\Scripts\python`으로 돌리고 `web.sh` 시험 5개는 건너뜁니다.
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .venv\Scripts\python -m unittest discover -s tests -p test_encoding.py
+.venv\Scripts\python -m unittest discover -s tests -p test_package_comparison.py
 .venv\Scripts\python -m unittest discover -s tests -p test_generator.py
 .venv\Scripts\python -m unittest discover -s tests -p test_web.py
 .venv\Scripts\python -m unittest discover -s tests -p test_llm.py
@@ -352,23 +353,40 @@ DXF의 원판 안에는 부재 윤곽, 홈, 도그본, 부품 번호, 하드웨�
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 10초
 ```
 
-네 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
+다섯 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
 실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다. 웹 시험이 이 해시와 현재 소스를 비교하므로, 엔진 소스를 고친 뒤에는 웹 시험 전에 이 명령으로 소스 해시를 다시 적습니다.
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/results.json을 다시 씁니다
 ```
 
-- **인코딩 시험:** `hanok_generator/`와 `tests/`의 파이썬 파일을 구문 트리로 읽어, 인코딩을 적지 않은 `read_text()`·`write_text()`, 텍스트 모드 `open()`, `text=True` 하위 프로세스를 찾습니다. 이런 곳은 한국어 Windows에서 cp949로 읽고 씁니다. GitHub의 Windows 러너는 한국어 로캘이 아니어서 CI만으로는 이 문제가 드러나지 않으므로 코드 모양으로 검사합니다.
+- **인코딩 시험:** `hanok_generator/`, `tools/`, `tests/`의 파이썬 파일을 구문 트리로 읽어, 인코딩을 적지 않은 `read_text()`·`write_text()`, 텍스트 모드 `open()`, `text=True` 하위 프로세스를 찾습니다. 이런 곳은 한국어 Windows에서 cp949로 읽고 씁니다. GitHub의 Windows 러너는 한국어 로캘이 아니어서 CI만으로는 이 문제가 드러나지 않으므로 코드 모양으로 검사합니다.
 - **생성기 시험:** 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향, R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부, 동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사를 확인합니다.
 - **R3 보존:** R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다. 저장소의 `r3_reference/` 폴더에서 파일 28개도 SHA-256으로 대조합니다.
 - **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다. 규칙 8종마다 고침 제안의 값을 하나씩 적용해 그 규칙이 풀리는지 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지와 오류 문구(`messages.js`)가 제안 값을 적는지는 `node`가 있을 때만 확인합니다.
 - **LLM 시험:** 네 형식의 도구 정의(영어·스키마 호환), 요청 정규화, 모델이 실수로 섞은 실수·기본값으로도 CLI와 같은 패키지 ID가 나오는지, 규칙 오류의 `hint`와 제안(제안 값으로 고치면 통과하는지), 모든 도구의 결과가 선언한 결과 스키마를 따르는지, 패키지 파일 읽기와 이어 읽기, 생성 실패 보고, 패키지 도구와 도면 이미지, MCP 서버의 초기화·버전 협상·도구 호출·오류 코드·일괄 요청·생성 중 응답·진행 알림·취소, `hanok-window-llm` 종료 코드, 도구를 부르는 프로세스에 builder가 올라가지 않는지를 확인합니다.
+
+**운영체제 간 패키지 비교:** CI는 같은 요청(`examples/double_r3.json`)으로 만든 매니페스트를 `r3-manifest-ubuntu-latest`, `r3-manifest-macos-latest`, `r3-manifest-windows-latest` 아티팩트로 올립니다. 세 시험 작업 뒤의 `Compare R3 package bytes` 작업이 파일 경로별 SHA-256과 크기를 비교하고, 결과와 차이를 작업 요약에 적습니다. 파일 목록은 모두 같아야 하며, 아티팩트나 파일 누락·중복, 잘못된 매니페스트, 예외 밖의 차이는 실패입니다. 패키지 ID는 환경 파일의 해시도 포함하므로 운영체제끼리 같은 값인지 단언하지 않습니다.
+
+예외 목록은 `tools/compare_package_manifests.py`의 `EXCEPTIONS`입니다. 항목마다 허용하는 운영체제 쌍과 이유·근거를 적습니다. `environment.json`은 실행 환경과 글꼴 정보, 이름을 하나씩 적은 PNG 5장은 시스템 글꼴, `validation_report.json`은 반올림하지 않은 측정값과 DXF 해시 때문에 다릅니다. `window.dxf`는 리눅스 수학 라이브러리의 참고 도면 좌표 마지막 비트 차이만 근거로 우분투와의 비교를 예외로 두며, 맥과 윈도 사이에서는 계속 같아야 합니다. `window.ai`를 포함한 나머지는 모두 엄격하게 비교합니다. 근거는 [변경 기록의 0.5.0 운영체제 비교와 AI 출력 검증](docs/CHANGELOG.md)에 있습니다. 예외 파일도 없어지면 실패하고, 같아지면 통과하면서 사용하지 않은 예외로 알립니다.
+
+이 검사는 **예외 파일 안의 변화량은 제한하지 못합니다.** 매니페스트에는 해시와 크기만 있으므로 우분투 DXF의 차이가 계속 점 하나뿐인지나 PNG 그림 내용이 옳은지는 이 비교만으로 증명하지 않습니다. 기존 기하·그림 회귀 시험도 함께 유지합니다. 예외를 늘릴 때는 실제 산출물을 조사하고 이유를 적어야 합니다.
+
+CI 실행 화면에서 세 아티팩트를 내려받아 같은 이름의 하위 폴더에 풀면 로컬에서도 비교할 수 있습니다. 아래는 `generator/`에서 실행하며, 윈도에서는 파이썬 경로를 `.venv\Scripts\python`으로 바꿉니다.
+
+```bash
+gh run download RUN_ID --repo kcenon/hanok_window --pattern 'r3-manifest-*' --dir output/ci-manifests
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/compare_package_manifests.py output/ci-manifests
+R3_MANIFEST_ARTIFACTS=output/ci-manifests PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py' -v
+```
+
+받을 폴더는 실행마다 새로 정해 이전 아티팩트와 섞이지 않게 합니다. 마지막 명령은 실제 세 아티팩트의 통과를 확인한 뒤 임시 사본에서 우분투 `window.ai` 해시 하나를 바꾸고 패키지 ID를 다시 계산합니다. 같은 비교 명령이 종료 코드 1로 거부하는지 단언합니다. CI 비교 작업도 이 시험을 실행합니다. `R3_MANIFEST_ARTIFACTS`를 지정하지 않은 일반 시험에서는 실제 아티팩트 시험 하나만 건너뛰고, 합성 매니페스트를 쓰는 단위 시험은 모두 실행합니다.
 
 공식 MCP 파이썬 SDK(`mcp`) 클라이언트와 맞물리는지는 따로 확인합니다. SDK는 생성기의 의존성이 아니므로 별도 가상환경에 설치해 실행합니다. SDK가 `mcp.sh`를 켜서 연결하고, 도구 목록과 결과 스키마를 받고, 도구를 불러 결과를 그 스키마로 검증합니다.
 

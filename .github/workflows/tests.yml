@@ -41,16 +41,75 @@ jobs:
           $VENV_PYTHON -m pip install -e .
       - name: test_encoding.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_encoding.py'
+      - name: test_package_comparison.py
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_package_comparison.py'
       - name: test_generator.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py'
       - name: test_web.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py'
       - name: test_llm.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_llm.py'
-      # The same request on every OS, so the file hashes can be compared. The 0.5.0 CHANGELOG entry lists what differs.
+      # Build into a fresh directory so the artifact contains only this R3 request.
       - name: R3 package manifest
         run: |
-          PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m hanok_generator build --input examples/double_r3.json --output output
-          cat output/packages/*/package_manifest.json
+          PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m hanok_generator build --input examples/double_r3.json --output "$RUNNER_TEMP/r3-package"
+          manifests=("$RUNNER_TEMP"/r3-package/packages/*/package_manifest.json)
+          if [ "${#manifests[@]}" -ne 1 ] || [ ! -f "${manifests[0]}" ]; then
+            echo "Expected exactly one R3 package manifest." >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/r3-manifest"
+          cp "${manifests[0]}" "$RUNNER_TEMP/r3-manifest/package_manifest.json"
+          cat "$RUNNER_TEMP/r3-manifest/package_manifest.json"
+      - name: Upload R3 package manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r3-manifest-${{ matrix.os }}
+          path: ${{ runner.temp }}/r3-manifest/package_manifest.json
+          if-no-files-found: error
+      - name: Tests left tracked files unchanged
+        run: git diff --exit-code
+
+  compare-packages:
+    name: Compare R3 package bytes
+    needs: tests
+    # A failed or missing matrix leg must not become a skipped successful gate.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: generator
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Require successful matrix
+        env:
+          MATRIX_RESULT: ${{ needs.tests.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != success ]; then
+            echo "R3 comparison failed: matrix result is $MATRIX_RESULT." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - name: Download R3 package manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: r3-manifest-*
+          path: ${{ runner.temp }}/r3-manifests
+          merge-multiple: false
+      - name: Compare manifests
+        run: python tools/compare_package_manifests.py "$RUNNER_TEMP/r3-manifests" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Prove a changed artifact is rejected
+        env:
+          R3_MANIFEST_ARTIFACTS: ${{ runner.temp }}/r3-manifests
+        run: |
+          python -m unittest discover -s tests -p 'test_package_comparison.py' -v
+          echo "Negative control passed: a changed Ubuntu window.ai hash was rejected with exit code 1." >> "$GITHUB_STEP_SUMMARY"
       - name: Tests left tracked files unchanged
         run: git diff --exit-code

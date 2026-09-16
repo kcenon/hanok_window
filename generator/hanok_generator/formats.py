@@ -45,4 +45,6 @@ def detail_variants(parameters):
         result.append("J4V")
     if h:
         result.append("J4H")
+    if parameters.get("artwork"):
+        result.append("BF")
     return result

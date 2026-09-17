@@ -11,7 +11,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
+from hanok_generator.engine import validation_rules
 from hanok_generator.jobs import run_job
 from hanok_generator.llm import FORMATS, Toolbox
 from hanok_generator.llm.mcp import PROTOCOL_VERSIONS
@@ -68,6 +70,33 @@ def conforms(value, schema):
     if isinstance(value, list) and "items" in schema:
         return all(conforms(item, schema["items"]) for item in value)
     return True
+
+
+def assert_check_descriptions(case, box, count):
+    for fmt in FORMATS:
+        with case.subTest(format=fmt):
+            definitions = box.definitions(fmt)
+            tools = [t["function"] if fmt == "openai" else t for t in definitions]
+            build = next(t for t in tools if t["name"] == "build_package")
+            case.assertIn(f"runs {count} checks", build["description"])
+    described = box.call("describe_generator")
+    case.assertFalse(described.is_error, described.data)
+    case.assertIn(f"({count} checks)", described.data["makes"])
+
+
+class MetadataTests(unittest.TestCase):
+    def test_check_counts_follow_catalogue_without_packages(self):
+        original = validation_rules.RULE_IDS
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "output"
+            for rules in (original, (*original, "test_extra_validation_rule")):
+                with self.subTest(count=len(rules)), patch.object(validation_rules, "RULE_IDS", rules), \
+                        patch("hanok_generator.llm.tools.run_job") as worker:
+                    box = Toolbox(output)
+                    self.assertEqual(box.service.meta()["validation_check_count"], len(rules))
+                    assert_check_descriptions(self, box, len(rules))
+                    worker.assert_not_called()
+                    self.assertFalse(output.exists())
 
 
 class ToolboxTests(unittest.TestCase):
@@ -210,6 +239,19 @@ class ToolboxTests(unittest.TestCase):
         narrower = self.box.call("check_design", dict(EXAMPLES["double_r3"], outer_mm=[bounds["width_at_most"], 586]))
         self.assertFalse(narrower.is_error, narrower.data)
 
+    def test_descriptions_match_reports_and_preserve_package_totals(self):
+        report = json.loads((Path(self.built.data["folder"]) / "validation_report.json").read_text(encoding="utf-8"))
+        count = len(report["checks"])
+        self.assertEqual(self.box.service.meta()["validation_check_count"], count)
+        assert_check_descriptions(self, self.box, count)
+        # A newer engine's advertised count must not overwrite an older package's totals.
+        with patch.object(validation_rules, "RULE_IDS", (*validation_rules.RULE_IDS, "test_extra_validation_rule")):
+            box = Toolbox(self.output)
+            assert_check_descriptions(self, box, count + 1)
+            package = box.call("get_package", {"package_id": self.built.data["package_id"]})
+            self.assertFalse(package.is_error, package.data)
+            self.assertEqual(package.data["checks"], {"passed": report["checks_passed"], "total": count})
+
     def test_build_matches_the_cli_package(self):
         self.assertFalse(self.built.is_error, self.built.data)
         data = self.built.data
@@ -222,9 +264,11 @@ class ToolboxTests(unittest.TestCase):
     def test_a_build_reports_its_stages(self):
         stages = []
         again = self.box.call("build_package", EXAMPLES["double_r3"],
-                              progress=lambda done, total, message: stages.append((done, total)))
+                              progress=lambda done, total, message: stages.append((done, total, message)))
         self.assertEqual((again.data["package_id"], again.data["already_existed"]), (self.built.data["package_id"], True))
-        self.assertEqual(stages, [(0, 3), (1, 3), (2, 3), (3, 3)])
+        self.assertEqual([(done, total) for done, total, _ in stages], [(0, 3), (1, 3), (2, 3), (3, 3)])
+        self.assertEqual(stages[1][2],
+                         "Building in a worker: saving the DXF, drawing the PNGs and running validation checks")
 
     def test_package_tools_accept_an_id_prefix(self):
         package_id = self.built.data["package_id"]
@@ -233,7 +277,7 @@ class ToolboxTests(unittest.TestCase):
         shown = self.box.call("get_package", {"package_id": package_id[:8]})
         self.assertFalse(shown.is_error, shown.data)
         self.assertEqual((shown.data["package_id"], shown.data["failed_checks"], len(shown.data["files"])),
-                         (package_id, [], 36))
+                         (package_id, [], 37))
         self.assertEqual(self.box.call("verify_package", {"package_id": package_id}).data["status"], "PASS")
         drawing = self.box.call("get_drawing", {"package_id": package_id[:12], "drawing": "assembly"})
         self.assertFalse(drawing.is_error, drawing.data)

@@ -4,6 +4,7 @@ from __future__ import annotations
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 import json
+import os
 from pathlib import PurePosixPath
 import re
 import socketserver
@@ -248,6 +249,9 @@ class Handler(BaseHTTPRequestHandler):
 
 class WebServer(ThreadingHTTPServer):
     daemon_threads = True
+    # On Windows SO_REUSEADDR lets a second server bind the same live port.
+    # Keep HTTPServer's quick-restart behavior on POSIX only.
+    allow_reuse_address = os.name != "nt"
 
     def __init__(self, service, builds, *, port=8765, verbose=False):
         # Loopback only: there is no login, so the server is never reachable from the network.

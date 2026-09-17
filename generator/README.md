@@ -63,14 +63,14 @@ claude mcp add hanok-window -- C:\절대\경로\generator\.venv\Scripts\hanok-wi
   "args": ["--output", "C:\\절대\\경로\\generator\\output"]}}}
 ```
 
-시험은 [검증](#검증)의 다섯 명령을 `.venv\Scripts\python`으로 돌리고 `web.sh` 시험 5개는 건너뜁니다.
+시험은 [검증](#검증)의 다섯 명령을 `.venv\Scripts\python`으로 돌립니다. 직접 실행하는 웹 서버의 시작·Ctrl+C 종료·재시작, 포트 충돌·시작 실패, 같은 출력 폴더의 동시 사용과 오래된 pid 기록은 윈도에서도 확인합니다. POSIX 전용인 백그라운드 명령, 잠금으로 pid의 주인을 확인하는 동작, 셸·Finder 실행 파일의 시험 3개만 건너뜁니다.
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .venv\Scripts\python -m unittest discover -s tests -p test_encoding.py
 .venv\Scripts\python -m unittest discover -s tests -p test_package_comparison.py
 .venv\Scripts\python -m unittest discover -s tests -p test_generator.py
-.venv\Scripts\python -m unittest discover -s tests -p test_web.py
+.venv\Scripts\python -m unittest discover -s tests -p test_web.py -v
 .venv\Scripts\python -m unittest discover -s tests -p test_llm.py
 ```
 
@@ -100,6 +100,8 @@ Finder에서는 `web-start.command`를 두 번 누르면 켜지고 `web-stop.com
 .venv/bin/hanok-window-web --output output --open        # http://127.0.0.1:8765
 .venv/bin/python -m hanok_generator.web --port 8800      # 같은 서버, 모듈로 실행
 ```
+
+직접 실행하는 서버는 서로 다른 `--port`를 지정하면 같은 `--output` 폴더를 함께 사용할 수 있습니다. 완료된 패키지는 공유하고, 생성 대기열과 진행 기록은 서버마다 따로 관리합니다. 한 서버를 꺼도 다른 서버와 완료된 패키지는 남습니다. 이미 사용 중인 포트로 두 번째 서버를 켜면 윈도에서도 포트를 열 수 없다는 안내와 함께 종료합니다.
 
 ### 화면
 
@@ -363,7 +365,7 @@ CI는 우분투·맥·윈도에서 `generator/requirements.lock`을 기준으로
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py' -v
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 10초
 ```
 
@@ -377,7 +379,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/
 - **인코딩 시험:** `hanok_generator/`, `tools/`, `tests/`의 파이썬 파일을 구문 트리로 읽어, 인코딩을 적지 않은 `read_text()`·`write_text()`, 텍스트 모드 `open()`, `text=True` 하위 프로세스를 찾습니다. 이런 곳은 한국어 Windows에서 cp949로 읽고 씁니다. GitHub의 Windows 러너는 한국어 로캘이 아니어서 CI만으로는 이 문제가 드러나지 않으므로 코드 모양으로 검사합니다.
 - **생성기 시험:** 단문 좌우·양문, 외경/내경 입력 동등성과 재측정, 창살 0개 조합, 조건부 상세도, 하드웨어 부재와 열림 방향, R3 형상 회귀, 소수 외곽 200건씩 일반/최적화 실행, 과밀·원판 초과·그림 초과 거부, 동시 성공/실패 작업, 단계별 오류·작업 프로세스 종료, 소스 번들 재생성, 무결성 검사를 확인합니다.
 - **R3 보존:** R3 규격·부품·결합·네스팅 및 생산 윤곽 176개를 고정한 기준은 `tests/fixtures/r3_reference.json`입니다. 저장소의 `r3_reference/` 폴더에서 파일 28개도 SHA-256으로 대조합니다.
-- **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. `web.sh` 시험은 임시 폴더에서 서버를 켜고 다시 켜고 끄며, 죽은 서버가 남긴 pid를 건드리지 않는지와 포트 충돌·시작 실패 안내를 확인합니다. 규칙 8종마다 고침 제안의 값을 하나씩 적용해 그 규칙이 풀리는지 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지와 오류 문구(`messages.js`)가 제안 값을 적는지는 `node`가 있을 때만 확인합니다.
+- **웹 시험:** 임시 출력 폴더에서 예제 5종을 웹과 `run_job`으로 각각 만들어 패키지 ID를 대조하고, 사전 확인·오류 표시 위치·보안 거절·파일과 ZIP·생성 대기열·서버 프로세스 격리·소스 해시를 확인합니다. 세 운영체제에서 실제 명령줄 서버를 켜고 Ctrl+C로 끝내고 다시 켜며, 포트 충돌·시작 실패 안내, 같은 출력 폴더의 동시 생성과 패키지 보존, 오래된 pid 기록 때문에 다른 프로세스를 멈추지 않는지를 확인합니다. 윈도에서는 시험 서버만 있는 숨겨진 콘솔에 Ctrl+C를 보내고 정상 종료 문구와 종료 코드를 확인합니다. 이 시험의 종료 시점에는 생성 작업이 끝나 있으므로 진행 중인 작업의 종료 처리를 검증했다는 뜻은 아닙니다. POSIX에서는 `web.sh`의 포트 오류도 함께 확인하고, 백그라운드 명령·잠금에 따른 pid 판별·셸과 Finder 실행 파일의 시험 3개를 추가로 실행합니다. 규칙 8종마다 고침 제안의 값을 하나씩 적용해 그 규칙이 풀리는지 확인합니다. 화면의 요청 구성(`app.js`)이 예제 JSON을 그대로 만드는지와 오류 문구(`messages.js`)가 제안 값을 적는지는 `node`가 있을 때만 확인합니다.
 - **LLM 시험:** 네 형식의 도구 정의(영어·스키마 호환), 요청 정규화, 모델이 실수로 섞은 실수·기본값으로도 CLI와 같은 패키지 ID가 나오는지, 규칙 오류의 `hint`와 제안(제안 값으로 고치면 통과하는지), 모든 도구의 결과가 선언한 결과 스키마를 따르는지, 패키지 파일 읽기와 이어 읽기, 생성 실패 보고, 패키지 도구와 도면 이미지, MCP 서버의 초기화·버전 협상·도구 호출·오류 코드·일괄 요청·생성 중 응답·진행 알림·취소, `hanok-window-llm` 종료 코드, 도구를 부르는 프로세스에 builder가 올라가지 않는지를 확인합니다.
 
 **운영체제 간 패키지 비교:** CI는 같은 요청(`examples/double_r3.json`)으로 만든 매니페스트를 `r3-manifest-ubuntu-latest`, `r3-manifest-macos-latest`, `r3-manifest-windows-latest` 아티팩트로 올립니다. 세 시험 작업 뒤의 `Compare R3 package bytes` 작업이 파일 경로별 SHA-256과 크기를 비교하고, 결과와 차이를 작업 요약에 적습니다. 파일 목록은 모두 같아야 하며, 아티팩트나 파일 누락·중복, 잘못된 매니페스트, 예외 밖의 차이는 실패입니다. 패키지 ID는 환경 파일의 해시도 포함하므로 운영체제끼리 같은 값인지 단언하지 않습니다.

@@ -24,6 +24,7 @@ from ezdxf import bbox
 from shapely.affinity import rotate, translate
 from shapely.geometry import LineString, box
 
+from hanok_generator.engine import validation_rules
 from hanok_generator.engine.cad_helpers import entity_polygon, meta, tag
 from hanok_generator.engine.numeric_policy import LENGTH_TOL_MM, geometry_matches
 from hanok_generator.jobs import JobError, replace_pointer, run_job
@@ -132,6 +133,17 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(check["status"],"PASS")
         self.assertTrue(all(abs(a-b)<=1e-7 for a,b in zip(check["actual"],[340.3,820.7])))
         LOG.append(dict(case="inner_size_inputs",status="PASS",cli_basis="inner",decimal_inner=[340.3,820.7],rejections=4))
+
+    def test_validation_catalogue_matches_reports(self):
+        rules=validation_rules.RULE_IDS
+        self.assertEqual(len(rules),len(set(rules)),"duplicate catalogue rule")
+        for name in self.results:
+            with self.subTest(name=name):
+                report=json.loads((self.path(name)/"validation_report.json").read_text(encoding="utf-8"))
+                actual=tuple(c["rule_id"] for c in report["checks"])
+                self.assertEqual(len(actual),len(set(actual)),"duplicate recorded rule")
+                self.assertEqual(actual,rules)
+                self.assertEqual(report["checks_passed"],len(rules))
 
     def test_all_types_zero_counts_and_real_details(self):
         ids=None

@@ -18,7 +18,7 @@ import zipfile
 
 from .. import __version__ as ENGINE_VERSION
 from .. import formats
-from ..engine import generate_spec
+from ..engine import generate_spec, validation_rules
 from ..engine.generate_spec import ParameterError
 from ..model import InputError, PRESETS, canonical, resolve
 from ..package import PNG_FILES, PackageError, verify as verify_package
@@ -224,6 +224,7 @@ class Service:
             return [item["minimum"], item["maximum"]]
 
         return dict(engine_version=ENGINE_VERSION, app_version=app_version(), output=str(self.root),
+                    validation_check_count=len(validation_rules.RULE_IDS),
                     example=copy.deepcopy(EXAMPLE), presets=presets, default_preset=defaults["preset"],
                     stock_mm=defaults["stock_mm"], picture_margin_mm=defaults["picture"]["margin_mm"],
                     picture_sizes=PICTURE_SIZES, frame_member_mm=preset_file["frame"]["member_width"],

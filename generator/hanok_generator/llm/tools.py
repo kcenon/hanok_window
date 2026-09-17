@@ -125,7 +125,7 @@ CHECK = ("Pre-check a window design without writing any file. Validates the requ
          "suggestion clears only that rule, so check again. Passing does not mean the saved DXF passed: "
          "build_package runs those checks.")
 BUILD = ("Build the complete CNC package for a design: DXF, five PNG drawings, four CSV manifests and a validation "
-         "report. An isolated worker saves the DXF, re-reads it and runs 71 checks; this takes a few seconds and "
+         "report. An isolated worker saves the DXF, re-reads it and runs {check_count} checks; this takes a few seconds and "
          "reports progress to MCP clients that ask for it. The same request yields the same package_id only in the "
          "same environment (OS, fonts, Python and library versions); to tell whether two packages hold the same "
          "design, compare the revision from check_design or get_package. Existing packages are never overwritten. "
@@ -355,7 +355,8 @@ class Toolbox:
         specs = (
             ("describe_generator", "Describe the generator", DESCRIBE, True, _object()),
             ("check_design", "Check a design", CHECK, True, design),
-            ("build_package", "Build a CNC package", BUILD, False, design),
+            ("build_package", "Build a CNC package", BUILD.format(check_count=meta["validation_check_count"]),
+             False, design),
             ("list_packages", "List built packages", LIST, True,
              _object(limit={"type": "integer", "minimum": 1, "maximum": 100,
                             "description": "How many of the newest packages to return, default 20."})),
@@ -439,7 +440,7 @@ class Toolbox:
             generator=dict(name="hanok-window-generator", version=meta["app_version"], engine=meta["engine_version"]),
             makes=("CNC packages for Korean hanok lattice windows, plain or built around an artwork panel: one "
                    "DXF with every part laid out on one stock board, five PNG drawings, four CSV manifests and a "
-                   "validation report that re-reads the saved DXF (71 checks)."),
+                   f"validation report that re-reads the saved DXF ({meta['validation_check_count']} checks)."),
             workflow=["check_design: validate a request without writing files. If it names a rule, apply one value "
                       "from suggestion (or follow hint) and check again; another rule may come next.",
                       "build_package: build the same request (a few seconds). The same request gives the same "
@@ -493,7 +494,7 @@ class Toolbox:
         if code != 200:
             return self._refused(body, request)
         before = {s["package_id"] for s in self.service.packages()["packages"]}
-        report(1, 3, "Building in a worker: saving the DXF, drawing the PNGs and running 71 checks")
+        report(1, 3, "Building in a worker: saving the DXF, drawing the PNGs and running validation checks")
         try:
             result = run_job(request, self.service.root, timeout=self.timeout)
         except JobError as exc:

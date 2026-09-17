@@ -42,8 +42,8 @@ def stop_leftover(child):
         child.wait(timeout=10)
 
 
-def windows_interrupt(pid):
-    """Run only in a disposable helper; the server owns the console we attach to."""
+def windows_console():
+    """Win32 console functions, loaded only by the Windows helpers."""
     import ctypes
     from ctypes import wintypes
 
@@ -56,6 +56,35 @@ def windows_interrupt(pid):
     kernel.GenerateConsoleCtrlEvent.restype = wintypes.BOOL
     kernel.FreeConsole.argtypes = ()
     kernel.FreeConsole.restype = wintypes.BOOL
+    return kernel
+
+
+def windows_launch(args):
+    """Give the real CLI normal Ctrl+C handling even if a CI shell ignores it."""
+    import ctypes
+
+    kernel = windows_console()
+    # SetConsoleCtrlHandler's ignore flag is inherited even in a new console.
+    # Change only this private launcher before creating the application child.
+    if not kernel.SetConsoleCtrlHandler(None, False):
+        raise ctypes.WinError(ctypes.get_last_error())
+    child = subprocess.Popen([sys.executable, "-m", "hanok_generator.web", *args],
+                             stdin=subprocess.DEVNULL, stdout=sys.stdout, stderr=sys.stderr)
+    try:
+        # The child already inherited normal handling; keep its launcher alive
+        # during Ctrl+C so it can relay the application's actual exit code.
+        if not kernel.SetConsoleCtrlHandler(None, True):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return child.wait()
+    finally:
+        stop_leftover(child)
+
+
+def windows_interrupt(pid):
+    """Run only in a disposable helper; the server owns the console we attach to."""
+    import ctypes
+
+    kernel = windows_console()
     # A Python launcher may attach its interpreter despite CREATE_NO_WINDOW.
     # Detach only this disposable helper, never the unittest process.
     kernel.FreeConsole()
@@ -79,8 +108,11 @@ class WebProcess:
         folder = case.enterContext(tempfile.TemporaryDirectory(prefix="hanok-web-process-"))
         self.log = Path(folder, "server.log")
         stream = case.enterContext(self.log.open("wb"))
+        command = [sys.executable, "-m", "hanok_generator.web"]
+        if os.name == "nt":
+            command = [sys.executable, str(Path(__file__).resolve()), "launch"]
         self.child = subprocess.Popen(
-            [sys.executable, "-m", "hanok_generator.web", "--output", str(self.output), "--port", str(port)],
+            [*command, "--output", str(self.output), "--port", str(port)],
             stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
             env=dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1"), **process_options())
         case.addCleanup(stop_leftover, self.child)
@@ -126,7 +158,7 @@ class WebProcess:
         self.case.assertIsNone(self.child.poll(), self.diagnostic())
         if os.name == "nt":
             result = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve()), str(self.child.pid)],
+                [sys.executable, str(Path(__file__).resolve()), "interrupt", str(self.child.pid)],
                 capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
                 env=dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1"),
                 **dict(process_options(), creationflags=subprocess.CREATE_NO_WINDOW))
@@ -138,4 +170,8 @@ class WebProcess:
 
 
 if __name__ == "__main__":
-    windows_interrupt(int(sys.argv[1]))
+    if sys.argv[1] == "launch":
+        raise SystemExit(windows_launch(sys.argv[2:]))
+    if sys.argv[1] != "interrupt":
+        raise ValueError("Expected launch or interrupt")
+    windows_interrupt(int(sys.argv[2]))

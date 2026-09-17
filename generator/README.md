@@ -66,6 +66,7 @@ claude mcp add hanok-window -- C:\절대\경로\generator\.venv\Scripts\hanok-wi
 시험은 [검증](#검증)의 다섯 명령을 `.venv\Scripts\python`으로 돌립니다. 직접 실행하는 웹 서버의 시작·Ctrl+C 종료·재시작, 포트 충돌·시작 실패, 같은 출력 폴더의 동시 사용과 오래된 pid 기록은 윈도에서도 확인합니다. POSIX 전용인 백그라운드 명령, 잠금으로 pid의 주인을 확인하는 동작, 셸·Finder 실행 파일의 시험 3개만 건너뜁니다.
 
 ```powershell
+.venv\Scripts\python -m pip install -r requirements-test.lock
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .venv\Scripts\python -m unittest discover -s tests -p test_encoding.py
 .venv\Scripts\python -m unittest discover -s tests -p test_package_comparison.py
@@ -355,7 +356,11 @@ DXF의 원판 안에는 부재 윤곽, 홈, 도그본, 부품 번호, 하드웨�
 
 ## 검증
 
-CI는 우분투·맥·윈도에서 `generator/requirements.lock`을 기준으로 `setup-python`의 pip 캐시를 사용합니다. 캐시는 다운로드한 패키지를 재사용하며, 매 실행마다 가상환경을 만들고 잠금 파일과 현재 소스를 설치합니다. 외부 패키지 설치가 없는 매니페스트 비교 작업에는 캐시를 쓰지 않습니다.
+시험을 실행할 때는 `requirements-test.lock`을 추가로 설치합니다. 이 파일은 실행 의존성의 `requirements.lock`을 참조하고, 결과 스키마 검증에 쓰는 `jsonschema`와 그 의존 버전을 고정합니다. 일반 설치에는 필요 없으며 실행 의존성과 생성 패키지의 `source/requirements.txt`에는 포함되지 않습니다.
+
+CI는 우분투·맥·윈도에서 `generator/requirements.lock`과 `generator/requirements-test.lock`을 기준으로 `setup-python`의 pip 캐시를 사용합니다. 캐시는 다운로드한 패키지를 재사용하며, 매 실행마다 가상환경을 만들고 시험 잠금 파일과 현재 소스를 설치합니다. 외부 패키지 설치가 없는 매니페스트 비교 작업에는 캐시를 쓰지 않습니다.
+
+도구 시험은 MCP가 광고하는 결과 스키마를 `Draft202012Validator`로 검사합니다. 먼저 스키마 자체의 문법을 확인하고 성공·오류 결과와 일부러 바꾼 결과를 대조합니다. 별도 예제에서는 추가 속성 금지, 열거 값, 숫자 범위, 상수, 분기 일치 수와 중첩 제약을 검사합니다. 실제 결과 스키마는 성공과 오류가 함께 사용하므로 계속 추가 속성을 허용하며, `required`에 없는 속성은 선택 사항입니다. 빈 스키마와 확장 키워드도 표준에서 허용하므로 문법 검사만으로 제약의 충분함을 보장하지는 않습니다. 실제 결과의 타입과 필수 속성을 훼손한 시험을 함께 두는 이유입니다.
 
 윈도 CI는 ODA File Converter 27.1.0을 선택 설치해 R3·액자형 A2의 DWG 왕복 시험을 실행합니다. 설치 실패나 변환기 부재는 이유를 로그에 남기고 시험을 건너뛰지만, 설치된 변환기의 변환 오류나 검사 실패는 CI 실패입니다. 사용 조건·설치 파일 검증·갱신 절차는 [DWG CI 안내](docs/DWG_CI.md)에 적었습니다. 변환기와 DWG는 배포 패키지에 넣지 않습니다.
 
@@ -364,6 +369,7 @@ CI는 우분투·맥·윈도에서 `generator/requirements.lock`을 기준으로
 캐시 효과는 같은 PR·커밋을 다시 실행해 운영체제별 캐시 적중 여부와 `Install` 단계 시간을 비교합니다. 실행 링크·시도 번호·실제 Python 버전·러너 이미지와 함께 PR에 기록하며, 캐시 복원 비용을 포함한 전체 작업 시간도 별도로 확인합니다. 캐시 적중만으로 전체 CI 시간이 줄었다고 판단하지 않습니다.
 
 ```bash
+.venv/bin/python -m pip install -r requirements-test.lock
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초

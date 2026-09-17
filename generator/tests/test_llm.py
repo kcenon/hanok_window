@@ -13,6 +13,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from jsonschema import Draft202012Validator, SchemaError, ValidationError
+
 from hanok_generator.engine import validation_rules
 from hanok_generator.jobs import run_job
 from hanok_generator.llm import FORMATS, Toolbox
@@ -55,21 +57,10 @@ def initialize(version):
 INITIALIZED = {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
 
-def conforms(value, schema):
-    """A small JSON Schema check for the keywords the output schemas use: type, properties, required, items."""
-    kinds = schema.get("type")
-    if kinds is not None:
-        simple = {"object": dict, "array": list, "string": str, "boolean": bool, "null": type(None)}
-        allowed = kinds if isinstance(kinds, list) else [kinds]
-        if not any(type(value) is int if kind == "integer" else type(value) in (int, float) if kind == "number"
-                   else type(value) is simple[kind] for kind in allowed):
-            return False
-    if isinstance(value, dict):
-        return all(key in value for key in schema.get("required", [])) and \
-            all(conforms(value[key], sub) for key, sub in schema.get("properties", {}).items() if key in value)
-    if isinstance(value, list) and "items" in schema:
-        return all(conforms(item, schema["items"]) for item in value)
-    return True
+def validate_output(value, schema):
+    """Check the schema itself, then retain ValidationError's instance path and constraint diagnostics."""
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(value)
 
 
 def assert_check_descriptions(case, box, count):
@@ -82,6 +73,52 @@ def assert_check_descriptions(case, box, count):
     described = box.call("describe_generator")
     case.assertFalse(described.is_error, described.data)
     case.assertIn(f"({count} checks)", described.data["makes"])
+
+
+class OutputSchemaTests(unittest.TestCase):
+    def test_declared_constraints_reject_invalid_results(self):
+        closed = {"type": "object", "properties": {"value": {"type": "integer"}},
+                  "additionalProperties": False}
+        nested = {"type": "array", "items": closed}
+        cases = (
+            ("additionalProperties", closed, [{}, {"value": 1}], [{"extra": 1}, {"value": 1, "extra": 2}]),
+            ("enum", {"type": "string", "enum": ["PASS", "FAIL"]}, ["PASS", "FAIL"], ["OTHER"]),
+            ("minimum", {"type": "number", "minimum": 0}, [0, 0.5], [-1]),
+            ("maximum", {"type": "number", "maximum": 10}, [9.5, 10], [11]),
+            ("const", {"const": "PASS"}, ["PASS"], ["FAIL"]),
+            # An integer matches both branches; a string matches neither.
+            ("oneOf", {"oneOf": [{"type": "number"}, {"type": "integer"}]}, [1.5], [1, "wrong"]),
+            ("required", {"type": "object", "required": ["status"]}, [{"status": "PASS"}], [{}]),
+            ("type", {"type": "integer"}, [0, 1.0], [True, False, 1.5, "1", None]),
+            ("type", {"type": "number"}, [0, 0.5], [True, False, "1"]),
+            ("type", {"type": "array", "items": {"type": "string"}}, [[], ["ok"]], [["ok", 1]]),
+            ("additionalProperties", nested, [[], [{"value": 1}]], [[{"value": 1, "extra": 2}]]),
+            ("type", nested, [[{"value": 1}]], [[{"value": "wrong"}]]),
+        )
+        for keyword, schema, valid, invalid in cases:
+            for value in valid:
+                with self.subTest(keyword=keyword, schema=schema, valid=value):
+                    validate_output(value, schema)
+            for value in invalid:
+                with self.subTest(keyword=keyword, schema=schema, invalid=value):
+                    with self.assertRaises(ValidationError) as caught:
+                        validate_output(value, schema)
+                    self.assertEqual(caught.exception.validator, keyword)
+
+    def test_open_optional_and_nullable_properties_remain_valid(self):
+        schema = {"type": "object", "properties": {"note": {"type": ["string", "null"]}}}
+        for value in ({}, {"note": "ok"}, {"note": None}, {"extra": 1}, {"note": None, "extra": 1}):
+            with self.subTest(value=value):
+                validate_output(value, schema)
+        with self.assertRaises(ValidationError) as caught:
+            validate_output({"note": 1}, schema)
+        self.assertEqual(caught.exception.json_path, "$.note")
+        self.assertEqual(caught.exception.validator, "type")
+
+    def test_invalid_schema_is_rejected_before_result_validation(self):
+        for schema in ({"type": "not-a-json-type"}, {"type": "object", "required": "status"}):
+            with self.subTest(schema=schema), self.assertRaises(SchemaError):
+                validate_output({}, schema)
 
 
 class MetadataTests(unittest.TestCase):
@@ -319,18 +356,41 @@ class ToolboxTests(unittest.TestCase):
                 self.assertEqual((result.is_error, result.data["rule_id"]), (True, rule))
 
     def test_results_match_their_output_schemas(self):
+        schemas = {tool["name"]: tool["outputSchema"] for tool in self.box.definitions("mcp")}
         package_id = self.built.data["package_id"]
-        calls = [("describe_generator", {}), ("check_design", EXAMPLES["double_r3"]),
-                 ("check_design", dict(EXAMPLES["double_r3"], lattice_per_leaf=[30, 4])),
-                 ("list_packages", {}), ("get_package", {"package_id": package_id}),
-                 ("verify_package", {"package_id": package_id}), ("get_package", {"package_id": "0" * 8}),
-                 ("get_drawing", {"package_id": package_id, "drawing": "nesting"}),
-                 ("read_package_file", {"package_id": package_id, "path": "parts_manifest.csv"})]
-        results = [(name, self.box.call(name, arguments)) for name, arguments in calls]
-        results.append(("build_package", self.built))
-        for name, result in results:
+        calls = [("describe_generator", {}, False), ("check_design", EXAMPLES["double_r3"], False),
+                 ("check_design", dict(EXAMPLES["double_r3"], lattice_per_leaf=[30, 4]), True),
+                 ("list_packages", {}, False), ("get_package", {"package_id": package_id}, False),
+                 ("verify_package", {"package_id": package_id}, False),
+                 ("get_package", {"package_id": "0" * 8}, True),
+                 ("get_drawing", {"package_id": package_id, "drawing": "nesting"}, False),
+                 ("read_package_file", {"package_id": package_id, "path": "parts_manifest.csv"}, False)]
+        results = [(name, self.box.call(name, arguments), error) for name, arguments, error in calls]
+        results.append(("build_package", self.built, False))
+        # Independent examples keep an emptied properties map from silently weakening this contract.
+        wrong_fields = dict(describe_generator=("makes", 0), check_design=("status", 0),
+                            build_package=("status", 0), list_packages=("total", True),
+                            get_package=("package_id", 0), verify_package=("files", True),
+                            get_drawing=("width", True), read_package_file=("next_offset", "wrong"))
+        for name, result, error in results:
+            schema = schemas[name]
             with self.subTest(tool=name, error=result.is_error):
-                self.assertTrue(conforms(result.data, self.box.tools[name].output), result.data)
+                self.assertEqual(result.is_error, error, result.data)
+                validate_output(result.data, schema)
+            if not result.is_error:
+                field, wrong = wrong_fields[name]
+                with self.subTest(tool=name, mutation=field):
+                    self.assertIn(field, result.data)
+                    with self.assertRaises(ValidationError) as caught:
+                        validate_output(dict(result.data, **{field: wrong}), schema)
+                    self.assertEqual(caught.exception.validator, "type")
+                    self.assertEqual(list(caught.exception.path), [field])
+            if name in ("check_design", "build_package", "verify_package"):
+                with self.subTest(tool=name, error=result.is_error, mutation="missing status"):
+                    missing = {key: value for key, value in result.data.items() if key != "status"}
+                    with self.assertRaises(ValidationError) as caught:
+                        validate_output(missing, schema)
+                    self.assertEqual(caught.exception.validator, "required")
 
     def test_a_failed_build_names_the_failed_checks(self):
         # Passes the pre-check; the saved DXF then shows pockets running into each other (as in the web tests).
@@ -339,7 +399,9 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual(result.data["rule_id"], "geometry.validation")
         self.assertIn("distinct_machining_regions_separated", {c["rule_id"] for c in result.data["validation"]["failed"]})
         self.assertIn("reliefs", result.data["hint"])
-        self.assertTrue(conforms(result.data, self.box.tools["build_package"].output))
+        schema = next(t["outputSchema"] for t in self.box.definitions("mcp") if t["name"] == "build_package")
+        with self.subTest(tool="build_package", error=result.is_error):
+            validate_output(result.data, schema)
 
     def test_bad_calls_come_back_as_results(self):
         with self.assertRaises(KeyError):

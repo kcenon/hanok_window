@@ -35,11 +35,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: generator/requirements.lock
+          cache-dependency-path: |
+            generator/requirements.lock
+            generator/requirements-test.lock
       - name: Install
         run: |
           python -m venv .venv
-          $VENV_PYTHON -m pip install -r requirements.lock
+          $VENV_PYTHON -m pip install -r requirements-test.lock
           $VENV_PYTHON -m pip install -e .
       # A separate step keeps this override even if optional setup times out.
       - name: Initialize DWG converter as unavailable

@@ -1,7 +1,7 @@
 # 한옥 창호 CNC 설계와 생성기
 
 창 크기(외경 또는 내경), 창짝당 창살 수, 단문(왼쪽·오른쪽 경첩)·양문을 넣으면 CNC로 깎을 한옥 창호의 CAD 패키지를 만드는 생성기와, 그 출발점인 확정 설계 R3를 함께 담은 저장소입니다.
-패키지 하나에는 DXF 도면, PNG 5장, 부품·홈·도그본·하드웨어 참고 좌표표(CSV 4종), 저장한 DXF를 다시 읽어 확인한 검증 기록이 들어 있습니다.
+패키지 하나에는 DXF 도면, AI 가공 도면, PNG 5장, 부품·홈·도그본·하드웨어 참고 좌표표(CSV 4종), 저장한 DXF를 다시 읽어 확인한 검증 기록이 들어 있습니다.
 
 > **제작 전 확인:** 모든 검증은 명목 CAD 기하에 대한 것입니다. 끼움 공차, 경첩·나사 같은 하드웨어, CAM 경로, 고정 지그는 아직 확인 전(PENDING)입니다. 시험편으로 확인하기 전에는 기계로 보내지 마십시오.
 
@@ -71,6 +71,7 @@ hanok_window/
 | R3 설계를 생성기로 다시 만들기 | `generator/examples/double_r3.json` (내경 입력은 `double_inner_r3.json`) |
 | R3 원본 도면과 계획 문서 보기 | `r3_reference/00_START_HERE.txt`부터 |
 | 생성기가 버전마다 바꾼 것 | [generator/docs/CHANGELOG.md](generator/docs/CHANGELOG.md) |
+| 0.5.0의 변경 내용과 패키지 ID 전환 안내 | [generator/docs/RELEASE_0.5.0.md](generator/docs/RELEASE_0.5.0.md) |
 | 지난 리비전(R1·R2) 보기 | 아래 [이력](#이력)의 git 태그 |
 
 ## 지킬 규칙
@@ -89,6 +90,8 @@ hanok_window/
 통합 경위와 변경 내역은 [r3_reference/01_plan/SPEC_UNIFICATION.md](r3_reference/01_plan/SPEC_UNIFICATION.md)에 있습니다.
 
 ## 이력
+
+0.5.0의 변경 내용과 호환성은 [릴리스 안내](generator/docs/RELEASE_0.5.0.md)에 정리했습니다. 태그 생성과 릴리스 게시는 [#35](https://github.com/kcenon/hanok_window/issues/35)에서 추적합니다.
 
 | 태그 | 내용 |
 |---|---|
@@ -110,16 +113,21 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 
 ## 시험
 
+설치한 가상환경에 시험 의존성을 더한 뒤 실행합니다. 아래 명령은 macOS와 Linux용이며, Windows 명령은 [생성기 README](generator/README.md#windows)에 있습니다.
+
 ```bash
 cd generator
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
+.venv/bin/python -m pip install -r requirements-test.lock
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py'         # 약 15초
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 5초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_manual_images.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_output_formats.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'
 ```
 
-다섯 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법, 세 운영체제의 패키지 바이트 비교는 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+일곱 시험 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법, 세 운영체제의 패키지 바이트 비교는 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
 
 ## 라이선스
 

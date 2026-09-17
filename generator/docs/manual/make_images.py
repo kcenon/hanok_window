@@ -1,4 +1,4 @@
-"""Remake the pictures of the user manual (docs/manual/images/).
+r"""Remake the pictures of the user manual (docs/manual/images/).
 
 Builds the example designs into a temporary output folder, serves them with the local web
 server in this process, drives headless Chrome over the DevTools protocol to photograph each
@@ -10,11 +10,16 @@ handed to the child process.
 
     cd generator
     .venv/bin/python docs/manual/make_images.py
+    .venv/bin/python docs/manual/make_images.py --check
+
+Windows PowerShell uses .\.venv\Scripts\python.exe instead of .venv/bin/python.
+--check renders into temporary storage and compares pixels without changing --out.
 """
 from __future__ import annotations
 
 import argparse
 import base64
+from contextlib import ExitStack
 import io
 import json
 import os
@@ -23,6 +28,7 @@ import shutil
 import socket
 import struct
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -37,11 +43,16 @@ from hanok_generator.web.server import make_server
 HERE = Path(__file__).resolve().parent
 EXAMPLES = HERE.parent.parent / "examples"
 CHROMES = ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "google-chrome", "google-chrome-stable",
-           "chromium", "chromium-browser")
+           "chromium", "chromium-browser", "chrome", "chrome.exe", "chromium.exe")
 WIDTH, HEIGHT, SCALE = 1280, 1000, 2  # CSS viewport and device pixel ratio of every screenshot
 FULL_WIDTH = 1920  # whole-screen shots are reduced to this many pixels across
 DRAWING_WIDTH = 1200
 DRAWINGS = dict(zip(("nesting", "joinery", "assembly", "opening", "pockets"), PNG_FILES))
+SCREENSHOTS = ("design", "design-inputs", "design-summary", "design-nesting", "design-inner", "design-artwork",
+               "design-artwork-preview", "design-single", "design-error", "build-failed", "history", "package",
+               "package-checks", "package-files", "viewer")
+IMAGE_NAMES = frozenset([*(f"{name}.png" for name in SCREENSHOTS), *(f"drawing-{name}.png" for name in DRAWINGS)])
+CAPTURE_EPOCH = 1789603200  # 2026-09-17 00:00 UTC; example folder times, not package contents
 DESIGN_READY = "document.querySelector('#panel-elev svg') && !document.getElementById('build').disabled"
 PACKAGE_READY = ("!document.getElementById('pkg-body').hidden"
                  " && document.getElementById('pkg-integrity')?.textContent.includes('파일')"
@@ -60,15 +71,19 @@ class Wire:
     def __init__(self, url, timeout=120):
         parsed = urllib.parse.urlparse(url)
         self.sock = socket.create_connection((parsed.hostname, parsed.port), timeout=timeout)
-        key = base64.b64encode(os.urandom(16)).decode()
-        self.sock.sendall((f"GET {parsed.path} HTTP/1.1\r\n"
-                           f"Host: {parsed.hostname}:{parsed.port}\r\n"
-                           "Upgrade: websocket\r\nConnection: Upgrade\r\n"
-                           f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
-        self.buffer = b""
-        head = self._until(b"\r\n\r\n")
-        if b" 101 " not in head.split(b"\r\n")[0]:
-            raise RuntimeError(f"DevTools refused the WebSocket upgrade: {head[:120]!r}")
+        try:
+            key = base64.b64encode(os.urandom(16)).decode()
+            self.sock.sendall((f"GET {parsed.path} HTTP/1.1\r\n"
+                               f"Host: {parsed.hostname}:{parsed.port}\r\n"
+                               "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+                               f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+            self.buffer = b""
+            head = self._until(b"\r\n\r\n")
+            if b" 101 " not in head.split(b"\r\n")[0]:
+                raise RuntimeError(f"DevTools refused the WebSocket upgrade: {head[:120]!r}")
+        except BaseException:
+            self.sock.close()
+            raise
 
     def _recv(self):
         chunk = self.sock.recv(1 << 16)
@@ -145,13 +160,18 @@ class Chrome:
 
     def __init__(self, binary):
         self.profile = tempfile.TemporaryDirectory(prefix="hanok-manual-chrome-")
-        self.proc = subprocess.Popen(
-            [binary, "--headless=new", "--remote-debugging-port=0", "--use-mock-keychain",
-             "--password-store=basic", "--no-first-run", "--no-default-browser-check",
-             "--disable-extensions", "--disable-gpu", "--hide-scrollbars",
-             f"--user-data-dir={self.profile.name}", "about:blank"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        self.wire, self.next_id = Wire(self._endpoint()), 0
+        self.proc, self.wire, self.next_id = None, None, 0
+        try:
+            self.proc = subprocess.Popen(
+                [binary, "--headless=new", "--remote-debugging-port=0", "--use-mock-keychain",
+                 "--password-store=basic", "--no-first-run", "--no-default-browser-check",
+                 "--disable-extensions", "--disable-gpu", "--hide-scrollbars",
+                 f"--user-data-dir={self.profile.name}", "about:blank"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.wire = Wire(self._endpoint())
+        except BaseException:
+            self.close()
+            raise
 
     def _endpoint(self, timeout=60):
         """Chrome writes the port it took and the browser path to DevToolsActivePort."""
@@ -182,15 +202,26 @@ class Chrome:
 
     def close(self):
         try:
-            self.send("Browser.close")
-        except (EOFError, OSError, RuntimeError):
-            pass
-        self.wire.close()
-        try:
-            self.proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            self.proc.kill()
-        self.profile.cleanup()
+            if self.wire is not None:
+                try:
+                    self.wire.sock.settimeout(3)
+                    self.send("Browser.close")
+                except (EOFError, OSError, RuntimeError):
+                    pass
+                finally:
+                    self.wire.close()
+        finally:
+            try:
+                if self.proc is not None:
+                    if self.wire is None and self.proc.poll() is None:
+                        self.proc.terminate()
+                    try:
+                        self.proc.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        self.proc.kill()
+                        self.proc.wait(timeout=15)
+            finally:
+                self.profile.cleanup()
 
 
 class Page:
@@ -206,8 +237,10 @@ class Page:
         self.call("Emulation.setDeviceMetricsOverride",
                   {"width": WIDTH, "height": HEIGHT, "deviceScaleFactor": SCALE, "mobile": False})
         self.call("Emulation.setEmulatedMedia", {"features": [{"name": "prefers-color-scheme", "value": "light"}]})
+        self.call("Emulation.setTimezoneOverride", {"timezoneId": "Asia/Seoul"})
         self.call("Page.navigate", {"url": url})
         self.wait(ready)
+        self.js("document.fonts.ready.then(() => true)")
 
     def call(self, method, params=None):
         return self.chrome.send(method, params, self.session)
@@ -249,16 +282,23 @@ class Page:
 
     def crop(self, *selectors, margin=10):
         """The viewport cut to the box around the elements, after scrolling the first one to the top."""
-        self.js(f"document.querySelector({json.dumps(selectors[0])}).scrollIntoView({{block: 'start', behavior: 'instant'}});"
-                " window.scrollBy(0, -16); true")
-        time.sleep(0.2)
-        boxes = [self.js(f"(() => {{ const r = document.querySelector({json.dumps(s)}).getBoundingClientRect();"
-                         " return [r.left, r.top, r.right, r.bottom]; })()") for s in selectors]
-        left, top = min(b[0] for b in boxes) - margin, min(b[1] for b in boxes) - margin
-        right, bottom = max(b[2] for b in boxes) + margin, max(b[3] for b in boxes) + margin
-        image = self.capture()
-        box = (max(0, left), max(0, top), min(WIDTH, right), min(HEIGHT, bottom))
-        return image.crop(tuple(round(v * SCALE) for v in box))
+        # Keep the header in normal flow while scrolling a detail into view; a sticky
+        # header would cover the top of the crop, especially the taller artwork form.
+        position = self.js("document.querySelector('.apptop').style.position")
+        try:
+            self.js("document.querySelector('.apptop').style.position = 'static';"
+                    f"document.querySelector({json.dumps(selectors[0])}).scrollIntoView({{block: 'start', behavior: 'instant'}});"
+                    " window.scrollBy(0, -16); true")
+            time.sleep(0.2)
+            boxes = [self.js(f"(() => {{ const r = document.querySelector({json.dumps(s)}).getBoundingClientRect();"
+                             " return [r.left, r.top, r.right, r.bottom]; })()") for s in selectors]
+            left, top = min(b[0] for b in boxes) - margin, min(b[1] for b in boxes) - margin
+            right, bottom = max(b[2] for b in boxes) + margin, max(b[3] for b in boxes) + margin
+            image = self.capture()
+            box = (max(0, left), max(0, top), min(WIDTH, right), min(HEIGHT, bottom))
+            return image.crop(tuple(round(v * SCALE) for v in box))
+        finally:
+            self.js(f"document.querySelector('.apptop').style.position = {json.dumps(position)}; true")
 
     def top(self, selector, margin=24):
         """The whole width of the viewport, from the top down to just below the element."""
@@ -275,11 +315,25 @@ def save(image, path, width=None):
 
 
 def find_chrome(given):
-    for candidate in ([given] if given else CHROMES):
-        found = candidate if os.path.isabs(candidate) and os.access(candidate, os.X_OK) else shutil.which(candidate)
-        if found:
-            return found
-    raise SystemExit("Chrome을 찾지 못했습니다. --chrome에 Chrome 또는 Chromium 실행 파일 경로를 주세요.")
+    """Explicit override, existing Mac/PATH candidates, then Windows installation roots."""
+    candidates = [given] if given is not None else [*CHROMES, *windows_chromes()]
+    for candidate in candidates:
+        is_path = given is not None or os.path.isabs(candidate)
+        found = candidate if is_path and os.path.isfile(candidate) and os.access(candidate, os.X_OK) else shutil.which(candidate)
+        if found and os.path.isfile(found) and os.access(found, os.X_OK):
+            return os.path.abspath(found)
+    example = (r'--chrome "C:\Program Files\Google\Chrome\Application\chrome.exe"' if sys.platform == "win32"
+               else '--chrome "/경로/Google Chrome"')
+    raise RuntimeError(f"Chrome 실행 파일을 찾지 못했습니다{': ' + given if given is not None else ''}. {example}")
+
+
+def windows_chromes():
+    if sys.platform != "win32":
+        return []
+    roots = [os.environ.get("ProgramFiles") or r"C:\Program Files",
+             os.environ.get("ProgramFiles(x86)") or r"C:\Program Files (x86)",
+             os.environ.get("LOCALAPPDATA")]
+    return [str(Path(root) / "Google" / "Chrome" / "Application" / "chrome.exe") for root in roots if root]
 
 
 def build_examples(output):
@@ -289,6 +343,8 @@ def build_examples(output):
         if path.name == "built_packages.json":
             continue
         ids[path.stem] = run_job(json.loads(path.read_text(encoding="utf-8")), output)["package_id"]
+        stamp = CAPTURE_EPOCH + (len(ids) - 1) * 60
+        os.utime(output / "packages" / ids[path.stem], (stamp, stamp))
         print(f"  {path.stem}: {ids[path.stem][:12]}")
     return ids
 
@@ -338,12 +394,22 @@ def shoot(chrome, origin, r3, out):
     p.wait("!document.getElementById('build').disabled")
     p.click("#build")
     p.wait("document.querySelector('.buildcard.fail')", timeout=150)
+    # Keep the actual failure text/count; only the timer and random log name are examples.
+    p.js(r"""(() => {
+      const card = document.querySelector('.buildcard.fail');
+      for (const node of card.querySelector('p').childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) node.textContent = node.textContent.replace(/ · [\d.]+초/, ' · 0.0초');
+      }
+      const log = card.querySelector('p.small');
+      log.textContent = log.textContent.replace(/failures[\\/][a-f0-9]{32}\.json/, 'failures/example.json');
+      return true;
+    })()""")
     save(p.crop("aside.summary"), out / "build-failed.png")
 
     p = Page(chrome, f"{origin}/#/packages", "document.querySelectorAll('#hist-rows tr').length >= 5")
     # Name the usual output folder rather than this run's temporary one.
     p.js("(() => { const n = document.getElementById('hist-note'); n.textContent = n.textContent.replace("
-         r"/\S*hanok-manual-[^/]+\/output/, '…/hanok_window/generator/output'); return true; })()")
+         r"/(출력 폴더 ).*$/, '$1…/hanok_window/generator/output'); return true; })()")
     save(p.top("#view-packages .pane"), out / "history.png", FULL_WIDTH)
 
     p = Page(chrome, f"{origin}/#/packages/{r3}", PACKAGE_READY)
@@ -365,29 +431,95 @@ def reduce_drawings(package, out):
             save(drawing, out / f"drawing-{name}.png", DRAWING_WIDTH)
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description="사용 설명서 그림(docs/manual/images/)을 다시 만듭니다.")
-    parser.add_argument("--out", type=Path, default=HERE / "images", help="그림을 쓸 폴더 (기본 docs/manual/images)")
-    parser.add_argument("--chrome", help="Chrome 또는 Chromium 실행 파일 (기본: 흔한 설치 위치에서 찾음)")
-    args = parser.parse_args(argv)
-    binary = find_chrome(args.chrome)
-    args.out.mkdir(parents=True, exist_ok=True)
+def render_images(binary, out):
+    """Capture a complete set into staging; every resource belongs to this invocation."""
     with tempfile.TemporaryDirectory(prefix="hanok-manual-") as tmp:
         output = Path(tmp) / "output"
         print("예제 생성:")
         ids = build_examples(output)
-        chrome = Chrome(binary)
-        server = make_server(output, port=0)
-        threading.Thread(target=server.serve_forever, daemon=True).start()
-        try:
+        with ExitStack() as cleanup:
+            chrome = Chrome(binary)
+            cleanup.callback(chrome.close)
+            server = make_server(output, port=0)
+            cleanup.callback(server.close)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            cleanup.callback(thread.join, timeout=15)
+            cleanup.callback(server.shutdown)
             print("화면 촬영:")
-            shoot(chrome, f"http://127.0.0.1:{server.port}", ids["double_r3"], args.out)
+            shoot(chrome, f"http://127.0.0.1:{server.port}", ids["double_r3"], out)
             print("도면 축소:")
-            reduce_drawings(output / "packages" / ids["double_r3"], args.out)
-        finally:
-            chrome.close()
-            server.shutdown()
-            server.close()
+            reduce_drawings(output / "packages" / ids["double_r3"], out)
+
+
+def png_names(folder):
+    return {p.name for p in folder.iterdir() if p.suffix.lower() == ".png"}
+
+
+def pixels(path):
+    try:
+        with Image.open(path) as image:
+            return image.size, image.convert("RGBA").tobytes()
+    except (OSError, ValueError) as exc:
+        raise OSError(f"{path.name}: 그림을 읽지 못했습니다: {exc}") from exc
+
+
+def validate_capture(folder):
+    actual = png_names(folder)
+    if actual != IMAGE_NAMES:
+        raise RuntimeError(f"촬영 파일 목록 오류: 누락 {sorted(IMAGE_NAMES - actual)}, 추가 {sorted(actual - IMAGE_NAMES)}")
+    for name in sorted(actual):
+        pixels(folder / name)
+
+
+def compare_images(reference, generated):
+    actual = png_names(reference)
+    changed = False
+    for name in sorted(IMAGE_NAMES | actual):
+        if name not in actual:
+            reason = "기준 그림 누락"
+        elif name not in IMAGE_NAMES:
+            reason = "예상하지 않은 기준 그림"
+        else:
+            old_size, old_pixels = pixels(reference / name)
+            new_size, new_pixels = pixels(generated / name)
+            reason = (f"크기 다름: {old_size} → {new_size}" if old_size != new_size else
+                      "픽셀 다름" if old_pixels != new_pixels else "")
+        if reason:
+            print(f"  {name}: {reason}")
+            changed = True
+    if not changed:
+        print(f"그림 {len(IMAGE_NAMES)}개가 모두 같습니다.")
+    return 1 if changed else 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="사용 설명서 그림을 다시 만들거나 변경 여부를 확인합니다.")
+    parser.add_argument("--out", type=Path, default=HERE / "images",
+                        help="그림을 쓸 폴더 (--check에서는 읽기 전용 기준 폴더; 기본 docs/manual/images)")
+    parser.add_argument("--chrome", help="Chrome 또는 Chromium 실행 파일 (기본: 흔한 설치 위치에서 찾음)")
+    parser.add_argument("--check", action="store_true", help="임시로 다시 찍어 비교 (같음 0, 차이 1, 실행 오류 2)")
+    args = parser.parse_args(argv)
+    try:
+        if args.check and not args.out.exists():
+            print(f"기준 그림 폴더가 없습니다: {args.out}")
+            return 1
+        if args.out.exists() and not args.out.is_dir():
+            raise OSError(f"그림 폴더가 아닙니다: {args.out}")
+        binary = find_chrome(args.chrome)
+        with tempfile.TemporaryDirectory(prefix="hanok-manual-images-") as tmp:
+            generated = Path(tmp)
+            render_images(binary, generated)
+            validate_capture(generated)
+            if args.check:
+                return compare_images(args.out, generated)
+            # Publish only after all captures succeeded; failed renders never touch --out.
+            args.out.mkdir(parents=True, exist_ok=True)
+            for name in sorted(IMAGE_NAMES):
+                shutil.copyfile(generated / name, args.out / name)
+    except (OSError, RuntimeError, EOFError, ValueError, subprocess.SubprocessError) as exc:
+        print(f"그림 생성/검사 오류: {exc}", file=sys.stderr)
+        return 2
     return 0
 
 

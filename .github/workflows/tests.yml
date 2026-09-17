@@ -41,12 +41,40 @@ jobs:
           python -m venv .venv
           $VENV_PYTHON -m pip install -r requirements.lock
           $VENV_PYTHON -m pip install -e .
+      # A separate step keeps this override even if optional setup times out.
+      - name: Initialize DWG converter as unavailable
+        run: echo "HANOK_ODAFC=$RUNNER_TEMP/oda-unavailable/ODAFileConverter.exe" >> "$GITHUB_ENV"
+      - name: Test optional ODA setup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ../.github/scripts/test-install-oda.ps1
+      - name: Install optional ODA File Converter
+        id: oda
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        timeout-minutes: 5
+        shell: pwsh
+        run: ../.github/scripts/install-oda.ps1
+      - name: DWG converter status
+        env:
+          ODA_SETUP_OUTCOME: ${{ steps.oda.outcome }}
+        run: |
+          echo "ODA setup: $ODA_SETUP_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          $VENV_PYTHON -c "from hanok_generator.web import dwg; print(dwg.status())" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$ODA_SETUP_OUTCOME" = failure ]; then
+            echo "::warning::ODA setup failed; the optional DWG round-trip test will be skipped."
+          fi
       - name: test_encoding.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_encoding.py'
       - name: test_package_comparison.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_package_comparison.py'
       - name: test_generator.py
-        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py'
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py' -v
+      - name: DWG skip without converter
+        if: runner.os == 'Windows'
+        env:
+          HANOK_ODAFC: ${{ runner.temp }}/oda-unavailable/ODAFileConverter.exe
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py' -k test_dwg_round_trip_keeps_every_check -v
       - name: test_web.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py'
       - name: test_llm.py

@@ -72,6 +72,8 @@ jobs:
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_package_comparison.py'
       - name: test_manual_images.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_manual_images.py' -v
+      - name: test_output_formats.py
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_output_formats.py' -v
       - name: test_generator.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py' -v
       - name: DWG skip without converter

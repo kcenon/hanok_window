@@ -4,6 +4,7 @@ Keep this catalogue aligned with builder.validate(). The generator tests compare
 it with real reports for every supported design, including zero-count families.
 Standalone validation without a spec file may omit its on-disk spec check.
 """
+from .output_formats import rule_ids
 
 RULE_IDS = (
     "unique_part_ids_and_total",
@@ -72,7 +73,7 @@ RULE_IDS = (
     "references_outside_board",
     "opening_illustration_matches_leaves",
     "pockets_open_edge_intent",
-    "ai_export_matches_saved_dxf",
+    *rule_ids(),
     "revision_recorded_matches_parameters",
     "numeric_policy_recorded",
     "design_spec_on_disk_matches_parameters",

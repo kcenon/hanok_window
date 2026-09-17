@@ -314,7 +314,7 @@ class ToolboxTests(unittest.TestCase):
         shown = self.box.call("get_package", {"package_id": package_id[:8]})
         self.assertFalse(shown.is_error, shown.data)
         self.assertEqual((shown.data["package_id"], shown.data["failed_checks"], len(shown.data["files"])),
-                         (package_id, [], 37))
+                         (package_id, [], 38))
         self.assertEqual(self.box.call("verify_package", {"package_id": package_id}).data["status"], "PASS")
         drawing = self.box.call("get_drawing", {"package_id": package_id[:12], "drawing": "assembly"})
         self.assertFalse(drawing.is_error, drawing.data)

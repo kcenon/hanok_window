@@ -10,14 +10,19 @@ import shutil
 import sys
 
 from .model import canonical
+from .engine import output_formats
 
 PNG_FILES = ["01_one_board_nesting.png", "02_joinery_details.png", "03_assembly_reference.png",
              "04_opening_reference.png", "05_all_pockets_closeup.png"]
 CSV_FILES = ["parts_manifest.csv", "pocket_manifest.csv", "dogbone_manifest.csv", "hardware_reference_manifest.csv"]
-REQUIRED = {"window.dxf", "window.ai", "README.txt", "design_request.json", "design_parameters.json", "design_spec.json",
+BASE_REQUIRED = {"window.dxf", "README.txt", "design_request.json", "design_parameters.json", "design_spec.json",
             "resolved_parameters.json", "validation_report.json", "environment.json", "source/requirements.txt",
             "source/hanok_generator/__main__.py", *PNG_FILES, *CSV_FILES}
 DEPENDENCIES = ("ezdxf", "shapely", "Pillow", "numpy", "fonttools", "pyparsing", "typing_extensions")
+
+
+def required_files():
+    return BASE_REQUIRED | set(output_formats.filenames())
 
 
 class PackageError(ValueError):
@@ -77,7 +82,7 @@ def seal(root):
     from PIL import Image
     root=Path(root)
     found={name for name,_ in package_files(root)}
-    missing=REQUIRED-found
+    missing=required_files()-found
     if missing:
         raise PackageError(f"Missing required artifacts: {sorted(missing)}")
     for name in PNG_FILES:
@@ -106,7 +111,7 @@ def verify(root):
         if len(names)!=len(set(names)) or any(Path(n).is_absolute() or ".." in Path(n).parts for n in names):
             raise PackageError("Invalid or duplicate manifest paths")
         found={name:p for name,p in package_files(root)}
-        if set(names)!=set(found) or not REQUIRED.issubset(found):
+        if set(names)!=set(found) or not required_files().issubset(found):
             raise PackageError("Package contents differ from manifest or required artifacts")
         bad=[row["path"] for row in rows if digest(found[row["path"]])!=row["sha256"] or found[row["path"]].stat().st_size!=row["bytes"]]
         if bad:

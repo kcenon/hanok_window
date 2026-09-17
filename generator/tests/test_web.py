@@ -1,5 +1,5 @@
 """Web interface: CLI parity, error mapping, request limits, builds, package files, isolation,
-and the background server behind web.sh."""
+foreground CLI lifecycle, and the POSIX background server behind web.sh."""
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -28,8 +28,9 @@ from hanok_generator.jobs import run_job
 from hanok_generator.package import digest, source_files
 from hanok_generator.web import dwg
 from hanok_generator.web.server import Handler, make_server
+from web_process import WebProcess, process_options, stop_leftover
 
-if os.name == "posix":  # web.control imports fcntl; only BackgroundServerTests use it, and they skip elsewhere
+if os.name == "posix":  # Foreground tests also exercise the POSIX controller's port diagnostics here.
     from hanok_generator.web.control import Record
 
 HERE = Path(__file__).parent
@@ -627,9 +628,145 @@ def status_of(port, path="/api/meta"):
         conn.close()
 
 
-@unittest.skipUnless(os.name == "posix", "the background server needs POSIX sessions and file locks")
+class ForegroundServerTests(unittest.TestCase):
+    """The documented foreground CLI on every OS; port errors also cover the POSIX controller."""
+
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="hanok-web-lifecycle-")))
+        self.output = self.root / "shared output"
+        if os.name == "posix":
+            self.addCleanup(self.kill_background)
+
+    def kill_background(self):
+        # Preserve the controller tests' cleanup if a port-refusal regression
+        # unexpectedly leaves a detached server holding this test's record.
+        record = Record(self.output)
+        current = record.running()
+        if current and current.get("pid"):
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(current["pid"], signal.SIGKILL)
+            deadline = time.monotonic() + 10
+            while record.running() is not None:
+                self.assertLess(time.monotonic(), deadline, "the controller server still holds its lock")
+                time.sleep(0.05)
+
+    def start(self, output=None, port=0):
+        return WebProcess(self, output or self.output, port).ready()
+
+    def control(self, *args):
+        return subprocess.run([sys.executable, "-m", "hanok_generator.web.control", *args,
+                               "--output", str(self.output)], cwd=HERE.parent, capture_output=True,
+                              text=True, encoding="utf-8", timeout=30,
+                              env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+
+    def test_start_stop_and_restart(self):
+        command = Path(sys.executable).with_name("hanok-window-web.exe" if os.name == "nt" else "hanok-window-web")
+        usage = subprocess.run([str(command), "--help"], capture_output=True, text=True, encoding="utf-8",
+                               timeout=20, env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+        self.assertEqual(usage.returncode, 0, usage.stderr)
+        self.assertIn("--output", usage.stdout)
+        first = self.start()
+        first.stop()
+        with self.assertRaises((ConnectionRefusedError, TimeoutError)):
+            first.call(timeout=1)
+        restarted = self.start(port=first.port)
+        restarted.stop()
+
+    def test_start_leaves_the_port_to_a_server_already_there(self):
+        other = self.start(self.root / "other")
+        refused = WebProcess(self, self.output, other.port)
+        self.assertEqual(refused.wait(), 1, refused.diagnostic())
+        self.assertIn(f"127.0.0.1:{other.port} 포트를 열 수 없습니다", refused.diagnostic())
+        self.assertEqual(other.call()[1]["output"], str(other.output))
+        self.assertIsNone(other.child.poll())
+        self.assertFalse((self.output / ".web" / "server.json").exists())
+        if os.name == "posix":
+            with self.subTest(launcher="web.control"):
+                result = self.control("start", "--port", str(other.port), "--no-open")
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(f"127.0.0.1:{other.port}에서 이미 다른 서버가 응답합니다", result.stderr)
+                self.assertFalse((self.output / ".web" / "server.json").exists())
+        other.stop()
+
+    def test_a_failed_start_reports_the_bind_error(self):
+        with socket.socket() as busy:  # Hold a real listener throughout the attempt, without answering HTTP.
+            busy.bind(("127.0.0.1", 0))
+            busy.listen()
+            port = busy.getsockname()[1]
+            failed = WebProcess(self, self.output, port)
+            self.assertEqual(failed.wait(), 1, failed.diagnostic())
+            self.assertIn(f"127.0.0.1:{port} 포트를 열 수 없습니다", failed.diagnostic())
+            if os.name == "posix":
+                with self.subTest(launcher="web.control"):
+                    result = self.control("start", "--port", str(port), "--no-open")
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertIn(f"127.0.0.1:{port} 포트를 열 수 없습니다", result.stderr)
+                    self.assertIn("서버 기록", result.stderr)
+        if os.name == "posix":
+            status = self.control("status", "--port", str(port))
+            self.assertEqual((status.returncode, status.stdout), (3, "꺼져 있습니다.\n"))
+        self.start(port=port).stop()
+
+    def test_stale_controller_records_never_signal_another_process(self):
+        crashed = self.start()
+        stop_leftover(crashed.child)
+        record = self.output / ".web" / "server.json"
+        record.parent.mkdir(parents=True)
+        # A Python child works on Windows too; it is unrelated to the server's console/session.
+        sentinel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"], **process_options())
+        self.addCleanup(stop_leftover, sentinel)
+        self.assertNotEqual(crashed.child.pid, sentinel.pid)
+        for pid in (crashed.child.pid, sentinel.pid):
+            with self.subTest(recorded_pid=pid):
+                data = json.dumps(dict(pid=pid, port=crashed.port))
+                record.write_text(data, encoding="utf-8")
+                first = self.start()
+                self.assertEqual(record.read_text(encoding="utf-8"), data)
+                first.stop()
+                self.start(port=first.port).stop()
+                self.assertIsNone(sentinel.poll(), "The unrelated sentinel was terminated")
+                self.assertEqual(record.read_text(encoding="utf-8"), data)
+
+    def test_two_servers_share_packages_but_not_build_status(self):
+        first, second = self.start(), self.start()
+        submitted = []
+        for server, data in ((first, R3), (second, request("single", side="left"))):
+            status, record = server.call("POST", "/api/builds", data)
+            self.assertEqual(status, 202, record)
+            submitted.append((server, record["build_id"]))
+        packages = []
+        deadline = time.monotonic() + 130
+        for server, build_id in submitted:
+            while True:
+                status, record = server.call(path=f"/api/builds/{build_id}")
+                self.assertEqual(status, 200, record)
+                if record["state"] not in ("queued", "running"):
+                    break
+                self.assertLess(time.monotonic(), deadline, server.diagnostic())
+                time.sleep(0.05)
+            self.assertEqual(record["state"], "passed", record)
+            package = record["result"]["package_id"]
+            packages.append(package)
+            peer = second if server is first else first
+            self.assertEqual(peer.call(path=f"/api/builds/{build_id}")[0], 404)
+            status, verified = peer.call(path=f"/api/packages/{package}/verify")
+            self.assertEqual((status, verified["status"]), (200, "PASS"), verified)
+        pointer = json.loads((self.output / "latest.json").read_text(encoding="utf-8"))
+        self.assertIn(pointer["package_id"], packages)
+        self.assertEqual(pointer["path"], f"packages/{pointer['package_id']}")
+        first.stop()
+        self.assertEqual(second.call()[1]["output"], str(self.output.resolve()))
+        restarted = self.start(port=first.port)
+        for package in packages:
+            self.assertEqual(restarted.call(path=f"/api/packages/{package}/verify")[1]["status"], "PASS")
+        self.assertEqual(restarted.call(path=f"/api/builds/{submitted[0][1]}")[0], 404)
+        restarted.stop()
+        second.stop()
+
+
+@unittest.skipUnless(os.name == "posix", "web.control and shell/Finder launchers require POSIX sessions and fcntl locks")
 class BackgroundServerTests(unittest.TestCase):
-    """web.sh start|stop|restart|status|log, which run python -m hanok_generator.web.control."""
+    """POSIX-only commands, lock-based PID ownership, and shell/Finder launchers."""
 
     def setUp(self):
         temp = tempfile.TemporaryDirectory(prefix="hanok-web-control-")
@@ -707,28 +844,6 @@ class BackgroundServerTests(unittest.TestCase):
                 self.assertEqual(self.record.path.read_text(encoding="utf-8"), "")
             finally:
                 other.kill()
-
-    def test_start_leaves_the_port_to_a_server_already_there(self):
-        other = serve(make_server(self.output / "other", port=0))
-        try:
-            refused = self.control("start", "--port", str(other.port), "--no-open")
-        finally:
-            other.shutdown()
-            other.close()
-        self.assertEqual(refused.returncode, 1)
-        self.assertIn(f"127.0.0.1:{other.port}에서 이미 다른 서버가 응답합니다", refused.stderr)
-        self.assertFalse(self.record.path.exists())
-
-    def test_a_failed_start_shows_the_server_log(self):
-        with socket.socket() as busy:  # holds the port without answering HTTP
-            busy.bind(("127.0.0.1", 0))
-            busy.listen()
-            port = busy.getsockname()[1]
-            failed = self.control("start", "--port", str(port), "--no-open")
-        self.assertEqual(failed.returncode, 1)
-        self.assertIn(f"127.0.0.1:{port} 포트를 열 수 없습니다", failed.stderr)
-        status = self.control("status", "--port", str(port))
-        self.assertEqual((status.returncode, status.stdout), (3, "꺼져 있습니다.\n"))
 
     @unittest.skipUnless((HERE.parent / ".venv" / "bin" / "python").exists(), "web.sh runs .venv/bin/python")
     def test_web_sh_and_the_finder_files(self):

@@ -76,7 +76,7 @@ jobs:
           HANOK_ODAFC: ${{ runner.temp }}/oda-unavailable/ODAFileConverter.exe
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_generator.py' -k test_dwg_round_trip_keeps_every_check -v
       - name: test_web.py
-        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py'
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py' -v
       - name: test_llm.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_llm.py'
       # Build into a fresh directory so the artifact contains only this R3 request.

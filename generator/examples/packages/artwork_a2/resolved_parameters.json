@@ -1,0 +1,205 @@
+{
+  "input_request": {
+    "artwork": {
+      "size_mm": [
+        420,
+        594
+      ]
+    },
+    "lattice_per_leaf": [
+      2,
+      4
+    ],
+    "preset": "standard_4x8_v1",
+    "type": "double"
+  },
+  "parameters": {
+    "artwork": {
+      "cover": 8,
+      "fit": 1,
+      "mounting": "One panel held behind the fixed frame by a back frame cut from the same board. Spacer, backing and fixings are procured separately.",
+      "sheet_height": 594,
+      "sheet_width": 420,
+      "spacer": 3,
+      "thickness": 3
+    },
+    "build_date": "2026-09-12",
+    "clearance": {
+      "frame_to_leaf": 3,
+      "leaf_to_leaf": 3
+    },
+    "frame": {
+      "member_width": 40,
+      "outer_height": 658,
+      "outer_width": 484
+    },
+    "hardware_reference": {
+      "catch_inset_from_frame_inner_top": 11,
+      "catch_inset_from_leaf_top": 12,
+      "catch_size": 10,
+      "handle_height": 20,
+      "handle_width": 10,
+      "hinge_depth_ref": 2,
+      "hinge_inset_from_leaf_end": 60,
+      "hinge_length": 40,
+      "hinges_per_leaf": 2,
+      "note": "Positions only. Not selected products, not production machining.",
+      "wing_inset": 2,
+      "wing_width": 14
+    },
+    "lattice": {
+      "bar_width": 10,
+      "end_lap_length": 10,
+      "horizontal_per_leaf": 4,
+      "vertical_per_leaf": 2
+    },
+    "leaf": {
+      "count": 2,
+      "member_width": 30,
+      "min_height_to_width_ratio": 0
+    },
+    "machining": {
+      "machining_face": "A",
+      "pocket_depth": 10.0,
+      "relief_radius": 3.2,
+      "tool_diameter": 6
+    },
+    "nesting": {
+      "algorithm": "first-fit-decreasing shelves, scoped per (family, member width)",
+      "families": {
+        "BACK_FRAME": [
+          "B01",
+          "B02"
+        ],
+        "FRAME": [
+          "F01",
+          "F02"
+        ],
+        "LATTICE": [
+          "L01",
+          "L02"
+        ],
+        "SASH": [
+          "S01",
+          "S02"
+        ]
+      }
+    },
+    "part_kinds": {
+      "B01": {
+        "axis": "V",
+        "family": "BACK_FRAME",
+        "role": "back frame stile"
+      },
+      "B02": {
+        "axis": "H",
+        "family": "BACK_FRAME",
+        "role": "back frame rail"
+      },
+      "F01": {
+        "axis": "V",
+        "family": "FRAME",
+        "role": "fixed frame stile"
+      },
+      "F02": {
+        "axis": "H",
+        "family": "FRAME",
+        "role": "fixed frame rail"
+      },
+      "L01": {
+        "axis": "V",
+        "family": "LATTICE",
+        "role": "vertical lattice bar"
+      },
+      "L02": {
+        "axis": "H",
+        "family": "LATTICE",
+        "role": "horizontal lattice bar"
+      },
+      "S01": {
+        "axis": "V",
+        "family": "SASH",
+        "role": "leaf stile"
+      },
+      "S02": {
+        "axis": "H",
+        "family": "SASH",
+        "role": "leaf rail"
+      }
+    },
+    "picture": {
+      "enabled": false,
+      "mounting": "One sheet fixed on a separate rear backing behind the frame. Never attached to the moving leaves.",
+      "region_margin": 0,
+      "sheet_height": 0,
+      "sheet_width": 0
+    },
+    "revision": "HANOK_GEN_V1_f844adc5013a",
+    "size": {
+      "basis": "artwork",
+      "requested_mm": [
+        420,
+        594
+      ]
+    },
+    "stock": {
+      "edge_margin": 10,
+      "grain_axis": "X",
+      "length": 2400,
+      "part_gap": 12,
+      "thickness": 20,
+      "width": 1200
+    },
+    "title": "Hanok window / double leaf",
+    "units": "mm",
+    "window": {
+      "hinge_side": null,
+      "preset": "standard_4x8_v1",
+      "type": "double"
+    }
+  },
+  "provenance": {
+    "defaults": "presets/r3_parameters.json",
+    "derived": {
+      "back frame member width": "frame.member_width - artwork.cover_mm - artwork.fit_mm",
+      "frame.outer_width, frame.outer_height": "artwork.size_mm - 2 * artwork.cover_mm + 2 * frame.member_width",
+      "machining.pocket_depth": "stock.thickness / 2"
+    },
+    "engine": "0.3.0",
+    "material_minima_status": "PENDING",
+    "preset": "standard_4x8_v1",
+    "size_basis": "artwork panel behind the fixed frame",
+    "units": "mm",
+    "user_fields": [
+      "artwork",
+      "lattice_per_leaf",
+      "preset",
+      "type"
+    ]
+  },
+  "request": {
+    "artwork": {
+      "cover_mm": 8,
+      "fit_mm": 1,
+      "size_mm": [
+        420,
+        594
+      ],
+      "spacer_mm": 3,
+      "thickness_mm": 3
+    },
+    "lattice_per_leaf": [
+      2,
+      4
+    ],
+    "picture": null,
+    "preset": "standard_4x8_v1",
+    "schema_version": 1,
+    "stock_mm": [
+      2400,
+      1200,
+      20
+    ],
+    "type": "double"
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "files": [
+    {
+      "bytes": 276762,
+      "path": "01_one_board_nesting.png",
+      "sha256": "d24393b132e8b3f3b85a346c9416ce6d966bc2c0a61032ae805d3b14acf5059b"
+    },
+    {
+      "bytes": 484870,
+      "path": "02_joinery_details.png",
+      "sha256": "ce3a0a518b3f33c0520c149294b79caf230ff56232795883849209b7d0768e86"
+    },
+    {
+      "bytes": 214476,
+      "path": "03_assembly_reference.png",
+      "sha256": "96e0fca6a7dae59787b92fd7a3228165b39d8998b094d730d81ac921b0e984a6"
+    },
+    {
+      "bytes": 162713,
+      "path": "04_opening_reference.png",
+      "sha256": "5bdaab27691b3a6a4c5f4c32514155b417b29b5005b76a592a2b7013ba068646"
+    },
+    {
+      "bytes": 77073,
+      "path": "05_all_pockets_closeup.png",
+      "sha256": "6ca79b8b39fdbf1ea85188f6ab60228390da68c9d72a5a003e3ad5a63b6c2e54"
+    },
+    {
+      "bytes": 2270,
+      "path": "README.txt",
+      "sha256": "e0833dc688c7f53ae837ffc4b5b853fb0cb90cbf6099ba98a747077d06ef1419"
+    },
+    {
+      "bytes": 2504,
+      "path": "design_parameters.json",
+      "sha256": "699ca3303617c09bbe0b637b6f156747537b16922e05d6ea4617320cfd5c53e6"
+    },
+    {
+      "bytes": 135,
+      "path": "design_request.json",
+      "sha256": "b3528166d64008249eedeea76337f41d4885d2247540c14124b6a3704b1d55af"
+    },
+    {
+      "bytes": 69054,
+      "path": "design_spec.json",
+      "sha256": "edee8add479a1d25cd82f98d9d5411ff3009ff0f844d084aaced35ab9bf6a279"
+    },
+    {
+      "bytes": 5186,
+      "path": "dogbone_manifest.csv",
+      "sha256": "74047682719c779609788712d3a322e1fbb1c5c22d59e687b8f5088199fa5cee"
+    },
+    {
+      "bytes": 3290,
+      "path": "environment.json",
+      "sha256": "e961fc419b89b8091896e5a8b10b38e9e2652fcad04958c1cf59cded2a9d3b5d"
+    },
+    {
+      "bytes": 862,
+      "path": "hardware_reference_manifest.csv",
+      "sha256": "24d45210628ba5983ab7c35323bcba92f4f64c89b8455d58756574c23a93d0e5"
+    },
+    {
+      "bytes": 2353,
+      "path": "parts_manifest.csv",
+      "sha256": "b8d842d02690f77b83a97a7b00abe41b039bf905ef3204a3e9c8ec22d7a33248"
+    },
+    {
+      "bytes": 13138,
+      "path": "pocket_manifest.csv",
+      "sha256": "215d633b485f58fd5734c55e25412fe32f4f492cd2190a9e16b495c6f5e51ad1"
+    },
+    {
+      "bytes": 3623,
+      "path": "resolved_parameters.json",
+      "sha256": "09393333b7ade51e44c7516f3108845ee0da57eade1efda75f82c3b1e3450783"
+    },
+    {
+      "bytes": 101,
+      "path": "source/hanok_generator/__init__.py",
+      "sha256": "91d46a46b4df750db41959c5f45b7b1d216ef1c097c3080fb97d000b778a4e3e"
+    },
+    {
+      "bytes": 48,
+      "path": "source/hanok_generator/__main__.py",
+      "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d"
+    },
+    {
+      "bytes": 4974,
+      "path": "source/hanok_generator/cli.py",
+      "sha256": "e7b5fbbf68427e03c2836bc2bd9f4abea4a165d1e795e1074cea6e404ef30de6"
+    },
+    {
+      "bytes": 80,
+      "path": "source/hanok_generator/engine/__init__.py",
+      "sha256": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684"
+    },
+    {
+      "bytes": 15034,
+      "path": "source/hanok_generator/engine/ai_export.py",
+      "sha256": "5fafdf1015b0bec7653e16e637fe948479ec51f91d05521a18c9c265d6d1d1aa"
+    },
+    {
+      "bytes": 89984,
+      "path": "source/hanok_generator/engine/builder.py",
+      "sha256": "741864960a833c473f099cb0ff7c946e20e0fc6edfb673af4a5df6b044631d6e"
+    },
+    {
+      "bytes": 10160,
+      "path": "source/hanok_generator/engine/cad_helpers.py",
+      "sha256": "2fd126f32186473e077e835f44a876821405093a870f5880a92a2cb195fdf892"
+    },
+    {
+      "bytes": 26967,
+      "path": "source/hanok_generator/engine/generate_spec.py",
+      "sha256": "f8b1814c7bd03b57118680e9411a3c0ad3b623c117ba45d67adc4134a4e82ccd"
+    },
+    {
+      "bytes": 4422,
+      "path": "source/hanok_generator/engine/machining_checks.py",
+      "sha256": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7"
+    },
+    {
+      "bytes": 4576,
+      "path": "source/hanok_generator/engine/numeric_policy.py",
+      "sha256": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c"
+    },
+    {
+      "bytes": 1163,
+      "path": "source/hanok_generator/engine/output_formats.py",
+      "sha256": "cef5b4caa1ca2169bd7d4a16da7bbd921762b2c50d3623ba19e0bd242d00e804"
+    },
+    {
+      "bytes": 2782,
+      "path": "source/hanok_generator/engine/validation_rules.py",
+      "sha256": "1ccd8b63c521b62c0d5ffe12e7062f0c3477c2da1e7d51d4ac95e0f82408ea47"
+    },
+    {
+      "bytes": 1447,
+      "path": "source/hanok_generator/formats.py",
+      "sha256": "0170ae228540108073f08abcd4aef06b0bb3dcf9b242974955b1a72b07d970be"
+    },
+    {
+      "bytes": 4323,
+      "path": "source/hanok_generator/jobs.py",
+      "sha256": "177904e4cf189992353df2c41f99e2c8c6c1d3c20cdaa0535a1e9364cd168590"
+    },
+    {
+      "bytes": 11302,
+      "path": "source/hanok_generator/model.py",
+      "sha256": "a046c17e373039304df2cdab9389cae4d22dc1822f4ccc7cf2e1c760382bee74"
+    },
+    {
+      "bytes": 7601,
+      "path": "source/hanok_generator/package.py",
+      "sha256": "3ea2751ca04cb10e8dc7c467ed8983b5945601129d039ae0ef3693041a8f88e7"
+    },
+    {
+      "bytes": 3105,
+      "path": "source/hanok_generator/presets/r3_parameters.json",
+      "sha256": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba"
+    },
+    {
+      "bytes": 3418,
+      "path": "source/hanok_generator/request.schema.json",
+      "sha256": "70eb170b57b26d928d3ba2417c8386f846823547666ed4f0d634d64ea8e549e5"
+    },
+    {
+      "bytes": 3102,
+      "path": "source/hanok_generator/worker.py",
+      "sha256": "6a614889d06c7fdda3974575ee7d500f61bd63c18f274cfd6d71a7729c30546b"
+    },
+    {
+      "bytes": 117,
+      "path": "source/requirements.txt",
+      "sha256": "caa4eccef5d53e49c7359e62173a78c464c93ec3b31a12b6e5e547607254daff"
+    },
+    {
+      "bytes": 39551,
+      "path": "validation_report.json",
+      "sha256": "32daa7745da0d0108cc7b189f62346611e0220985c32b285aba170ec29a24551"
+    },
+    {
+      "bytes": 100680,
+      "path": "window.ai",
+      "sha256": "7b22334f9c14e37c70cc3ee3b6e17c6b87c23bf6cd12855ad65d50c3e8ebc809"
+    },
+    {
+      "bytes": 259641,
+      "path": "window.dxf",
+      "sha256": "4f77bc69f3cbaa12d59b3c5755dfc35658ecff7e9cc255a0eb8a321c4d2a3f83"
+    }
+  ],
+  "manufacturing_status": "PENDING",
+  "package_id": "0d3e19e140a6f878592b36fc52086566f0e7266e4ca49ee6f5267d0f0794bf68",
+  "schema_version": 1,
+  "status": "COMPLETE_NOMINAL_CAD"
+}

@@ -1,0 +1,6 @@
+{
+  "type": "double",
+  "outer_mm": [900, 1200],
+  "lattice_per_leaf": [2, 6],
+  "preset": "standard_4x8_v1"
+}

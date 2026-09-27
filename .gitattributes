@@ -1,2 +1,4 @@
 * text=auto eol=lf
 r3_reference/** -text
+generator/examples/packages/** -text linguist-generated=true
+generator/tests/fixtures/*.zip -text linguist-generated=true

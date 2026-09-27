@@ -1,0 +1,6 @@
+{
+  "type": "double",
+  "lattice_per_leaf": [2, 4],
+  "preset": "standard_4x8_v1",
+  "artwork": {"size_mm": [420, 594]}
+}

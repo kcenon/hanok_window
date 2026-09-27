@@ -48,7 +48,7 @@ hanok_window/
 │   ├── web-stop.command       Finder에서 두 번 누르면 끄기
 │   ├── mcp.sh                 LLM 클라이언트에 등록하는 MCP 서버
 │   ├── hanok_generator/       파이썬 패키지: 엔진, 명령줄, 웹 화면, LLM 도구
-│   ├── examples/              입력 예제 5종과 생성 결과
+│   ├── examples/              입력 예제 7종과 생성 결과
 │   ├── tests/                 회귀 시험, 웹 시험, LLM 시험, 인코딩 시험, MCP SDK 확인, R3 기준값
 │   ├── docs/CHANGELOG.md      버전별 구현·검증 기록
 │   ├── docs/manual/           그림으로 보는 사용 설명서

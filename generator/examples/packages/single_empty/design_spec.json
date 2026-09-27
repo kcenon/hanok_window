@@ -1,0 +1,472 @@
+{
+  "revision": "HANOK_GEN_V1_9ee45712a705",
+  "generated_from": "design_parameters.json",
+  "derived": {
+    "overall_width_height": [
+      420,
+      900
+    ],
+    "frame_inner": [
+      340,
+      820
+    ],
+    "leaf_width_height": [
+      334.0,
+      814
+    ],
+    "leaf_opening": [
+      274.0,
+      754
+    ],
+    "lattice_per_leaf": [
+      0,
+      0
+    ],
+    "lattice_cell": [
+      274.0,
+      754.0
+    ],
+    "crossings_total": 0,
+    "picture_region": [
+      274,
+      754
+    ],
+    "picture_origin": [
+      73,
+      73
+    ],
+    "part_lengths": {
+      "F01": 900,
+      "F02": 420,
+      "S01": 814,
+      "S02": 334.0,
+      "L01": 774,
+      "L02": 294.0
+    },
+    "part_widths": {
+      "F01": 40,
+      "F02": 40,
+      "S01": 30,
+      "S02": 30,
+      "L01": 10,
+      "L02": 10
+    },
+    "part_counts": {
+      "F01": 2,
+      "F02": 2,
+      "S01": 2,
+      "S02": 2,
+      "L01": 0,
+      "L02": 0
+    },
+    "totals": {
+      "parts": 8,
+      "pockets": 16,
+      "reliefs": 0,
+      "joint_pairs": 8
+    },
+    "nesting_bounds": [
+      20,
+      20,
+      1180.0,
+      248.0
+    ]
+  },
+  "parts": [
+    {
+      "part_id": "F01-1",
+      "kind": "F01",
+      "length": 900.0,
+      "width": 40.0,
+      "thickness": 20,
+      "nest_x": 20,
+      "nest_y": 20,
+      "assembly_group": "FIXED",
+      "face_a": "FRONT",
+      "assembly_transform": [
+        0,
+        1,
+        -1,
+        0,
+        0,
+        900
+      ]
+    },
+    {
+      "part_id": "F01-2",
+      "kind": "F01",
+      "length": 900.0,
+      "width": 40.0,
+      "thickness": 20,
+      "nest_x": 20,
+      "nest_y": 72,
+      "assembly_group": "FIXED",
+      "face_a": "FRONT",
+      "assembly_transform": [
+        0,
+        -1,
+        1,
+        0,
+        420,
+        0
+      ]
+    },
+    {
+      "part_id": "F02-1",
+      "kind": "F02",
+      "length": 420.0,
+      "width": 40.0,
+      "thickness": 20,
+      "nest_x": 20,
+      "nest_y": 124,
+      "assembly_group": "FIXED",
+      "face_a": "BACK",
+      "assembly_transform": [
+        -1,
+        0,
+        0,
+        1,
+        420,
+        0
+      ]
+    },
+    {
+      "part_id": "F02-2",
+      "kind": "F02",
+      "length": 420.0,
+      "width": 40.0,
+      "thickness": 20,
+      "nest_x": 452,
+      "nest_y": 124,
+      "assembly_group": "FIXED",
+      "face_a": "BACK",
+      "assembly_transform": [
+        1,
+        0,
+        0,
+        -1,
+        0,
+        900
+      ]
+    },
+    {
+      "part_id": "S01-1",
+      "kind": "S01",
+      "length": 814.0,
+      "width": 30.0,
+      "thickness": 20,
+      "nest_x": 20,
+      "nest_y": 176,
+      "assembly_group": "LEAF_1",
+      "face_a": "FRONT",
+      "assembly_transform": [
+        0,
+        1,
+        -1,
+        0,
+        43.0,
+        857
+      ]
+    },
+    {
+      "part_id": "S01-2",
+      "kind": "S01",
+      "length": 814.0,
+      "width": 30.0,
+      "thickness": 20,
+      "nest_x": 20,
+      "nest_y": 218.0,
+      "assembly_group": "LEAF_1",
+      "face_a": "FRONT",
+      "assembly_transform": [
+        0,
+        -1,
+        1,
+        0,
+        377.0,
+        43
+      ]
+    },
+    {
+      "part_id": "S02-1",
+      "kind": "S02",
+      "length": 334.0,
+      "width": 30.0,
+      "thickness": 20,
+      "nest_x": 846,
+      "nest_y": 176,
+      "assembly_group": "LEAF_1",
+      "face_a": "BACK",
+      "assembly_transform": [
+        -1,
+        0,
+        0,
+        1,
+        377.0,
+        43
+      ]
+    },
+    {
+      "part_id": "S02-2",
+      "kind": "S02",
+      "length": 334.0,
+      "width": 30.0,
+      "thickness": 20,
+      "nest_x": 846,
+      "nest_y": 218.0,
+      "assembly_group": "LEAF_1",
+      "face_a": "BACK",
+      "assembly_transform": [
+        1,
+        0,
+        0,
+        -1,
+        43.0,
+        857
+      ]
+    }
+  ],
+  "pockets": [
+    {
+      "feature_id": "F01-1-P01",
+      "part_id": "F01-1",
+      "joint": "J1",
+      "seat": false,
+      "u0": 0,
+      "v0": 0,
+      "u1": 40,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-01",
+      "mate_feature_id": "F02-2-P01",
+      "mate_part_id": "F02-2"
+    },
+    {
+      "feature_id": "F01-1-P02",
+      "part_id": "F01-1",
+      "joint": "J1",
+      "seat": false,
+      "u0": 860,
+      "v0": 0,
+      "u1": 900,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-02",
+      "mate_feature_id": "F02-1-P02",
+      "mate_part_id": "F02-1"
+    },
+    {
+      "feature_id": "F01-2-P01",
+      "part_id": "F01-2",
+      "joint": "J1",
+      "seat": false,
+      "u0": 0,
+      "v0": 0,
+      "u1": 40,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-03",
+      "mate_feature_id": "F02-1-P01",
+      "mate_part_id": "F02-1"
+    },
+    {
+      "feature_id": "F01-2-P02",
+      "part_id": "F01-2",
+      "joint": "J1",
+      "seat": false,
+      "u0": 860,
+      "v0": 0,
+      "u1": 900,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-04",
+      "mate_feature_id": "F02-2-P02",
+      "mate_part_id": "F02-2"
+    },
+    {
+      "feature_id": "F02-1-P01",
+      "part_id": "F02-1",
+      "joint": "J1",
+      "seat": false,
+      "u0": 0,
+      "v0": 0,
+      "u1": 40,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-03",
+      "mate_feature_id": "F01-2-P01",
+      "mate_part_id": "F01-2"
+    },
+    {
+      "feature_id": "F02-1-P02",
+      "part_id": "F02-1",
+      "joint": "J1",
+      "seat": false,
+      "u0": 380,
+      "v0": 0,
+      "u1": 420,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-02",
+      "mate_feature_id": "F01-1-P02",
+      "mate_part_id": "F01-1"
+    },
+    {
+      "feature_id": "F02-2-P01",
+      "part_id": "F02-2",
+      "joint": "J1",
+      "seat": false,
+      "u0": 0,
+      "v0": 0,
+      "u1": 40,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-01",
+      "mate_feature_id": "F01-1-P01",
+      "mate_part_id": "F01-1"
+    },
+    {
+      "feature_id": "F02-2-P02",
+      "part_id": "F02-2",
+      "joint": "J1",
+      "seat": false,
+      "u0": 380,
+      "v0": 0,
+      "u1": 420,
+      "v1": 40,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-04",
+      "mate_feature_id": "F01-2-P02",
+      "mate_part_id": "F01-2"
+    },
+    {
+      "feature_id": "S01-1-P01",
+      "part_id": "S01-1",
+      "joint": "J2",
+      "seat": false,
+      "u0": 0,
+      "v0": 0.0,
+      "u1": 30,
+      "v1": 30.0,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-05",
+      "mate_feature_id": "S02-2-P01",
+      "mate_part_id": "S02-2"
+    },
+    {
+      "feature_id": "S01-1-P02",
+      "part_id": "S01-1",
+      "joint": "J2",
+      "seat": false,
+      "u0": 784,
+      "v0": 0.0,
+      "u1": 814,
+      "v1": 30.0,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-06",
+      "mate_feature_id": "S02-1-P02",
+      "mate_part_id": "S02-1"
+    },
+    {
+      "feature_id": "S01-2-P01",
+      "part_id": "S01-2",
+      "joint": "J2",
+      "seat": false,
+      "u0": 0,
+      "v0": 0.0,
+      "u1": 30,
+      "v1": 30.0,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-07",
+      "mate_feature_id": "S02-1-P01",
+      "mate_part_id": "S02-1"
+    },
+    {
+      "feature_id": "S01-2-P02",
+      "part_id": "S01-2",
+      "joint": "J2",
+      "seat": false,
+      "u0": 784,
+      "v0": 0.0,
+      "u1": 814,
+      "v1": 30.0,
+      "depth": 10.0,
+      "face_a": "FRONT",
+      "joint_pair_id": "PAIR-08",
+      "mate_feature_id": "S02-2-P02",
+      "mate_part_id": "S02-2"
+    },
+    {
+      "feature_id": "S02-1-P01",
+      "part_id": "S02-1",
+      "joint": "J2",
+      "seat": false,
+      "u0": 0.0,
+      "v0": 0,
+      "u1": 30.0,
+      "v1": 30,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-07",
+      "mate_feature_id": "S01-2-P01",
+      "mate_part_id": "S01-2"
+    },
+    {
+      "feature_id": "S02-1-P02",
+      "part_id": "S02-1",
+      "joint": "J2",
+      "seat": false,
+      "u0": 304.0,
+      "v0": 0,
+      "u1": 334.0,
+      "v1": 30,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-06",
+      "mate_feature_id": "S01-1-P02",
+      "mate_part_id": "S01-1"
+    },
+    {
+      "feature_id": "S02-2-P01",
+      "part_id": "S02-2",
+      "joint": "J2",
+      "seat": false,
+      "u0": 0.0,
+      "v0": 0,
+      "u1": 30.0,
+      "v1": 30,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-05",
+      "mate_feature_id": "S01-1-P01",
+      "mate_part_id": "S01-1"
+    },
+    {
+      "feature_id": "S02-2-P02",
+      "part_id": "S02-2",
+      "joint": "J2",
+      "seat": false,
+      "u0": 304.0,
+      "v0": 0,
+      "u1": 334.0,
+      "v1": 30,
+      "depth": 10.0,
+      "face_a": "BACK",
+      "joint_pair_id": "PAIR-08",
+      "mate_feature_id": "S01-2-P02",
+      "mate_part_id": "S01-2"
+    }
+  ],
+  "dogbones": []
+}

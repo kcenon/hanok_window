@@ -87,6 +87,8 @@ jobs:
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_web.py' -v
       - name: test_llm.py
         run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON -m unittest discover -s tests -p 'test_llm.py'
+      - name: Verify published examples
+        run: PYTHONDONTWRITEBYTECODE=1 $VENV_PYTHON examples/make_packages.py --check
       # Build into a fresh directory so the artifact contains only this R3 request.
       - name: R3 package manifest
         run: |

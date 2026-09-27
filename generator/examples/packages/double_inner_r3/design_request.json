@@ -1,0 +1,12 @@
+{
+  "inner_mm": [
+    383,
+    506
+  ],
+  "lattice_per_leaf": [
+    2,
+    4
+  ],
+  "preset": "hanok_A3_portrait_R3",
+  "type": "double"
+}

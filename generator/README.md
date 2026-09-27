@@ -63,18 +63,13 @@ claude mcp add hanok-window -- C:\절대\경로\generator\.venv\Scripts\hanok-wi
   "args": ["--output", "C:\\절대\\경로\\generator\\output"]}}}
 ```
 
-시험은 [검증](#검증)의 일곱 명령을 `.venv\Scripts\python`으로 돌립니다. 직접 실행하는 웹 서버의 시작·Ctrl+C 종료·재시작, 포트 충돌·시작 실패, 같은 출력 폴더의 동시 사용과 오래된 pid 기록은 윈도에서도 확인합니다. POSIX 전용인 백그라운드 명령, 잠금으로 pid의 주인을 확인하는 동작, 셸·Finder 실행 파일의 시험 3개만 건너뜁니다.
+시험은 [검증](#검증)의 전체 시험 명령을 `.venv\Scripts\python`으로 돌립니다. 직접 실행하는 웹 서버의 시작·Ctrl+C 종료·재시작, 포트 충돌·시작 실패, 같은 출력 폴더의 동시 사용과 오래된 pid 기록은 윈도에서도 확인합니다. POSIX 전용인 백그라운드 명령, 잠금으로 pid의 주인을 확인하는 동작, 셸·Finder 실행 파일의 시험 3개만 건너뜁니다.
 
 ```powershell
 .venv\Scripts\python -m pip install -r requirements-test.lock
 $env:PYTHONDONTWRITEBYTECODE = "1"
-.venv\Scripts\python -m unittest discover -s tests -p test_encoding.py
-.venv\Scripts\python -m unittest discover -s tests -p test_package_comparison.py
-.venv\Scripts\python -m unittest discover -s tests -p test_manual_images.py -v
-.venv\Scripts\python -m unittest discover -s tests -p test_output_formats.py -v
-.venv\Scripts\python -m unittest discover -s tests -p test_generator.py
-.venv\Scripts\python -m unittest discover -s tests -p test_web.py -v
-.venv\Scripts\python -m unittest discover -s tests -p test_llm.py
+.venv\Scripts\python -m unittest discover -s tests -p 'test_*.py' -v
+.venv\Scripts\python examples/make_packages.py --check
 ```
 
 ## 웹 화면
@@ -375,7 +370,7 @@ CI는 우분투·맥·윈도에서 `generator/requirements.lock`과 `generator/r
 
 윈도 CI는 ODA File Converter 27.1.0을 선택 설치해 R3·액자형 A2의 DWG 왕복 시험을 실행합니다. 설치 실패나 변환기 부재는 이유를 로그에 남기고 시험을 건너뛰지만, 설치된 변환기의 변환 오류나 검사 실패는 CI 실패입니다. 사용 조건·설치 파일 검증·갱신 절차는 [DWG CI 안내](docs/DWG_CI.md)에 적었습니다. 변환기와 DWG는 배포 패키지에 넣지 않습니다.
 
-문서에도 검사 개수·파일 개수 등 코드와 맞아야 하는 내용이 있으므로 경로 필터를 두지 않습니다. 문서만 바꾼 PR도 일곱 시험과 운영체제 간 패키지 비교를 모두 실행합니다. 소수 외곽 시험도 일반·최적화 실행 각 200건을 유지합니다.
+문서에도 검사 개수·파일 개수 등 코드와 맞아야 하는 내용이 있으므로 경로 필터를 두지 않습니다. 문서만 바꾼 PR도 전체 시험과 운영체제 간 패키지 비교를 모두 실행합니다. 소수 외곽 시험도 일반·최적화 실행 각 200건을 유지합니다.
 
 설명서 그림 시험은 브라우저 탐색, 그림의 크기·픽셀 비교, 기준 파일 보존과 자원 정리를 브라우저 없이 확인합니다. 실제 Chrome 촬영과 그림 최신 여부는 [설명서의 생성·검사 명령](docs/manual/README.md#그림-다시-만들기)으로 따로 확인합니다.
 
@@ -383,16 +378,11 @@ CI는 우분투·맥·윈도에서 `generator/requirements.lock`과 `generator/r
 
 ```bash
 .venv/bin/python -m pip install -r requirements-test.lock
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'    # 약 1초
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_manual_images.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_output_formats.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py'   # 약 100초
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'         # 약 10초
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python examples/make_packages.py --check
 ```
 
-일곱 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
+전체 시험 명령은 기록 파일을 바꾸지 않습니다. 시험은 생성기 밖의 임시 폴더에서 완성 패키지를 만듭니다.
 실행 소스의 SHA-256과 결과를 `tests/results.json`에 새로 기록할 때만 스크립트로 실행합니다. 웹 시험이 이 해시와 현재 소스를 비교하므로, 엔진 소스를 고친 뒤에는 웹 시험 전에 이 명령으로 소스 해시를 다시 적습니다.
 
 ```bash
@@ -409,23 +399,40 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/
 
 예외 목록은 `tools/compare_package_manifests.py`의 `EXCEPTIONS`입니다. 항목마다 허용하는 운영체제 쌍과 이유·근거를 적습니다. `environment.json`은 실행 환경과 글꼴 정보, 이름을 하나씩 적은 PNG 5장은 시스템 글꼴, `validation_report.json`은 반올림하지 않은 측정값과 DXF 해시 때문에 다릅니다. `window.dxf`는 리눅스 수학 라이브러리의 참고 도면 좌표 마지막 비트 차이만 근거로 우분투와의 비교를 예외로 두며, 맥과 윈도 사이에서는 계속 같아야 합니다. `window.ai`를 포함한 나머지는 모두 엄격하게 비교합니다. 근거는 [변경 기록의 0.5.0 운영체제 비교와 AI 출력 검증](docs/CHANGELOG.md)에 있습니다. 예외 파일도 없어지면 실패하고, 같아지면 통과하면서 사용하지 않은 예외로 알립니다.
 
-이 검사는 **예외 파일 안의 변화량은 제한하지 못합니다.** 매니페스트에는 해시와 크기만 있으므로 우분투 DXF의 차이가 계속 점 하나뿐인지나 PNG 그림 내용이 옳은지는 이 비교만으로 증명하지 않습니다. 기존 기하·그림 회귀 시험도 함께 유지합니다. 예외를 늘릴 때는 실제 산출물을 조사하고 이유를 적어야 합니다.
+매니페스트 비교 뒤에는 `tools/compare_package_contents.py`가 실제 패키지 파일을 검사합니다.
+CI는 재배포 가능한 Noto Sans 글꼴을 고정하고 PNG 5장의 크기·RGBA 픽셀이 같아야 합니다.
+DXF는 모든 group code와 문자열을 대조하며 실수만 절대 오차 1e-7까지 허용합니다.
+검증 JSON도 구조·검사·정수값이 같아야 하며 실수 차이는 같은 한도로 제한합니다.
+환경 기록은 OS·아키텍처·Python 패치 버전·글꼴 경로만 달라도 되고, 글꼴 해시·의존성·소스·필수 파일 기준은 같아야 합니다.
+검증 JSON의 DXF 해시·렌더 환경은 각 패키지의 실제 파일과도 대조합니다.
+파일 해시를 다시 계산한 PNG 픽셀 변조도 거절하는 부정 시험이 있습니다.
+따라서 CI 산출물은 매니페스트뿐 아니라 전체 패키지를 포함합니다.
 
 CI 실행 화면에서 세 아티팩트를 내려받아 같은 이름의 하위 폴더에 풀면 로컬에서도 비교할 수 있습니다. 아래는 `generator/`에서 실행하며, 윈도에서는 파이썬 경로를 `.venv\Scripts\python`으로 바꿉니다.
 
 ```bash
 gh run download RUN_ID --repo kcenon/hanok_window --pattern 'r3-manifest-*' --dir output/ci-manifests
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/compare_package_manifests.py output/ci-manifests
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/compare_package_contents.py output/ci-manifests
 R3_MANIFEST_ARTIFACTS=output/ci-manifests PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py' -v
 ```
 
 받을 폴더는 실행마다 새로 정해 이전 아티팩트와 섞이지 않게 합니다. 마지막 명령은 실제 세 아티팩트의 통과를 확인한 뒤 임시 사본에서 우분투 `window.ai` 해시 하나를 바꾸고 패키지 ID를 다시 계산합니다. 같은 비교 명령이 종료 코드 1로 거부하는지 단언합니다. CI 비교 작업도 이 시험을 실행합니다. `R3_MANIFEST_ARTIFACTS`를 지정하지 않은 일반 시험에서는 실제 아티팩트 시험 하나만 건너뛰고, 합성 매니페스트를 쓰는 단위 시험은 모두 실행합니다.
 
-공식 MCP 파이썬 SDK(`mcp`) 클라이언트와 맞물리는지는 따로 확인합니다. SDK는 생성기의 의존성이 아니므로 별도 가상환경에 설치해 실행합니다. SDK가 `mcp.sh`를 켜서 연결하고, 도구 목록과 결과 스키마를 받고, 도구를 불러 결과를 그 스키마로 검증합니다.
+공식 MCP 파이썬 SDK(`mcp`) 클라이언트와 맞물리는지는 따로 확인합니다. SDK는 생성기의 의존성이 아니므로 별도 가상환경에 설치해 실행합니다. SDK가 생성기 가상환경의 Python으로 MCP 서버를 켜서 연결하고, 도구 목록과 결과 스키마를 받고, 도구를 불러 결과를 그 스키마로 검증합니다.
 
 ```bash
-python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install mcp
+python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install -r requirements-mcp.lock
 /tmp/mcp-sdk/bin/python tests/interop_mcp_sdk.py        # 모든 단계를 통과하면 끝에 PASS
+```
+
+추가 CI는 Ubuntu의 Python 3.12·3.13에서 전체 시험을 실행합니다. 공식 MCP SDK 연동은
+`requirements-mcp.lock`의 별도 환경으로 다섯 실행 환경에서 확인합니다.
+Ubuntu/Python 3.11에서는 실제 Chrome으로 설계→생성→패키지 확인·도면 보기·파일 내려받기,
+액자형 생성과 입력 오류 거절을 실행합니다. 로컬에서는 다음과 같이 확인합니다.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tools/browser_smoke.py
 ```
 
 새 시스템은 R3 코드를 별도 모듈로 확장했으며 기존 패키지를 덮어쓰지 않습니다. 이전 리비전(R1·R2)과 조사 기록은 작업 트리에서 정리했고 git 태그로 보관합니다([저장소 안내의 이력](../README.md#이력)).

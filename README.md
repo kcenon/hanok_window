@@ -118,16 +118,11 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 ```bash
 cd generator
 .venv/bin/python -m pip install -r requirements-test.lock
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_encoding.py'
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_package_comparison.py'
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_manual_images.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_output_formats.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_generator.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_web.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_llm.py'
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python examples/make_packages.py --check
 ```
 
-일곱 시험 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법, 세 운영체제의 패키지 바이트 비교는 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
+시험과 예제 확인 명령은 기록 파일을 바꾸지 않습니다. 시험 범위와 기록을 새로 남기는 방법, 세 운영체제의 패키지 바이트 비교는 [generator/README.md의 검증](generator/README.md#검증)에 있습니다.
 
 ## 라이선스
 

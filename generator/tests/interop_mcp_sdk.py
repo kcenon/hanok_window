@@ -1,17 +1,19 @@
 """Interoperability check with the official MCP Python SDK. Not part of the unit tests.
 
 The generator does not depend on the SDK. Install it into a separate environment and run this file
-from it; the SDK client starts mcp.sh, negotiates the protocol, lists the tools and calls them, and
+from it; the SDK client starts the generator's Python entry point, negotiates the protocol, lists the tools and calls them, and
 the SDK itself validates every successful structured result against the tool's outputSchema.
 
-    python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install mcp
+    python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install -r requirements-mcp.lock
     /tmp/mcp-sdk/bin/python tests/interop_mcp_sdk.py
 
 Exit code 0 when every step passes. Checked with mcp 2.2.0 (2026-09-13).
 """
 import asyncio
+import argparse
 from importlib import metadata
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -37,13 +39,14 @@ def structured(result):
     return value if value is not None else json.loads(result.content[0].text)
 
 
-async def check(output):
+async def check(output, server_python):
     stages = []
 
     async def on_progress(progress, total=None, message=None, *rest):
         stages.append(progress)
 
-    server = StdioServerParameters(command=str(ROOT / "mcp.sh"), args=["--output", str(output)])
+    server = StdioServerParameters(command=str(server_python),
+                                  args=["-m", "hanok_generator.llm.mcp", "--output", str(output)])
     async with stdio_client(server) as (read, write):
         async with ClientSession(read, write) as session:
             init = await session.initialize()
@@ -80,8 +83,13 @@ async def check(output):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--server-python", type=Path,
+                        default=ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))
+    args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="hanok-mcp-sdk-") as tmp:
-        asyncio.run(check(Path(tmp) / "output"))
+        # Resolving the venv's Python symlink would bypass its installed dependencies.
+        asyncio.run(check(Path(tmp) / "output", args.server_python.absolute()))
     print("PASS")
     return 0
 

@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "tests": 24,
+  "tests": 25,
   "failures": [],
   "errors": [],
   "cases": [
@@ -11,7 +11,7 @@
       "parts": 12,
       "pockets": 24,
       "dogbones": 0,
-      "package_id": "d1679c455870bf5d585f4177773807f1d27dfc6d6054e068da7aafa33cc6f402"
+      "package_id": "dac7cc900d05d0f8c0ec30780a435ab37e0d2a9c609b1db2f8fb6dbe163e60de"
     },
     {
       "case": "double_None_2_0",
@@ -20,7 +20,7 @@
       "parts": 16,
       "pockets": 40,
       "dogbones": 16,
-      "package_id": "d753ca0cc2b0fbc0e8072134110238feaf70b1aa2fddb998efb5d0e1458dad9b"
+      "package_id": "6c9686b0e0a4463088aa18cc7050ccb0c9453200e597448c62fce6af354ecb3e"
     },
     {
       "case": "double_None_0_4",
@@ -29,7 +29,7 @@
       "parts": 20,
       "pockets": 56,
       "dogbones": 32,
-      "package_id": "227f38b78140fad1ee9a6b7fda5b3410588545df5455237bbc1fa844e9fd849f"
+      "package_id": "924c50fd7691695279f4a28b3e2758028c0e6085dd632123258be1512cc2ec71"
     },
     {
       "case": "double_None_2_4",
@@ -38,7 +38,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "ae6fe789e0c74b2e2410b74e9f2bbba0eff1b5d165cfc5bdeee52b5b99531209"
+      "package_id": "133f22370e383f6a4a82674642a4bdc313d36f9663f97b22eccb36820e523910"
     },
     {
       "case": "single_left_0_4",
@@ -47,7 +47,7 @@
       "parts": 12,
       "pockets": 32,
       "dogbones": 16,
-      "package_id": "c8c48c0f02f32cba27becd4b3161ca3cb8e601b7d22ea1f13bbb92bcd4452102"
+      "package_id": "e4468a17d144c2c5733cd1456ba82efd779ba2e025f7b1ae165ae7f352df2042"
     },
     {
       "case": "single_left_2_4",
@@ -56,7 +56,7 @@
       "parts": 14,
       "pockets": 56,
       "dogbones": 24,
-      "package_id": "92890d1a0816007bb1b3c69a7acc948adfefadcfd7afd6246338d728dc1c4b2e"
+      "package_id": "17ff82c9b772d31ead1b220525966b3885144ef6eda2eafe7da7b6a87c111047"
     },
     {
       "case": "single_left_2_0",
@@ -65,7 +65,7 @@
       "parts": 10,
       "pockets": 24,
       "dogbones": 8,
-      "package_id": "4cb0626c852b6beb2d76e54301b7d6f107dbef87fc811038ece60e24d601ea01"
+      "package_id": "38ba0e5cdca5d1b8d53a07dcb682a180f568cf31b95f596971d0c1130118d13d"
     },
     {
       "case": "single_left_0_0",
@@ -74,16 +74,7 @@
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "a03dff91f9a897058daeabe094325df1f8d958b1c24ebdc13145d0dd20fb15d6"
-    },
-    {
-      "case": "single_right_0_4",
-      "status": "PASS",
-      "checks": 71,
-      "parts": 12,
-      "pockets": 32,
-      "dogbones": 16,
-      "package_id": "24161144d7fa4bd32dd99251aca2075d847797af2652979589f905d4a3c4c079"
+      "package_id": "3ccad6373acd88d067a8a71cb3f5236ed998fddda18821d65ce742a14f4441e3"
     },
     {
       "case": "single_right_2_0",
@@ -92,7 +83,16 @@
       "parts": 10,
       "pockets": 24,
       "dogbones": 8,
-      "package_id": "1eb5d0645d4d05ad7664d301ed9859f88a8498b7fa818eadcb3f9fd66c6d551f"
+      "package_id": "2477d9fc631b813bcdbe4501275a241213e0a7357fe68d351fb8c7cee6cef384"
+    },
+    {
+      "case": "single_right_0_4",
+      "status": "PASS",
+      "checks": 71,
+      "parts": 12,
+      "pockets": 32,
+      "dogbones": 16,
+      "package_id": "6c2f473da4e0bb365a619697b6986c0413da01addfa71a68057b818ec9a687f9"
     },
     {
       "case": "single_right_0_0",
@@ -101,7 +101,7 @@
       "parts": 8,
       "pockets": 16,
       "dogbones": 0,
-      "package_id": "56626568a1fed910439f2212e55cca913997081d8d8d3e0064c90fd0847a539c"
+      "package_id": "28d27d4c0b352e0551c191229bd848ddaa0bd8bf350a173202739a075950af0e"
     },
     {
       "case": "single_right_2_4",
@@ -110,7 +110,7 @@
       "parts": 14,
       "pockets": 56,
       "dogbones": 24,
-      "package_id": "8b8c55329383f5fb38ad5a499e41cc9d010071774b339d1453ad04fcf224ef4f"
+      "package_id": "b5acb313da48861812cf7942904e914bd029f85ac2c93913df70f1f33b05edf6"
     },
     {
       "case": "resize",
@@ -119,7 +119,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "dd8ba654e4bc7fa8f5108ed1e6657cbd691d92ff2f555e6231fc409dde737c2d"
+      "package_id": "b434f745863e7f8fdec72df07d15027acc1167a3259694eca58f77768c382406"
     },
     {
       "case": "r3",
@@ -128,7 +128,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "f9dd31dc03d76550f122e5ea39e2778c73f4f6b020faeb87da1bf3068980eaa1"
+      "package_id": "219db6969bd7ac80fff332afd7cd2aca8c4b2a0f476b27da1c8033fd7b29fd1c"
     },
     {
       "case": "picture",
@@ -137,7 +137,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "b05aa8e5a0c09b3c6fb02b424cb334083b21b5c35c52d1d90951e8cdbb68af17"
+      "package_id": "910e2492acc4dff465fccaeb8a2f6e37e645eff30f886ae406e4bf377425a785"
     },
     {
       "case": "lattice_3_5",
@@ -146,7 +146,7 @@
       "parts": 28,
       "pockets": 148,
       "dogbones": 64,
-      "package_id": "943d75be96d58c992aeb28b08d8e0ecc72bb1511f2aac273ba65a92b5c9bf6e7"
+      "package_id": "d342ec108395590877470fc0436e6c54cb493151b607286e9bbabdc33ef4b5c2"
     },
     {
       "case": "r3_stock_2400",
@@ -155,7 +155,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "baf1c0a05b731f7b892afd924d558ca93a5461ef05db39e654db7369448060d3"
+      "package_id": "73ecd750d65ea472c1a16f67f8e40ea16a2a9e8b32f4a881acb60fc4f75fcd7e"
     },
     {
       "case": "inner_r3",
@@ -164,7 +164,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "f521d0f370675f9d6071f569b95727b3335bc34e902bd3c299c1acfc7a1a2590"
+      "package_id": "f5d2dd8a16d13ab05e75914600083d86e0154727df8bf2879371fc0a47ebaeb6"
     },
     {
       "case": "standard_4x8",
@@ -173,7 +173,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "b2e5bdba40c18c2016f461901c6ef1c6fa2e089ab59dc57c876c1ab2baca6b11"
+      "package_id": "6037a817c4d3d428d95325de4715218d3b65e793fe0ecca80b4e4225eb012bae"
     },
     {
       "case": "stock_2400_900x1200",
@@ -182,7 +182,7 @@
       "parts": 28,
       "pockets": 136,
       "dogbones": 64,
-      "package_id": "13cf3c379317c370e4765911578f16b98437a172dd328749392085c923ffe100"
+      "package_id": "14a0507bd048d4afbf8a6627e0f747fd6c29836bf6e45823ea19bf033df62563"
     },
     {
       "case": "artwork_a2",
@@ -191,7 +191,7 @@
       "parts": 28,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "fd24c64519c7ec4738f5d9fce93113df3a3d083974a1b418cbc6c81f68c98511"
+      "package_id": "d27a7e52de1ae54512e1d15835c634276997541fd1ed6f2ebc90279b3dff1644"
     },
     {
       "case": "stock_18",
@@ -200,7 +200,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "09bee156668cd6185d3b310fb8d6cec55db337480c6777dbe2258e91dceb7edc"
+      "package_id": "b7aa5c20c73e811b7e5408ef23dcbaaf627894c2a0f83b8b86fa99d22e6a8d46"
     },
     {
       "case": "standard_4x8_900x1200",
@@ -209,7 +209,7 @@
       "parts": 28,
       "pockets": 136,
       "dogbones": 64,
-      "package_id": "f711300844264bd087275679ce333517f448c211bb015196dd21546e12b7f572"
+      "package_id": "0061affe47996e7bf5dc78935399825b944f1f872637ccaa7453aeb4a4fba07c"
     },
     {
       "case": "stock_24",
@@ -218,7 +218,7 @@
       "parts": 24,
       "pockets": 104,
       "dogbones": 48,
-      "package_id": "766ed0862f65fea0e7fbf13d00ff3d43fb8b0309caaa72c408ff3a3660c85151"
+      "package_id": "79071fcd4f79a9e03cfd53cbbe42f3194351f8c711c4e8aa216d59b7330a67ad"
     },
     {
       "case": "ai_export_board_only",
@@ -420,7 +420,7 @@
     "engine/reports.py": "acbb6b46cec8bfd9541e3cfe743d2973a7e70d8d55d483bcc368576b560365a9",
     "engine/validation_rules.py": "1ccd8b63c521b62c0d5ffe12e7062f0c3477c2da1e7d51d4ac95e0f82408ea47",
     "formats.py": "0170ae228540108073f08abcd4aef06b0bb3dcf9b242974955b1a72b07d970be",
-    "jobs.py": "177904e4cf189992353df2c41f99e2c8c6c1d3c20cdaa0535a1e9364cd168590",
+    "jobs.py": "7f5615afc1bcb7fe341fe1e41a7ab80cc372af391f453535a63b8bcf6aa88ee6",
     "model.py": "a046c17e373039304df2cdab9389cae4d22dc1822f4ccc7cf2e1c760382bee74",
     "package.py": "3ea2751ca04cb10e8dc7c467ed8983b5945601129d039ae0ef3693041a8f88e7",
     "presets/r3_parameters.json": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba",

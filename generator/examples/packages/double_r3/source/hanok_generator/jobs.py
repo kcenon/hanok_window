@@ -54,7 +54,10 @@ def run_job(request, output, *, timeout=120, _fault=None):
         command=[sys.executable,"-m","hanok_generator.worker",str(stage/"payload.json"),str(package),str(stage/"result.json")]
         if _fault and _fault not in ("publish","pointer"):
             command.extend(["--fault",_fault])
-        process=subprocess.run(command,env=env,cwd=stage,capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=timeout)
+        # Workers read payload files. Inheriting an MCP client's active input pipe
+        # can block interpreter startup on Windows and exposes protocol input.
+        process=subprocess.run(command,env=env,cwd=stage,stdin=subprocess.DEVNULL,
+                               capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=timeout)
         if not (stage/"result.json").is_file():
             raise JobError(dict(status="FAIL",rule_id="worker.stopped",message="작업 프로세스가 결과를 완성하지 못했습니다.",
                                 returncode=process.returncode,details=process.stderr[-4000:]))

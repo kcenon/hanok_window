@@ -1,6 +1,6 @@
 """Create and re-read-validate one nominal design in a dedicated worker process."""
 from __future__ import annotations
-import argparse, csv, hashlib, itertools, json, math
+import argparse, hashlib, itertools, json, math
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -8,8 +8,10 @@ import ezdxf
 from shapely.geometry import Polygon, Point, LineString, box
 from shapely.affinity import affine_transform, translate, rotate
 from shapely.ops import unary_union
-from PIL import Image, ImageDraw
 from . import output_formats
+from .reports import write_manifests, write_readme
+from .rendering import (face_note, render_details, nest_entities, cutzone, render_nesting,
+                        render_closeup, render_assembly, render_opening)
 from .cad_helpers import *
 from .numeric_policy import (POLICY_VERSION, LENGTH_TOL_MM, RATIO_TOL, AREA_TOL_MM2,
                             VOLUME_TOL_MM3, ARC_CHORD_TOL_MM, close, coordinates_match,
@@ -190,14 +192,6 @@ def add_part_geometry(cfg,m,s,p):
                     parent_pocket=d['parent_pocket'],depth_mm=cfg.DEPTH,radius_mm=d['radius'],
                     local_center=[d['center_u'],d['center_v']],
                     operation='UNION_WITH_PARENT_POCKET',machining_face='A')
-
-
-def face_note(cfg):
-    front=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F01','S01','L01','B01'))
-    back=' / '.join(k for k,(_,_,count) in cfg.SIZES.items() if count and k in ('F02','S02','L02','B02'))
-    note=f'{front}: A -> FRONT. {back}: flip A -> BACK.'
-    # The back frame carries no machining, so the note says where it goes instead.
-    return note+f' B01 / B02: BEHIND THE FIXED FRAME, Z {-cfg.THK:g} TO 0.' if cfg.ART else note
 
 
 def add_board(cfg,m,spec):
@@ -973,30 +967,6 @@ def check_metadata(cfg,check,doc,spec_path):
     check('DXF_audit_no_errors_no_fixes',not audit.has_errors and not audit.has_fixes,{'errors':len(audit.errors),'fixes':len(audit.fixes)})
 
 
-def write_manifests(cfg,doc):
-    ents=list(doc.modelspace());pmap={meta(e)['part_id']:meta(e) for e in ents if e.dxf.layer=='CUT_THROUGH'}
-    def emit(name,rows):
-        with (cfg.OUT/name).open('w',encoding='utf-8-sig',newline='') as f:
-            fields=list(rows[0]) if rows else ['part_id','feature_id','parent_pocket','center_u_mm','center_v_mm','radius_mm','depth_mm','intent','dxf_handle']
-            w=csv.DictWriter(f,fieldnames=fields);w.writeheader();w.writerows(rows)
-    emit('parts_manifest.csv',[dict(part_id=pid,length_mm=d['length_mm'],width_mm=d['width_mm'],thickness_mm=cfg.THK,
-         nest_x_mm=d['nesting_origin'][0],nest_y_mm=d['nesting_origin'][1],assembly_group=d['assembly_group'],
-         A_face_in_assembly=d['assembly_face_A'],grain_axis='X',assembly_affine=json.dumps(d['assembly_map']),
-         pocket_count=sum(meta(e).get('part_id')==pid and e.dxf.layer==cfg.POCKET_LAYER for e in ents)) for pid,d in pmap.items()])
-    emit('pocket_manifest.csv',[dict(part_id=d['part_id'],feature_id=d['feature_id'],joint=d['joint'],pair_id=d['joint_id'],
-         u0_mm=d['local_rect'][0],v0_mm=d['local_rect'][1],length_mm=d['local_rect'][2],width_mm=d['local_rect'][3],
-         depth_mm=cfg.DEPTH,seat=d['seat'],mate_part_id=d['mate_part_id'],mate_feature_id=d['mate_feature_id'],
-         open_edges=';'.join(d['open_edges']),A_face_in_assembly=pmap[d['part_id']]['assembly_face_A'],dxf_handle=e.dxf.handle)
-         for e in ents if e.dxf.layer==cfg.POCKET_LAYER for d in [meta(e)]])
-    emit('dogbone_manifest.csv',[dict(part_id=d['part_id'],feature_id=d['feature_id'],parent_pocket=d['parent_pocket'],
-         center_u_mm=d['local_center'][0],center_v_mm=d['local_center'][1],radius_mm=cfg.R,depth_mm=cfg.DEPTH,
-         intent='UNION_WITH_PARENT_POCKET',dxf_handle=e.dxf.handle)
-         for e in ents if e.dxf.layer=='DOGBONE' for d in [meta(e)]])
-    emit('hardware_reference_manifest.csv',[dict(hardware_id=d['hardware_id'],hardware_type=d['hardware_type'],part_id=d['part_id'],
-         layer=e.dxf.layer,production_machining=False,front_face_position_only=True,depth_ref_mm=d.get('depth_ref_mm','UNSPECIFIED'),
-         dxf_handle=e.dxf.handle) for e in ents if meta(e).get('kind')=='hardware_ref' and meta(e).get('view')=='nest' for d in [meta(e)]])
-
-
 def add_details(cfg,msp):
     variants=formats.detail_variants(cfg.PARAMS)
     positions={key:(cfg.ASSEMBLY_ORIGIN[0]+cfg.W+160+(i%2)*270,100+(2-i//2)*210) for i,key in enumerate(variants)}
@@ -1108,186 +1078,3 @@ def add_details(cfg,msp):
             tx(f'{kinds[0]} + {kinds[1]}: {2*cfg.NLEAF*(cfg.NV if key=="J4V" else cfg.NH)} end joints in this design.',10,18,3.4)
         tx('REFERENCE ONLY / DXF 1:1 / PNG enlarged',10,7,3.2)
     return positions
-
-
-def render_details(cfg,doc,positions):
-    rows=math.ceil(len(positions)/2);height=280+rows*1680+220
-    im=Image.new('RGB',(4400,height),COL['white']);d=ImageDraw.Draw(im)
-    label(d,(120,65),'02  JOINERY DETAILS',65,bold=True)
-    label(d,(120,153),f'Closed pocket geometry  |  All wood {cfg.THK:g} mm thick  |  Pocket depth {cfg.DEPTH:g} mm  |  Exact R{cfg.R:g} relief arcs',31,fill=COL['muted'])
-    d.line((120,220,4280,220),fill=COL['border'],width=3)
-    viewports={key:(100+(i%2)*2160,280+(i//2)*1680,2040,1615) for i,key in enumerate(positions)}
-    for j,(ox,oy) in positions.items():
-        vp=viewports[j];r=Renderer(im,(ox,oy,ox+240,oy+190),vp)
-        ents=[e for e in doc.modelspace() if meta(e).get('detail')==j]
-        # All geometry is read from the reference detail regions in the final DXF.
-        r.entities(ents)
-    y=height-190
-    legend=[(COL['pocket'],f'{cfg.DEPTH:g} mm pocket'),(COL['dog'],f'R{cfg.R:g} relief'),
-            (COL['front'],'retained front half'),(COL['back'],'retained back half')]
-    x=160
-    for c,s in legend:
-        d.rectangle((x,y,x+43,y+43),fill=c,outline=COL['line'],width=2)
-        label(d,(x+65,y+3),s,29);x+=1015
-    label(d,(120,height-85),'Detail geometry stays 1:1 in DXF Model Space. Only this PNG view is enlarged. Dimensions are millimetres.',27,fill=COL['muted'])
-    im.save(cfg.OUT/'02_joinery_details.png',dpi=(220,220));return im
-
-
-def nest_entities(cfg,doc,full=True):
-    ents=list(doc.modelspace());out=[]
-    if full:out += [e for e in ents if e.dxf.layer=='BOARD_BOUNDARY']
-    for lay in ['CUT_THROUGH',cfg.POCKET_LAYER,'DOGBONE','HINGE_REF','LATCH_REF','PART_ID']:
-        out += [e for e in ents if e.dxf.layer==lay and (lay in ['CUT_THROUGH',cfg.POCKET_LAYER,'DOGBONE'] or meta(e).get('view')=='nest')]
-    # Notes below the board lie outside the nesting viewport; the side panel carries them.
-    if full:out += [e for e in ents if meta(e).get('view')=='nest' and e.dxf.layer in ['GRAIN_DIRECTION','NOTES','DIMENSIONS'] and meta(e).get('kind') not in ('title','sheet_note')]
-    return out
-
-
-def cutzone(cfg,report):
-    """Framing box for the enlarged views, taken from the measured nesting bounds."""
-    nb=report['nesting_bounds_mm']
-    return (0,0,nb[2]+cfg.MARGIN,nb[3]+cfg.MARGIN)
-
-
-def render_nesting(cfg,doc,report):
-    im=Image.new('RGB',(4400,4280),COL['white']);d=ImageDraw.Draw(im)
-    nb=report['nesting_bounds_mm']
-    label(d,(120,65),f'01  ONE-BOARD NESTING / {cfg.TITLE}',61,bold=True)
-    label(d,(120,155),f'{cfg.BL:g} x {cfg.BWD:g} x {cfg.BT:g} mm  |  CNC face A  |  {cfg.W:g} W x {cfg.H:g} H assembled  |  All part lengths parallel to +X grain',28,fill=COL['muted'])
-    d.line((120,225,4280,225),fill=COL['border'],width=3)
-    r=Renderer(im,(-45,-52,cfg.BL+20,cfg.BWD+46),(90,280,3000,2370));r.entities(nest_entities(cfg,doc,True))
-    x,y,w=3190,310,980
-    label(d,(x,y),'SAVED DXF CHECKED',33,bold=True);y+=75
-    for value,desc in [(report['parts_total'],'independent wooden parts'),
-                       (report['nominal_pockets_total'],'closed nominal pocket contours'),
-                       (report['dogbone_reliefs_total'],f'exact R{cfg.R:g} relief contours'),
-                       (report['mated_joints_total'],'matching half-lap joint pairs')]:
-        label(d,(x,y),str(value),66,bold=True);label(d,(x+165,y+25),desc,25);y+=118
-    y+=20;d.line((x,y,x+w,y),fill=COL['border'],width=3);y+=43
-    label(d,(x,y),'LAYER / MACHINING INTENT',30,bold=True);y+=70
-    for col,ttl,sub in [(COL['wood'],'CUT_THROUGH',f'{cfg.THK:g} mm nominal full-depth outer profile'),
-                        (COL['pocket'],cfg.POCKET_LAYER,f'{cfg.DEPTH:g} mm deep from common A face'),
-                        (COL['dog'],'DOGBONE',f'{cfg.DEPTH:g} mm deep; union with parent seat'),
-                        (COL['hardware'],'HINGE_REF / LATCH_REF','Reference only. EXCLUDE FROM CAM.')]:
-        d.rectangle((x,y,x+40,y+40),fill=col,outline=COL['line'],width=2)
-        label(d,(x+62,y),ttl,27,bold=True)
-        label(d,(x+62,y+44),sub,24,fill=COL['muted']);y+=116
-    y+=25;label(d,(x,y),'ASSEMBLY FACE ORIENTATION',29,bold=True);y+=62
-    for s in [face_note(cfg),
-              f'Minimum stock edge margin: {cfg.MARGIN:g} mm.',
-              f'Minimum between-part gap: {cfg.PGAP:g} mm.',
-              f'Cut-zone envelope: X{nb[0]:g}-{nb[2]:g} / Y{nb[1]:g}-{nb[3]:g}.',
-              'Open-edge laps need waste-side cutter overrun.',
-              'No tabs, toolpaths, feeds or speeds included.']:
-        y=wrapped(d,s,(x,y),w,26);y+=20
-    label(d,(120,2760),f'CUT-ZONE ENLARGEMENT / SAME {report["parts_total"]} PARTS',45,bold=True)
-    label(d,(120,2830),'A second viewport of the saved DXF, not additional parts. Pocket and relief positions are taken from CAD entities.',27,fill=COL['muted'])
-    d.rounded_rectangle((95,2900,4300,4140),radius=18,fill=COL['panel'],outline=COL['border'],width=2)
-    rr=Renderer(im,cutzone(cfg,report),(130,2920,4120,1200));rr.entities(nest_entities(cfg,doc,False))
-    label(d,(120,4180),'NOMINAL GEOMETRY ONLY  |  Fit coupons, actual hardware and CAM setup require approval before production.',27,fill=COL['muted'])
-    im.save(cfg.OUT/'01_one_board_nesting.png',dpi=(220,220))
-
-
-def render_closeup(cfg,doc,report):
-    im=Image.new('RGB',(4400,1850),COL['white']);d=ImageDraw.Draw(im)
-    label(d,(110,60),'05  ALL POCKETS / CUT-ZONE CLOSEUP',58,bold=True)
-    label(d,(110,145),f'Same {report["parts_total"]} parts at increased viewing scale  |  {report["nominal_pockets_total"]} nominal pockets + {report["dogbone_reliefs_total"]} reliefs  |  Closed DXF contours',28,fill=COL['muted'])
-    Renderer(im,cutzone(cfg,report),(100,245,4200,1400)).entities(nest_entities(cfg,doc,False))
-    label(d,(110,1720),'Part labels are annotations, not engraving. Dashed hardware outlines are references, not approved machining.',28,fill=COL['muted'])
-    im.save(cfg.OUT/'05_all_pockets_closeup.png',dpi=(220,220))
-
-
-def render_assembly(cfg,doc):
-    im=Image.new('RGB',(3600,3950),COL['white']);d=ImageDraw.Draw(im)
-    label(d,(105,62),f'03  ASSEMBLY / {cfg.TITLE}',54,bold=True)
-    label(d,(105,151),f'{cfg.W:g} x {cfg.H:g} mm frame | {cfg.NLEAF} leaf, each {cfg.LW:g} x {cfg.LH:g} mm | Lattice {cfg.NV} vertical + {cfg.NH} horizontal',27,fill=COL['muted'])
-    d.line((105,225,3495,225),fill=COL['border'],width=3)
-    ox,oy=cfg.ASSEMBLY_ORIGIN
-    r=Renderer(im,(ox-78,oy-92,ox+cfg.W+75,oy+cfg.H+80),(70,290,2590,2980))
-    ents=[e for e in doc.modelspace() if meta(e).get('view')=='assembly' and meta(e).get('kind')!='title']
-    for role in ('picture','body','other'):
-        r.entities([e for e in ents if (meta(e).get('role')==role if role!='other' else meta(e).get('role') not in ('picture','body'))])
-    x,y,w=2760,360,700
-    basis='Outer frame' if cfg.SIZE['basis']=='outer' else 'Fixed-frame inner opening'
-    schedule=[('WINDOW',cfg.TITLE),
-              ('SIZE BASIS',f'{basis} {cfg.SIZE["requested_mm"][0]:g} x {cfg.SIZE["requested_mm"][1]:g} mm. Outer {cfg.W:g} x {cfg.H:g}, inner {cfg.IW:g} x {cfg.IH:g}.'),
-              ('EACH OPENING',f'{cfg.OW:g} x {cfg.OH:g} mm before lattice subdivision.'),
-              ('LATTICE',f'{cfg.NV} vertical + {cfg.NH} horizontal per leaf; {cfg.NV*cfg.NH} crossings.'),
-              ('CLEARANCES',f'Frame to leaf: {cfg.GAP_OUT:g} mm.'+(f' Between leaves: {cfg.GAP_MID:g} mm.' if cfg.NLEAF==2 else '')),
-              ('ARTWORK PANEL' if cfg.ART else 'REAR PICTURE',
-               f'{cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm in a {cfg.BMW:g} mm back frame one layer behind; '
-               f'{cfg.ACOV:g} mm covered on each side, {cfg.AFIT:g} mm fit, {cfg.ASPC:g} mm spacer.' if cfg.ART else
-               f'{cfg.A3W:g} x {cfg.A3H:g} mm, centred, minimum margin {cfg.PMG:g} mm.' if cfg.PICTURE else 'No picture specified.'),
-              ('HARDWARE REFERENCES',f'{2*cfg.NLEAF} hinges, {cfg.NLEAF} handles, {cfg.NLEAF} catches. Hinge sides: '+', '.join(f.side for f in cfg.FORMAT)+'.'),
-              ('JOINT DETAILS',', '.join(formats.detail_variants(cfg.PARAMS)))]
-    for ttl,body in schedule:
-        label(d,(x,y),ttl,27,bold=True);y+=48
-        y=wrapped(d,body,(x,y),w,28);y+=40
-    d.rounded_rectangle((110,3410,3490,3800),radius=18,fill=COL['panel'],outline=COL['border'],width=2)
-    label(d,(160,3460),'ASSEMBLY AND FABRICATION STATUS',34,bold=True)
-    notes=[face_note(cfg),
-           'Hardware shapes and opening axes are position references. Products and load capacity remain PENDING.',
-           'Material minima, fit coupons, backing and CAM setup remain PENDING.']
-    if cfg.PICTURE:notes.append('The picture is fixed to a separate rear support, never to moving leaves.')
-    if cfg.ART:notes.append('The artwork panel sits in the back frame behind the fixed frame, never on the moving leaves. '
-                            'Spacer, backing and fixings are supplied separately.')
-    y=3530
-    for note in notes:y=wrapped(d,note,(160,y),3270,28)+20
-    label(d,(110,3850),'Reference members are transformed from the saved and verified CNC part geometry.',27,fill=COL['muted'])
-    im.save(cfg.OUT/'03_assembly_reference.png',dpi=(220,220))
-
-
-def render_opening(cfg,doc):
-    im=Image.new('RGB',(4000,2750),COL['white']);d=ImageDraw.Draw(im)
-    label(d,(110,60),f'04  OPENING / {cfg.TITLE}',55,bold=True)
-    label(d,(110,152),f'Looking down | {cfg.NLEAF} moving leaf | Opening toward the viewer | Reference axes',28,fill=COL['muted'])
-    d.line((110,225,3890,225),fill=COL['border'],width=3)
-    ox,oy=cfg.OPENING_ORIGIN
-    Renderer(im,(ox-50,oy-100,ox+cfg.W+50,oy+max(360,cfg.LW+cfg.THK+110)),(110,285,2720,2190)).entities(
-        [e for e in doc.modelspace() if meta(e).get('view')=='opening'])
-    y=365
-    for ttl,body in [('ILLUSTRATION ONLY','The plan shows a nominal 90-degree rotation about provisional front-projecting axes.'),
-                     ('HINGE SIDES',', '.join(f.side.upper() for f in cfg.FORMAT)+'; two hinges per leaf.'),
-                     ('ARTWORK PANEL' if cfg.ART else 'REAR PICTURE',
-                      f'One {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm panel in the back frame, {cfg.ASPC:g} mm behind the fixed frame.' if cfg.ART else
-                      f'One fixed {cfg.A3W:g} x {cfg.A3H:g} mm picture on a separate backing.' if cfg.PICTURE else 'No picture or rear picture plane is specified.'),
-                     ('PENDING','Select actual hinges, screws, catches and backing. Check full movement, loads and clearances before manufacture.')]:
-        label(d,(2970,y),ttl,29,bold=True);y+=57
-        y=wrapped(d,body,(2970,y),875,29)+66
-    label(d,(115,2580),'REFERENCE ONLY / Dynamic interference and real hardware are not validated by this illustration.',29,bold=True)
-    label(d,(115,2650),'No opening diagram is a CNC pocket or a toolpath.',27,fill=COL['muted'])
-    im.save(cfg.OUT/'04_opening_reference.png',dpi=(220,220))
-
-
-def write_readme(cfg,report):
-    ma=report['manufacturing_assessment']
-    lines=[f"한옥 창호 CAD 패키지 / {cfg.PARAMS['revision']}",f'형식: {cfg.TITLE}',
-           f'외곽: {cfg.W:g} x {cfg.H:g} mm. 창짝 {cfg.NLEAF}개, 각각 {cfg.LW:g} x {cfg.LH:g} mm.',
-           f"크기 기준: {'외경(완성 외곽)' if cfg.SIZE['basis']=='outer' else '내경(고정틀 안목)'} {cfg.SIZE['requested_mm'][0]:g} x {cfg.SIZE['requested_mm'][1]:g} mm 입력. 외경 {cfg.W:g} x {cfg.H:g}, 내경 {cfg.IW:g} x {cfg.IH:g} mm.",
-           f'창짝당 창살: 세로 {cfg.NV}, 가로 {cfg.NH}. 교차점 {cfg.NV*cfg.NH}개.',
-           f'부품 {cfg.NPART}, 홈 {cfg.NPOCKT}, 도그본 {cfg.NDOG}, 결합쌍 {cfg.NPOCKT//2}.',
-           f'원판: {cfg.BL:g} x {cfg.BWD:g} x {cfg.THK:g} mm. 부재 길이는 목리 X 방향.',
-           f'가공 깊이: {cfg.DEPTH:g} mm. 모든 가공은 A면. 공구 지름 {cfg.PARAMS["machining"]["tool_diameter"]:g}, 도그본 R{cfg.R:g}.',
-           f'창짝-고정틀 간극 {cfg.GAP_OUT:g} mm.'+(f' 창짝 사이 간극 {cfg.GAP_MID:g} mm.' if cfg.NLEAF==2 else ''),
-           f'그림: {cfg.A3W:g} x {cfg.A3H:g} mm, 후면 기준영역 안에 중앙 배치, 각 변 최소 여유 {cfg.PMG:g} mm.' if cfg.PICTURE else
-           f'화판: {cfg.ARTW:g} x {cfg.ARTH:g} x {cfg.ARTT:g} mm. 고정틀이 각 변 {cfg.ACOV:g} mm를 덮습니다.' if cfg.ART else '그림: 지정하지 않음.',
-           *([f'뒤틀(B01·B02) 4개: 폭 {cfg.BMW:g} mm, 안쪽 {cfg.D["back_inner_w"]:g} x {cfg.D["back_inner_h"]:g} mm, 끼움 여유 {cfg.AFIT:g} mm, 맞댄 이음.',
-              f'층: 고정틀·창짝·창살은 Z 0~{cfg.THK:g} mm, 뒤틀은 Z {-cfg.THK:g}~0 mm. 그 안에 스페이서 {cfg.ASPC:g} mm와 화판 {cfg.ARTT:g} mm가 들어갑니다.',
-              '스페이서·뒷판·걸이 철물은 별도 조달이며 PENDING입니다. 뒤틀 모서리 맞댄 이음의 접착·고정 방법도 확인해야 합니다.'] if cfg.ART else []),
-           '실제 존재하는 결합 상세: '+', '.join(formats.detail_variants(cfg.PARAMS)),
-           f'경첩 {2*cfg.NLEAF}, 손잡이 {cfg.NLEAF}, 캐치 {cfg.NLEAF}: 실물 선정 전 참고 위치.',
-           '경첩 부재: '+', '.join(f'{f.hinge_stile}/{f.fixed_stile}' for f in cfg.FORMAT),
-           '손잡이 부재: '+', '.join(f.handle_stile for f in cfg.FORMAT),
-           '',f"저장 DXF 재검증: {report['checks_passed']}개 검사 PASS. 검사 ID·기대값·실측값·허용 오차는 validation_report.json.",
-           f"실측 최소 홈 사이 폭: {ma['machined_web']['measured_mm']}; 가장자리 폭: {ma['edge_web']['measured_mm']}; 잔존 두께: {ma['remaining_thickness']['measured_mm']} mm.",
-           '제작용 최소값은 미확정(null/PENDING). 명목 기하 합격은 제작 승인이나 강도 보증이 아닙니다.',
-           '부재는 명목 무공차입니다. 시험편·끼움 공차·재료·하드웨어·후판 고정·개폐 간섭·CAM·고정 지그를 확인해야 합니다.',
-           'CUT_THROUGH는 전체 두께. POCKET과 DOGBONE은 부모 홈과 합쳐 절삭합니다. 개방 경계는 폐기물 방향 오버런이 필요합니다.',
-           'HINGE_REF와 LATCH_REF는 생산 가공에서 제외합니다. 공구 경로·탭·이송·회전수·G-code는 포함하지 않습니다.',
-           '', '파일: '+', '.join(('window.dxf',*output_formats.filenames()))+', PNG 5장, CSV 4종, design_request.json, design_parameters.json, design_spec.json,',
-           'resolved_parameters.json, validation_report.json, environment.json, package_manifest.json, source/.',
-           '재생성: source/requirements.txt를 설치하고 PYTHONPATH=source python -m hanok_generator build --input design_request.json --output rebuilt',
-           '검증: PYTHONPATH=source python -m hanok_generator verify .',
-           'DXF는 고정 해시 시드와 메타데이터를 사용합니다. PNG 재현에는 environment.json의 폰트와 라이브러리도 같아야 합니다.',
-           '파일을 수정한 뒤 기존 매니페스트를 덮어쓰지 마십시오. 새 입력으로 새 패키지를 생성하십시오.']
-    (cfg.OUT/'README.txt').write_bytes(('\n'.join(lines)+'\n').encode('utf-8'))

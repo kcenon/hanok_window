@@ -53,7 +53,7 @@
     {
       "bytes": 3478,
       "path": "environment.json",
-      "sha256": "2823a1da48914b16c70f61437b52e762f1ef2f838a404e2d16dd4ce38e2a269a"
+      "sha256": "4f95660e271d549251ac57528efb699089659827549c863f9f753a6173d32c8e"
     },
     {
       "bytes": 862,
@@ -161,9 +161,9 @@
       "sha256": "a046c17e373039304df2cdab9389cae4d22dc1822f4ccc7cf2e1c760382bee74"
     },
     {
-      "bytes": 7601,
+      "bytes": 7733,
       "path": "source/hanok_generator/package.py",
-      "sha256": "3ea2751ca04cb10e8dc7c467ed8983b5945601129d039ae0ef3693041a8f88e7"
+      "sha256": "2a6f2f38f12c61ee2151e9571c066aee5292314b3a0e626e55cc6d52bcebd3dc"
     },
     {
       "bytes": 3105,
@@ -202,7 +202,7 @@
     }
   ],
   "manufacturing_status": "PENDING",
-  "package_id": "f5d2dd8a16d13ab05e75914600083d86e0154727df8bf2879371fc0a47ebaeb6",
+  "package_id": "13e8d4f7157d755d7d8988a53b1d62f0297132644c0b4ff21d9b2205f81d7c8e",
   "schema_version": 1,
   "status": "COMPLETE_NOMINAL_CAD"
 }

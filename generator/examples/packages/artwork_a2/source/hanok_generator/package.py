@@ -63,7 +63,9 @@ def environment():
     fonts={}
     for role,opts in [("regular",{}),("bold",{"bold":True}),("mono",{"mono":True})]:
         face=cad_helpers.font(12,**opts)
-        path=Path(face.path) if getattr(face,"path",None) else None
+        font_path=getattr(face,"path",None)
+        # Pillow's built-in font stores its bytes in memory, not at a file path.
+        path=Path(font_path) if isinstance(font_path,(str,Path)) else None
         fonts[role]=dict(path=str(path) if path else "Pillow default",
                          sha256=digest(path) if path and path.is_file() else None)
     return dict(python=platform.python_version(),platform=sys.platform,machine=platform.machine(),

@@ -1,0 +1,77 @@
+{
+  "fonts": {
+    "bold": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    },
+    "mono": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    },
+    "regular": {
+      "path": "/System/Library/Fonts/Supplemental/Arial.ttf",
+      "sha256": "525979822591a3447cfc49d943d6f7683508e25543407871c0ed8fed05fd2bd9"
+    }
+  },
+  "libraries": {
+    "Pillow": "12.3.0",
+    "ezdxf": "1.4.2",
+    "fonttools": "4.65.0",
+    "numpy": "2.4.6",
+    "pyparsing": "3.3.2",
+    "shapely": "2.0.7",
+    "typing_extensions": "4.16.0"
+  },
+  "machine": "arm64",
+  "package_format": {
+    "required_files": [
+      "01_one_board_nesting.png",
+      "02_joinery_details.png",
+      "03_assembly_reference.png",
+      "04_opening_reference.png",
+      "05_all_pockets_closeup.png",
+      "README.txt",
+      "design_parameters.json",
+      "design_request.json",
+      "design_spec.json",
+      "dogbone_manifest.csv",
+      "environment.json",
+      "hardware_reference_manifest.csv",
+      "parts_manifest.csv",
+      "pocket_manifest.csv",
+      "resolved_parameters.json",
+      "source/hanok_generator/__main__.py",
+      "source/requirements.txt",
+      "validation_report.json",
+      "window.ai",
+      "window.dxf"
+    ],
+    "version": 1
+  },
+  "platform": "darwin",
+  "python": "3.11.15",
+  "python_hash_seed": "0",
+  "source_sha256": {
+    "__init__.py": "91d46a46b4df750db41959c5f45b7b1d216ef1c097c3080fb97d000b778a4e3e",
+    "__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "cli.py": "e7b5fbbf68427e03c2836bc2bd9f4abea4a165d1e795e1074cea6e404ef30de6",
+    "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
+    "engine/ai_export.py": "5fafdf1015b0bec7653e16e637fe948479ec51f91d05521a18c9c265d6d1d1aa",
+    "engine/builder.py": "b24fe3cee6db184477a22ad4e7e05a1f14e4f85322dc47d42e34de8292826920",
+    "engine/cad_helpers.py": "4d7d0432e38f07ec094f79d9d41f534f951e94d4c124d35c0f48bd97a028e4ef",
+    "engine/generate_spec.py": "f8b1814c7bd03b57118680e9411a3c0ad3b623c117ba45d67adc4134a4e82ccd",
+    "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",
+    "engine/numeric_policy.py": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c",
+    "engine/output_formats.py": "cef5b4caa1ca2169bd7d4a16da7bbd921762b2c50d3623ba19e0bd242d00e804",
+    "engine/rendering.py": "f4da4d311a89e73724dad1bcce1f38fdf76dce872844f62ddfa09aa91315daa0",
+    "engine/reports.py": "acbb6b46cec8bfd9541e3cfe743d2973a7e70d8d55d483bcc368576b560365a9",
+    "engine/validation_rules.py": "1ccd8b63c521b62c0d5ffe12e7062f0c3477c2da1e7d51d4ac95e0f82408ea47",
+    "formats.py": "0170ae228540108073f08abcd4aef06b0bb3dcf9b242974955b1a72b07d970be",
+    "jobs.py": "7f5615afc1bcb7fe341fe1e41a7ab80cc372af391f453535a63b8bcf6aa88ee6",
+    "model.py": "a046c17e373039304df2cdab9389cae4d22dc1822f4ccc7cf2e1c760382bee74",
+    "package.py": "2a6f2f38f12c61ee2151e9571c066aee5292314b3a0e626e55cc6d52bcebd3dc",
+    "presets/r3_parameters.json": "d0abdcab5b8e77572068ec8bcc8329000895689f9d42f7a13947781530f8d1ba",
+    "request.schema.json": "70eb170b57b26d928d3ba2417c8386f846823547666ed4f0d634d64ea8e549e5",
+    "worker.py": "6a614889d06c7fdda3974575ee7d500f61bd63c18f274cfd6d71a7729c30546b"
+  }
+}

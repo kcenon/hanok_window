@@ -30,6 +30,10 @@ DESIGN_TOOLS = ("check_design", "build_package")
 ORDER = ("type", "hinge_side", "outer_mm", "inner_mm", "artwork", "lattice_per_leaf", "preset", "picture",
          "stock_mm")
 EXAMPLES = {
+    "artwork_a2": {"type": "double", "lattice_per_leaf": [2, 4], "preset": "standard_4x8_v1",
+                   "artwork": {"size_mm": [420, 594]}},
+    "double_4x8": {"type": "double", "outer_mm": [900, 1200], "lattice_per_leaf": [2, 6],
+                   "preset": "standard_4x8_v1"},
     "double_r3": {"type": "double", "outer_mm": [463, 586], "lattice_per_leaf": [2, 4], "preset": "hanok_A3_portrait_R3"},
     "double_inner_r3": {"type": "double", "inner_mm": [383, 506], "lattice_per_leaf": [2, 4],
                         "preset": "hanok_A3_portrait_R3"},

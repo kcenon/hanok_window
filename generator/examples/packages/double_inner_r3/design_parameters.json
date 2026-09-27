@@ -1,0 +1,122 @@
+{
+  "build_date": "2026-09-12",
+  "clearance": {
+    "frame_to_leaf": 3,
+    "leaf_to_leaf": 3
+  },
+  "frame": {
+    "member_width": 40,
+    "outer_height": 586,
+    "outer_width": 463
+  },
+  "hardware_reference": {
+    "catch_inset_from_frame_inner_top": 11,
+    "catch_inset_from_leaf_top": 12,
+    "catch_size": 10,
+    "handle_height": 20,
+    "handle_width": 10,
+    "hinge_depth_ref": 2,
+    "hinge_inset_from_leaf_end": 60,
+    "hinge_length": 40,
+    "hinges_per_leaf": 2,
+    "note": "Positions only. Not selected products, not production machining.",
+    "wing_inset": 2,
+    "wing_width": 14
+  },
+  "lattice": {
+    "bar_width": 10,
+    "end_lap_length": 10,
+    "horizontal_per_leaf": 4,
+    "vertical_per_leaf": 2
+  },
+  "leaf": {
+    "count": 2,
+    "member_width": 30,
+    "min_height_to_width_ratio": 2.6
+  },
+  "machining": {
+    "machining_face": "A",
+    "pocket_depth": 10.0,
+    "relief_radius": 3.2,
+    "tool_diameter": 6
+  },
+  "nesting": {
+    "algorithm": "first-fit-decreasing shelves, scoped per (family, member width)",
+    "families": {
+      "FRAME": [
+        "F01",
+        "F02"
+      ],
+      "LATTICE": [
+        "L01",
+        "L02"
+      ],
+      "SASH": [
+        "S01",
+        "S02"
+      ]
+    }
+  },
+  "part_kinds": {
+    "F01": {
+      "axis": "V",
+      "family": "FRAME",
+      "role": "fixed frame stile"
+    },
+    "F02": {
+      "axis": "H",
+      "family": "FRAME",
+      "role": "fixed frame rail"
+    },
+    "L01": {
+      "axis": "V",
+      "family": "LATTICE",
+      "role": "vertical lattice bar"
+    },
+    "L02": {
+      "axis": "H",
+      "family": "LATTICE",
+      "role": "horizontal lattice bar"
+    },
+    "S01": {
+      "axis": "V",
+      "family": "SASH",
+      "role": "leaf stile"
+    },
+    "S02": {
+      "axis": "H",
+      "family": "SASH",
+      "role": "leaf rail"
+    }
+  },
+  "picture": {
+    "enabled": true,
+    "mounting": "One sheet fixed on a separate rear backing behind the frame. Never attached to the moving leaves.",
+    "region_margin": 10,
+    "sheet_height": 420,
+    "sheet_width": 297
+  },
+  "revision": "HANOK_GEN_V1_a9fbfb12f054",
+  "size": {
+    "basis": "inner",
+    "requested_mm": [
+      383,
+      506
+    ]
+  },
+  "stock": {
+    "edge_margin": 20,
+    "grain_axis": "X",
+    "length": 1220,
+    "part_gap": 12,
+    "thickness": 20,
+    "width": 900
+  },
+  "title": "Hanok window / double leaf",
+  "units": "mm",
+  "window": {
+    "hinge_side": null,
+    "preset": "hanok_A3_portrait_R3",
+    "type": "double"
+  }
+}

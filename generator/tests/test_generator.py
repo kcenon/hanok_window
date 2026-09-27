@@ -517,6 +517,44 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(list((self.output/".staging").iterdir()),[])
             LOG.append(dict(case="failure_"+stage,status="PREVIOUS_PACKAGE_PRESERVED"))
 
+    def test_package_with_builtin_memory_font(self):
+        from PIL import ImageFont
+        from hanok_generator.worker import generate
+        folder=self.root / "memory-font";folder.mkdir()
+        with patch("hanok_generator.engine.cad_helpers.font",
+                   side_effect=lambda size, bold=False, mono=False: ImageFont.load_default(size=size)):
+            result=generate(asdict(resolve(request("single",(0,0),"left"))),folder)
+        self.assertEqual(result["status"],"PASS")
+        self.assertEqual(verify(folder)["status"],"PASS")
+        env=json.loads((folder/"environment.json").read_text(encoding="utf-8"))
+        self.assertEqual(env["fonts"],{role:dict(path="Pillow default",sha256=None)
+                                      for role in ("regular","bold","mono")})
+
+    def test_worker_has_eof_without_inheriting_client_input(self):
+        # Keep the client's input pipe open. A noninteractive worker must see EOF
+        # immediately, even while its parent is serving an interactive protocol.
+        code = '''import json, subprocess, sys
+from hanok_generator.jobs import run_job
+original = subprocess.run
+def check_stdin(command, **kwargs):
+    probe = "import sys,runpy; assert sys.stdin.buffer.read() == b''; runpy.run_module('hanok_generator.worker', run_name='__main__')"
+    return original([command[0], '-c', probe, *command[3:]], **kwargs)
+subprocess.run = check_stdin
+print(json.dumps(run_job(dict(type='single',hinge_side='left',outer_mm=[420,900],lattice_per_leaf=[0,0]),sys.argv[1],timeout=10)))
+'''
+        with subprocess.Popen([sys.executable, "-c", code, str(self.root / "stdin-isolation")],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              text=True, encoding="utf-8") as process:
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate()
+                self.fail("Worker waited for the client's input pipe to close")
+            stdout, stderr = process.communicate()
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(json.loads(stdout)["status"], "PASS")
+
     def test_concurrent_mixed_jobs_and_byte_rebuild(self):
         cases=[request(),request("single",(0,0),"left"),request("single",(0,4),"right"),request(bars=(3,5)),request(bars=(12,4))]*2
         def run(data):

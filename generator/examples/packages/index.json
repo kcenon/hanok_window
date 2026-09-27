@@ -1,0 +1,72 @@
+{
+  "artwork_a2": {
+    "checks": 71,
+    "dogbones": 48,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "0ff0b06c9a8c27d1fd0f5f8350685bccb640ea2ee8b98c0f92703bc5e71eb7d1",
+    "parts": 28,
+    "pockets": 104,
+    "status": "PASS"
+  },
+  "double_4x8": {
+    "checks": 71,
+    "dogbones": 64,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "0517297367fcea85a9b4c7294515ad9fd834798d5525afad0cae4e2e18601fd8",
+    "parts": 28,
+    "pockets": 136,
+    "status": "PASS"
+  },
+  "double_600_800": {
+    "checks": 71,
+    "dogbones": 48,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "9ec68d94e779b6973424f6e30a03dad2ef8ef90876ae771528357c794cca77f7",
+    "parts": 24,
+    "pockets": 104,
+    "status": "PASS"
+  },
+  "double_inner_r3": {
+    "checks": 71,
+    "dogbones": 48,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "e102b455a41c29ffecd09da7d9051cdca9467127eb87c653bbc383754c52f093",
+    "parts": 24,
+    "pockets": 104,
+    "status": "PASS"
+  },
+  "double_r3": {
+    "checks": 71,
+    "dogbones": 48,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "430b07e872e42327c525030853aba188e05128d2285e26fa2ff69778a1c922c6",
+    "parts": 24,
+    "pockets": 104,
+    "status": "PASS"
+  },
+  "single_empty": {
+    "checks": 71,
+    "dogbones": 0,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "994e968d49438dba3528ca1cf70e9714afb11eafb002fee8ea0c8b21e72f3136",
+    "parts": 8,
+    "pockets": 16,
+    "status": "PASS"
+  },
+  "single_right": {
+    "checks": 71,
+    "dogbones": 32,
+    "files": 40,
+    "manufacturing_status": "PENDING",
+    "package_id": "544a19c4827f5d99960e3e3c9efa771014d69043aad37d889f4fed8dcb936a44",
+    "parts": 16,
+    "pockets": 72,
+    "status": "PASS"
+  }
+}

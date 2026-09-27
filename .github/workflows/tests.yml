@@ -142,6 +142,7 @@ jobs:
     timeout-minutes: 5
     defaults:
       run:
+        shell: bash
         working-directory: generator
     env:
       PYTHONDONTWRITEBYTECODE: "1"

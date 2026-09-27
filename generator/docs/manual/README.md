@@ -210,7 +210,7 @@
 | 파일 | 쓰임 |
 |---|---|
 | `window.dxf` | CNC 가공용 DXF. 모든 부품을 원판 한 장에 배치했습니다 |
-| `window.ai` | 원판 위 가공 도형만 담은 Illustrator 8 형식 파일. Illustrator 8부터 CS6 이후까지 열립니다 |
+| `window.ai` | 원판 위 가공 도형을 담은 Illustrator 8 계열 형식. 대상 Illustrator에서 직접 열기는 아직 미확인입니다 |
 | `01_*.png` ~ `05_*.png` | 도면 다섯 장 (아래 그림) |
 | `parts_manifest.csv` | 부품표 |
 | `pocket_manifest.csv` | 홈 목록과 좌표 |

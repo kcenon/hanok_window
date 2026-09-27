@@ -41,7 +41,7 @@ LLM 에이전트(Claude, Cursor, VS Code 등 MCP 클라이언트)로 설계하�
 hanok_window/
 ├── README.md                  이 문서
 ├── LICENSE                    MIT 라이선스
-├── generator/                 한옥 창호 생성기 0.5.0 (생성 엔진 0.3.0). 새 설계는 여기서
+├── generator/                 한옥 창호 생성기 0.5.1 (생성 엔진 0.3.0). 새 설계는 여기서
 │   ├── README.md              사용 설명서: 설치·웹 화면·명령줄·LLM 연동·입력·산출물·검증
 │   ├── web.sh                 웹 서버 켜고 끄기 (start·stop·status·restart·log)
 │   ├── web-start.command      Finder에서 두 번 누르면 켜기
@@ -71,7 +71,9 @@ hanok_window/
 | R3 설계를 생성기로 다시 만들기 | `generator/examples/double_r3.json` (내경 입력은 `double_inner_r3.json`) |
 | R3 원본 도면과 계획 문서 보기 | `r3_reference/00_START_HERE.txt`부터 |
 | 생성기가 버전마다 바꾼 것 | [generator/docs/CHANGELOG.md](generator/docs/CHANGELOG.md) |
-| 0.5.0의 변경 내용과 패키지 ID 전환 안내 | [generator/docs/RELEASE_0.5.0.md](generator/docs/RELEASE_0.5.0.md) |
+| 0.5.1의 변경 내용과 패키지 ID 전환 안내 | [generator/docs/RELEASE_0.5.1.md](generator/docs/RELEASE_0.5.1.md) |
+| 0.5.0의 변경 내용과 0.4.x에서 전환 안내 | [generator/docs/RELEASE_0.5.0.md](generator/docs/RELEASE_0.5.0.md) |
+| 변경을 제안하고 병합하는 방법 | 아래 [작업 흐름](#작업-흐름) |
 | 지난 리비전(R1·R2) 보기 | 아래 [이력](#이력)의 git 태그 |
 
 ## 지킬 규칙
@@ -79,6 +81,14 @@ hanok_window/
 - **`r3_reference/`는 고치지 않습니다.** 생성기 회귀 시험이 이 폴더의 파일 28개를 SHA-256으로 대조하므로 한 바이트만 바뀌어도 실패합니다. 2026-09-13에 `unified/`에서 이름만 바꿨고 내용은 그대로입니다. 그 안의 문서가 가리키는 `from_codex/`·`from_claude/`는 작업 트리에서 정리해 git 기록에만 있습니다([이력](#이력)).
 - **패키지를 섞어 쓰지 않습니다.** 각 패키지의 DXF는 그 패키지 안의 부품표·홈 좌표·가공 지침과 함께 씁니다. 태그에서 꺼낸 옛 DXF, 특히 `from_claude/`의 DXF(채택하지 않은 창살 1+5 안)는 CAM에 넘기지 마십시오.
 - **패키지 ID를 정하는 파일은 신중히 고칩니다.** 모든 패키지는 생성기의 최상위 모듈, `engine/`, `presets/`, 입력 스키마를 `source/`에 복사하고 그 해시를 패키지 ID에 넣습니다. 이 파일을 고치면 같은 입력이라도 패키지 ID가 바뀝니다. 웹 코드와 LLM 도구를 `hanok_generator/web/`, `llm/`에 따로 둔 이유입니다.
+
+## 작업 흐름
+
+2026-09-28부터 `main`에 직접 병합하지 않고 `develop`을 통합 브랜치로 씁니다.
+
+- 작업 브랜치는 `develop`에서 만들고 `<type>/issue-<번호>-<설명>` 형식으로 이름을 붙입니다.
+- 작업 PR은 `develop`으로 보내고, CI가 모두 통과한 뒤 **squash 병합**합니다. 저장소 설정도 squash 병합만 허용합니다.
+- `main`에는 `develop` → `main` 릴리스 PR만 squash 병합합니다. 병합된 `main` 커밋에 `v<버전>` 태그와 릴리스를 만들고, `develop`은 `main`에서 다시 만듭니다.
 
 ## R3 확정 규격
 
@@ -91,7 +101,7 @@ hanok_window/
 
 ## 이력
 
-0.5.0의 변경 내용과 호환성은 [릴리스 안내](generator/docs/RELEASE_0.5.0.md)에 정리했습니다. 태그 생성과 릴리스 게시는 [#35](https://github.com/kcenon/hanok_window/issues/35)에서 추적합니다.
+릴리스별 변경 내용과 호환성은 [0.5.1 릴리스 안내](generator/docs/RELEASE_0.5.1.md)와 [0.5.0 릴리스 안내](generator/docs/RELEASE_0.5.0.md)에 정리했습니다. 릴리스는 [GitHub 릴리스](https://github.com/kcenon/hanok_window/releases)에 게시합니다.
 
 | 태그 | 내용 |
 |---|---|
@@ -100,6 +110,8 @@ hanok_window/
 | `v0.3.1` | 웹 서버를 켜고 끄는 `web.sh` |
 | `v0.4.0` | LLM 도구 7개, MCP 서버, 함수 호출 정의 |
 | `v0.4.1` | 고침 제안 확대(웹 화면·LLM), 패키지 파일 읽기 도구, MCP 동시 처리·진행 알림·취소, 결과 스키마 |
+| `v0.5.0` | Windows 호환·UTF-8/LF, 4×8 원판, 부재별 Z 층, 액자형, DWG 내려받기, AI 출력 (엔진 0.3.0) |
+| `v0.5.1` | 과거 패키지 검증 호환성, 예제 7종 공개, 렌더링·보고서 분리, MCP 작업 입력 격리, PNG 글자 배치 고정 |
 
 - `from_codex/`: PORTRAIT_DL_R1. 창살 패턴은 지금과 같지만 규격을 손으로 관리하던 버전입니다. 계획서 원본(`01_prompt/`)이 병합 계획서의 뼈대가 되었습니다.
 - `from_claude/`: 창살 세로 1 + 가로 5 안. 2026-09-10에 세로 2 + 가로 4로 확정하면서 채택하지 않았습니다. 중앙 맞댐부에 반턱을 넣지 않는 이유 같은 고유 내용은 병합 계획서에 흡수했습니다.

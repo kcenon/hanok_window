@@ -22,6 +22,7 @@ DEPENDENCIES = ("ezdxf", "shapely", "Pillow", "numpy", "fonttools", "pyparsing",
 
 
 def required_files():
+    """Artifacts required when sealing a package with this generator."""
     return BASE_REQUIRED | set(output_formats.filenames())
 
 
@@ -93,6 +94,9 @@ def seal(root):
         raise PackageError("A saved-DXF PASS is required before publication")
     if report.get("sha256")!=digest(root/"window.dxf"):
         raise PackageError("DXF differs from the validated file")
+    env=json.loads((root/"environment.json").read_text(encoding="utf-8"))
+    env["package_format"]=dict(version=1,required_files=sorted(required_files()))
+    write_json(root/"environment.json",env)
     rows=[dict(path=name,bytes=p.stat().st_size,sha256=digest(p)) for name,p in package_files(root)]
     package_id=hashlib.sha256(canonical(rows).encode()).hexdigest()
     manifest=dict(schema_version=1,package_id=package_id,status="COMPLETE_NOMINAL_CAD",
@@ -103,6 +107,12 @@ def seal(root):
 
 
 def verify(root):
+    """Check the recorded package, without applying today's export registry to it.
+
+    New packages bind their required files into environment.json, which is itself
+    hashed. Older packages predate that record; their saved checks distinguish the
+    original DXF packages from the later AI packages. Never execute included code.
+    """
     root=Path(root)
     try:
         manifest=json.loads((root/"package_manifest.json").read_text(encoding="utf-8"))
@@ -111,13 +121,32 @@ def verify(root):
         if len(names)!=len(set(names)) or any(Path(n).is_absolute() or ".." in Path(n).parts for n in names):
             raise PackageError("Invalid or duplicate manifest paths")
         found={name:p for name,p in package_files(root)}
-        if set(names)!=set(found) or not required_files().issubset(found):
+        if set(names)!=set(found) or not BASE_REQUIRED.issubset(found):
             raise PackageError("Package contents differ from manifest or required artifacts")
         bad=[row["path"] for row in rows if digest(found[row["path"]])!=row["sha256"] or found[row["path"]].stat().st_size!=row["bytes"]]
         if bad:
             raise PackageError("Changed files: "+", ".join(bad))
         if hashlib.sha256(canonical(rows).encode()).hexdigest()!=manifest["package_id"]:
             raise PackageError("Manifest content identity mismatch")
+        # Read these only after their hashes and the content identity have passed.
+        env=json.loads(found["environment.json"].read_text(encoding="utf-8"))
+        report=json.loads(found["validation_report.json"].read_text(encoding="utf-8"))
+        required=set(BASE_REQUIRED)
+        if "package_format" in env:
+            contract=env["package_format"]
+            if not isinstance(contract,dict) or type(contract.get("version")) is not int or contract["version"]!=1:
+                raise PackageError("Unsupported recorded package format")
+            recorded=contract.get("required_files")
+            if (not isinstance(recorded,list) or any(not isinstance(n,str) for n in recorded)
+                    or len(recorded)!=len(set(recorded)) or not BASE_REQUIRED.issubset(recorded)):
+                raise PackageError("Invalid recorded required artifacts")
+            required.update(recorded)
+        # The AI check also protects pre-contract 0.5.0 packages from a removed AI
+        # file, even if someone updates the inventory and its content identity.
+        if any(c.get("rule_id")=="ai_export_matches_saved_dxf" for c in report["checks"]):
+            required.add("window.ai")
+        if not required.issubset(found):
+            raise PackageError(f"Missing recorded required artifacts: {sorted(required-set(found))}")
         return dict(status="PASS",package_id=manifest["package_id"],files=len(rows))
-    except (OSError,KeyError,TypeError,json.JSONDecodeError) as exc:
+    except (OSError,KeyError,TypeError,AttributeError,json.JSONDecodeError) as exc:
         raise PackageError(f"Invalid package: {exc}") from exc

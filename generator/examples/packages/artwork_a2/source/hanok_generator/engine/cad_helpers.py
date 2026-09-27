@@ -101,7 +101,9 @@ def font(size,bold=False,mono=False):
     for path in candidates:
         if not path: continue
         try:
-            f=ImageFont.truetype(path,max(6,int(size)))
+            # CAD annotations use Latin text. Pin the layout engine: Pillow's
+            # optional Raqm support otherwise changes kerning across OS wheels.
+            f=ImageFont.truetype(path,max(6,int(size)),layout_engine=ImageFont.Layout.BASIC)
             FONTS_USED.setdefault(role,path)
             return f
         except OSError: pass

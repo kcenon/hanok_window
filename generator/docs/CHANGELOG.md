@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 배포 전: PNG 글자 배치 고정
+
+실제 macOS·Ubuntu CI 산출물을 픽셀 단위로 대조하니 같은 Noto Sans 파일을 써도
+글자 간격이 달랐다. macOS Pillow는 Raqm이 없어 BASIC을 사용했고, Ubuntu의
+선택적 글자 배치 기능은 다른 간격을 만들었다. 영어 CAD 주석의 배치를 명시적으로
+`ImageFont.Layout.BASIC`으로 고정한다. PNG 픽셀 일치 기준과 변조 거절 시험은 유지한다.
+
 ## 배포 전: 작업 프로세스 표준 입력 격리
 
 확대한 Windows 공식 MCP SDK 시험에서 생성 작업의 120초 시간 초과를 발견했다.

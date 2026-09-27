@@ -401,6 +401,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python tests/test_generator.py      # tests/
 
 매니페스트 비교 뒤에는 `tools/compare_package_contents.py`가 실제 패키지 파일을 검사합니다.
 CI는 재배포 가능한 Noto Sans 글꼴을 고정하고 PNG 5장의 크기·RGBA 픽셀이 같아야 합니다.
+영어 CAD 주석은 Pillow의 BASIC 배치 엔진을 명시해 선택적 Raqm 설치 여부가
+글자 간격을 바꾸지 않게 합니다.
 DXF는 모든 group code와 문자열을 대조하며 실수만 절대 오차 1e-7까지 허용합니다.
 검증 JSON도 구조·검사·정수값이 같아야 하며 실수 차이는 같은 한도로 제한합니다.
 환경 기록은 OS·아키텍처·Python 패치 버전·글꼴 경로만 달라도 되고, 글꼴 해시·의존성·소스·필수 파일 기준은 같아야 합니다.

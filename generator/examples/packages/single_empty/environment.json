@@ -58,7 +58,7 @@
     "engine/__init__.py": "d8dd281ffc31709c814507530fa93987050ddaeb56b834cc2fa6375890b37684",
     "engine/ai_export.py": "5fafdf1015b0bec7653e16e637fe948479ec51f91d05521a18c9c265d6d1d1aa",
     "engine/builder.py": "b24fe3cee6db184477a22ad4e7e05a1f14e4f85322dc47d42e34de8292826920",
-    "engine/cad_helpers.py": "2fd126f32186473e077e835f44a876821405093a870f5880a92a2cb195fdf892",
+    "engine/cad_helpers.py": "4d7d0432e38f07ec094f79d9d41f534f951e94d4c124d35c0f48bd97a028e4ef",
     "engine/generate_spec.py": "f8b1814c7bd03b57118680e9411a3c0ad3b623c117ba45d67adc4134a4e82ccd",
     "engine/machining_checks.py": "e2859569225d0a1fd47bbfa37ac9927c7eb74c8443e977f62fb4d87b438f2ea7",
     "engine/numeric_policy.py": "d9898cf37de5b0c34a8d74b839e277bfce11329683f66942d8a0c43add8a2c6c",

@@ -1,5 +1,17 @@
 # 변경 기록
 
+## 0.5.1: Dependabot 설정과 잠금 파일 이름 (#48)
+
+2026-09-29. 잠금 파일 3개의 이름을 `requirements.txt`, `requirements-test.txt`,
+`requirements-mcp.txt`로 바꿨다. Dependabot은 pip 의존성 목록 중 이름이 `.txt`나
+`.in`으로 끝나는 파일만 읽어서, `.lock`의 고정 버전 35개가 의존성 그래프에 들어가지
+않았다. 그중 28개는 경보를 받지 못했고, Pillow 보안 PR은 `pyproject.toml`만
+고쳤다(PR #2). 이제 직접 의존성의 보안 PR은 `pyproject.toml`과 `requirements.txt`를
+함께 고친다. `.github/dependabot.yml`을 새로 두어 예제 패키지와 R3 원본의 `requirements.txt`를
+고치는 보안 PR을 막았다. 이 파일들은 매니페스트와 시험이 SHA-256으로 대조하는
+기록이다. 버전 업데이트는 켜지 않았고, 경보 처리 방법은 저장소 README에 적었다.
+잠금 파일은 패키지에 들어가지 않아 package_id는 그대로다.
+
 ## 0.5.1: develop 통합 브랜치와 브랜치 규칙 (#47)
 
 2026-09-29. 기본 브랜치를 `develop`으로 바꾸고 `main`·`develop`을 저장소 규칙 두 벌로

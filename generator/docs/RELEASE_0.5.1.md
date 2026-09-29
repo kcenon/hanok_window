@@ -29,4 +29,4 @@ AI·DWG를 실제 프로그램으로 여는 확인과 실물 제작 확인은 [#
 
 ## 작업 흐름 변경
 
-0.5.1부터 변경은 `develop`으로 squash 병합하고, `main`에는 `develop` → `main` 릴리스 PR만 squash 병합합니다. 자세한 내용은 [저장소 안내의 작업 흐름](../../README.md#작업-흐름)에 있습니다.
+0.5.1부터 저장소의 기본 브랜치는 `develop`이고, 변경은 `develop`으로 squash 병합합니다. `main`에는 `develop` → `main` 릴리스 PR만 squash 병합하며, 두 브랜치는 저장소 규칙으로 보호합니다. CI는 `develop`에 병합된 커밋에서도 돕니다. 자세한 내용은 [저장소 안내의 작업 흐름](../../README.md#작업-흐름)에 있습니다.

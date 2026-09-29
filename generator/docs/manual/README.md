@@ -46,7 +46,7 @@
 3. 검증한 버전의 의존 패키지와 생성기를 설치합니다.
 
    ```bash
-   .venv/bin/python -m pip install -r requirements.lock
+   .venv/bin/python -m pip install -r requirements.txt
    .venv/bin/python -m pip install -e .
    ```
 
@@ -56,7 +56,7 @@
    .venv/bin/hanok-window --help
    ```
 
-`requirements.lock`은 CPython 3.11로 Windows 11(AMD64)과 GitHub Actions의 ubuntu 24.04·macOS 26(arm64)에서 검증한 버전 목록입니다. 저장소를 새 버전으로 받은 뒤에는 3번의 두 번째 줄(`pip install -e .`)을 다시 실행해야 화면에 새 버전이 표시됩니다.
+`requirements.txt`는 CPython 3.11로 Windows 11(AMD64)과 GitHub Actions의 ubuntu 24.04·macOS 26(arm64)에서 검증한 버전 목록입니다. 저장소를 새 버전으로 받은 뒤에는 3번의 두 번째 줄(`pip install -e .`)을 다시 실행해야 화면에 새 버전이 표시됩니다.
 
 ## 켜고 끄기
 
@@ -334,6 +334,6 @@ cd generator
 
 반복 촬영을 위해 임시 예제 폴더의 생성 시각은 2026-09-17 09:00~09:04 KST, 실패 카드의 시간은 `0.0초`, 기록 이름은 `failures/example.json`으로 고정합니다. 기록 화면의 임시 출력 경로도 예시 경로로 바꿉니다. 이 값들은 설명용이며 실제 실행 시간이나 작업 기록이 아닙니다. 오류 내용·검사 수·파일 수·패키지 ID는 실제 결과를 보여 줍니다. 부분 그림을 찍는 동안에만 상단 메뉴의 고정을 풀어 내용이 가리지 않게 합니다. 실제 프로그램과 패키지 내용은 바꾸지 않습니다.
 
-촬영 기준은 **Windows 11 Pro 10.0.26200, Chrome 151.0.7922.176, CPython 3.11.9, `requirements.lock`의 실행 의존성(Pillow 12.3.0 포함), ODA File Converter 27.1.0 설치 상태**입니다. 화면은 Noto Sans KR·Consolas, 도면은 Arial을 사용했습니다. 화면 크기는 1280×1000 CSS 픽셀, 배율 2, 밝은 테마, 시간대 Asia/Seoul입니다. 운영체제·글꼴·Chrome·Python·의존성·ODA 설치 상태가 다르면 화면이 바뀌지 않아도 그림이 달라질 수 있으므로 운영체제 사이의 픽셀 일치를 보장하지 않습니다.
+촬영 기준은 **Windows 11 Pro 10.0.26200, Chrome 151.0.7922.176, CPython 3.11.9, `requirements.txt`의 실행 의존성(Pillow 12.3.0 포함), ODA File Converter 27.1.0 설치 상태**입니다. 화면은 Noto Sans KR·Consolas, 도면은 Arial을 사용했습니다. 화면 크기는 1280×1000 CSS 픽셀, 배율 2, 밝은 테마, 시간대 Asia/Seoul입니다. 운영체제·글꼴·Chrome·Python·의존성·ODA 설치 상태가 다르면 화면이 바뀌지 않아도 그림이 달라질 수 있으므로 운영체제 사이의 픽셀 일치를 보장하지 않습니다.
 
 CI는 브라우저 없이 경로 탐색·픽셀 비교·기준 파일 보존·자원 정리 시험을 세 운영체제에서 실행합니다. 실제 그림 최신 여부는 위 명령으로 필요할 때 확인합니다. 현재 기준 그림의 실제 촬영과 반복 비교는 Windows에서 검증했습니다.

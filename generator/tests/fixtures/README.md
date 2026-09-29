@@ -7,7 +7,7 @@
 
 - 패키지 ID: `e6539f1c13eff237acc19478c5d50d418a02305cd8623871e543b76bbe3a5c8b`
 - ZIP SHA-256: `e2345662a780677d9562dc6607d310da58fd6cfdc27b5d0a765b13f3b1d4ae29`
-- 재생성 환경: CPython 3.11.15, macOS arm64, 현재 `requirements.lock`의 의존성.
+- 재생성 환경: CPython 3.11.15, macOS arm64, 현재 `requirements.txt`의 의존성.
   태그 배포 당시 PNG 바이트를 재현하려는 자료는 아니다.
 - 포함 소스는 태그에서 추출했으며 생성과 동시에 당시 검증기가 PASS를 확인했다.
   시험은 이 코드를 실행하지 않고 패키지 파일을 읽기 전용으로 확인한다.

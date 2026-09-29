@@ -4,7 +4,7 @@ The generator does not depend on the SDK. Install it into a separate environment
 from it; the SDK client starts the generator's Python entry point, negotiates the protocol, lists the tools and calls them, and
 the SDK itself validates every successful structured result against the tool's outputSchema.
 
-    python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install -r requirements-mcp.lock
+    python3.11 -m venv /tmp/mcp-sdk && /tmp/mcp-sdk/bin/python -m pip install -r requirements-mcp.txt
     /tmp/mcp-sdk/bin/python tests/interop_mcp_sdk.py
 
 Exit code 0 when every step passes. Checked with mcp 2.2.0 (2026-09-13).

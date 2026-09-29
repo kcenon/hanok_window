@@ -47,18 +47,18 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
           cache-dependency-path: |
-            generator/requirements.lock
-            generator/requirements-test.lock
-            generator/requirements-mcp.lock
+            generator/requirements.txt
+            generator/requirements-test.txt
+            generator/requirements-mcp.txt
       - name: Install
         run: |
           python -m venv .venv
-          $VENV_PYTHON -m pip install -r requirements-test.lock
+          $VENV_PYTHON -m pip install -r requirements-test.txt
           $VENV_PYTHON -m pip install -e .
       - name: Official MCP SDK interoperability
         run: |
           python -m venv .mcp-venv
-          $MCP_PYTHON -m pip install -r requirements-mcp.lock
+          $MCP_PYTHON -m pip install -r requirements-mcp.txt
           PYTHONDONTWRITEBYTECODE=1 $MCP_PYTHON tests/interop_mcp_sdk.py --server-python "$VENV_PYTHON"
       - name: Record rendering backend
         run: |
@@ -174,7 +174,7 @@ jobs:
         run: python tools/compare_package_manifests.py "$RUNNER_TEMP/r3-manifests" --summary "$GITHUB_STEP_SUMMARY"
       - name: Compare actual geometry, reports and pixels
         run: |
-          python -m pip install -r requirements-test.lock
+          python -m pip install -r requirements-test.txt
           python -m pip install -e .
           python tools/compare_package_contents.py "$RUNNER_TEMP/r3-manifests" | tee -a "$GITHUB_STEP_SUMMARY"
           R3_CONTENT_ARTIFACTS="$RUNNER_TEMP/r3-manifests" python -m unittest discover -s tests -p test_package_contents.py -k test_real_artifacts -v

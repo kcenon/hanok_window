@@ -156,7 +156,7 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 
 ```bash
 cd generator
-.venv/bin/python -m pip install -r requirements-test.lock
+.venv/bin/python -m pip install -r requirements-test.txt
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python examples/make_packages.py --check
 ```

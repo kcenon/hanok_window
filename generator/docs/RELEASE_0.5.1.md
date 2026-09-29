@@ -10,6 +10,7 @@
 - 같은 환경에서 예제 7종의 내용 파일 17개씩은 분리 전후 바이트까지 같았습니다. DXF·AI·CSV의 도면 내용은 바뀌지 않았습니다.
 - 새 패키지는 **검사 71개**, 매니페스트에 기록하는 **파일 40개**, `package_manifest.json`을 포함한 ZIP **41개**입니다.
 - 0.4.x처럼 AI 출력 도입 전에 만든 정상 패키지도 읽기 전용 검증(`verify`)에서 무결성 실패로 잘못 표시되지 않습니다.
+- 설치에 쓰는 잠금 파일의 이름이 바뀌었습니다. `requirements.lock`은 `requirements.txt`, `requirements-test.lock`은 `requirements-test.txt`, `requirements-mcp.lock`은 `requirements-mcp.txt`이며 고정 버전은 같습니다.
 
 ## 바뀐 기능
 
@@ -29,4 +30,4 @@ AI·DWG를 실제 프로그램으로 여는 확인과 실물 제작 확인은 [#
 
 ## 작업 흐름 변경
 
-0.5.1부터 저장소의 기본 브랜치는 `develop`이고, 변경은 `develop`으로 squash 병합합니다. `main`에는 `develop` → `main` 릴리스 PR만 squash 병합하며, 두 브랜치는 저장소 규칙으로 보호합니다. CI는 `develop`에 병합된 커밋에서도 돕니다. 자세한 내용은 [저장소 안내의 작업 흐름](../../README.md#작업-흐름)에 있습니다.
+0.5.1부터 저장소의 기본 브랜치는 `develop`이고, 변경은 `develop`으로 squash 병합합니다. `main`에는 `develop` → `main` 릴리스 PR만 squash 병합하며, 두 브랜치는 저장소 규칙으로 보호합니다. CI는 `develop`에 병합된 커밋에서도 돕니다. 자세한 내용은 [저장소 안내의 작업 흐름](../../README.md#작업-흐름)에 있습니다. Dependabot 보안 PR과 경보를 처리하는 방법은 [저장소 안내의 의존성 보안 업데이트](../../README.md#의존성-보안-업데이트)에 있습니다.

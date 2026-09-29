@@ -117,6 +117,24 @@ gh api repos/kcenon/hanok_window/git/refs -f ref=refs/heads/develop -f sha="$(gh
 gh api -X PATCH repos/kcenon/hanok_window -f default_branch=develop
 ```
 
+### 의존성 보안 업데이트
+
+Dependabot 경보와 보안 업데이트를 켜 두었고, 새 버전마다 PR을 여는 버전 업데이트는 쓰지 않습니다. 의존 버전을 올리면 새로 만드는 패키지의 ID가 달라지고 예제도 다시 만들어야 하므로, 올리는 때는 사람이 정합니다. 설정은 `.github/dependabot.yml`에 있습니다.
+
+| 경보가 뜬 파일 | 처리 |
+|---|---|
+| `generator/pyproject.toml`, `generator/requirements*.txt` | Dependabot이 `develop`으로 보안 PR을 엽니다. 직접 의존성(ezdxf·shapely·Pillow)의 PR은 `pyproject.toml`과 `requirements.txt`를 함께 고칩니다. CI가 실패하면 원인을 고치는 커밋을 같은 PR에 더한 뒤 병합합니다. |
+| `generator/examples/packages/*/source/requirements.txt` | Dependabot PR은 열리지 않습니다. 생성기 쪽 PR을 병합한 뒤 예제를 다시 만들면(`examples/make_packages.py`) 경보가 닫힙니다. 그때까지 경보를 열어 둡니다. |
+| `r3_reference/02_cnc/requirements.txt` | Dependabot PR은 열리지 않고, 사람도 고치지 않습니다([지킬 규칙](#지킬-규칙)). R3를 만든 환경의 기록이고 설치와 CI에 쓰지 않으므로, 경보를 「사용하지 않음」(`not_used`)으로 닫고 이유를 적습니다. 이 파일의 Pillow 12.3.0은 이 설정을 두기 전인 2026-09-14에 PR #1이 올린 값입니다. |
+
+예제와 R3의 `requirements.txt`는 매니페스트와 시험이 SHA-256으로 대조하므로, 고치면 CI가 실패합니다. 그래서 `dependabot.yml`이 두 곳의 모든 의존성을 무시합니다. 보안 업데이트는 `versions`를 적은 `ignore`만 따르므로 버전 범위를 `">= 0"`으로 적었습니다.
+
+R3 경보는 다음 명령으로 닫습니다. 경보 번호는 저장소의 Security 화면이나 `gh api repos/kcenon/hanok_window/dependabot/alerts`에서 확인합니다.
+
+```bash
+gh api -X PATCH repos/kcenon/hanok_window/dependabot/alerts/<번호> -f state=dismissed -f dismissed_reason=not_used -f dismissed_comment="R3 원본의 환경 기록이며 설치와 CI에 쓰지 않습니다"
+```
+
 ## R3 확정 규격
 
 - 완성 외곽 463 × 586 mm, 창짝 187 × 500 mm 좌우 2짝, 중앙 고정 기둥 없음
@@ -156,7 +174,7 @@ git worktree add ../hanok_window_R1 R1      # 다 본 뒤: git worktree remove .
 
 ```bash
 cd generator
-.venv/bin/python -m pip install -r requirements-test.lock
+.venv/bin/python -m pip install -r requirements-test.txt
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python examples/make_packages.py --check
 ```

@@ -84,11 +84,38 @@ hanok_window/
 
 ## 작업 흐름
 
-2026-09-28부터 `main`에 직접 병합하지 않고 `develop`을 통합 브랜치로 씁니다.
+2026-09-28부터 `main`에 직접 병합하지 않고 `develop`을 통합 브랜치로 씁니다. 저장소의 기본 브랜치는 `develop`입니다.
 
 - 작업 브랜치는 `develop`에서 만들고 `<type>/issue-<번호>-<설명>` 형식으로 이름을 붙입니다.
-- 작업 PR은 `develop`으로 보내고, CI가 모두 통과한 뒤 **squash 병합**합니다. 저장소 설정도 squash 병합만 허용합니다.
-- `main`에는 `develop` → `main` 릴리스 PR만 squash 병합합니다. 병합된 `main` 커밋에 `v<버전>` 태그와 릴리스를 만들고, `develop`은 `main`에서 다시 만듭니다.
+- 작업 PR은 `develop`으로 보내고, CI가 모두 통과한 뒤 **squash 병합**합니다. 저장소 설정도 squash 병합만 허용합니다. `develop`이 기본 브랜치라서 PR 본문의 `Closes #번호`가 병합 때 이슈를 닫습니다.
+- `main`에는 `develop` → `main` 릴리스 PR만 squash 병합합니다.
+- CI(`.github/workflows/tests.yml`)는 모든 PR과 `main`·`develop`에 병합된 커밋에서 돕니다. 같은 PR에 새 커밋이 오면 이전 실행을 취소하고, 병합된 커밋의 실행은 서로 취소하지 않습니다.
+
+### 브랜치 규칙
+
+`main`과 `develop`은 저장소 규칙(ruleset) 두 벌로 보호합니다. 규칙은 브랜치 이름에 걸려 있어 `develop`을 다시 만들어도 그대로 적용됩니다.
+
+| 규칙 | `main` | `develop` |
+|---|---|---|
+| PR로만 바꿈(승인 0명, squash 병합만) | 예 | 예 |
+| 필수 검사: `tests` 5개와 `Compare R3 package bytes` | 예 | 예 |
+| PR 브랜치가 대상 브랜치의 최신 커밋을 담아야 병합 | 예 | 아니요(병합 뒤 CI가 다시 확인) |
+| 강제 push와 삭제 금지 | 예 | 예 |
+| 소유자(관리자 역할)의 우회 | PR 병합 때만 | 항상(릴리스 뒤 다시 만들기) |
+
+### 릴리스
+
+1. `develop`을 향한 열린 PR이 없는지 확인합니다. 있으면 먼저 병합하거나 닫습니다. 4단계에서 `develop`을 지우면 GitHub가 그 PR의 대상 브랜치를 `main`으로 바꾸기 때문입니다.
+2. `develop` → `main` 릴리스 PR의 CI가 모두 통과하면 squash 병합합니다. `develop`은 기본 브랜치라 병합 뒤 자동으로 지워지지 않습니다.
+3. 병합된 `main` 커밋에 `v<버전>` 태그와 GitHub 릴리스를 만듭니다.
+4. `develop`을 `main`에서 다시 만듭니다. 기본 브랜치는 지울 수 없으므로 잠시 `main`을 기본으로 둡니다.
+
+```bash
+gh api -X PATCH repos/kcenon/hanok_window -f default_branch=main
+gh api -X DELETE repos/kcenon/hanok_window/git/refs/heads/develop
+gh api repos/kcenon/hanok_window/git/refs -f ref=refs/heads/develop -f sha="$(gh api repos/kcenon/hanok_window/commits/main --jq .sha)"
+gh api -X PATCH repos/kcenon/hanok_window -f default_branch=develop
+```
 
 ## R3 확정 규격
 

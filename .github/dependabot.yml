@@ -1,0 +1,20 @@
+# Dependabot security updates stay on for generator/pyproject.toml and
+# generator/requirements*.txt. No version updates are configured.
+#
+# Example packages and the R3 original record the environment that built them, and
+# their manifests and tests check these files by SHA-256, so Dependabot must not edit
+# them. Security updates honor an ignore entry only when it lists versions, so the
+# entry below ignores every version; a pull request limit of 0 turns off version
+# updates for these directories.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directories:
+      - /generator/examples/packages/*/source
+      - /r3_reference/02_cnc
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        versions: [">= 0"]

@@ -3,14 +3,17 @@ name: tests
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
 
+# A newer pull request run replaces the older one. Every pushed commit gets its own
+# group: a queued run replaces a pending run of the same group even without
+# cancel-in-progress, so a shared group could skip a merge commit.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   tests:
